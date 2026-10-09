@@ -7,6 +7,7 @@
  */
 
 import { TOC_WIDTH, clampTocWidth } from '../shared/settings';
+import { SOURCE_MODE_CLASS } from '../shared/const';
 
 const HEADING_SELECTOR = 'h1, h2, h3, h4';
 /** 只要有标题就生成目录（0 个标题时自然返回 null） */
@@ -62,6 +63,12 @@ export function buildToc(root: HTMLElement, minHeadings = MIN_HEADINGS): TocHand
     link.title = link.textContent;
     link.addEventListener('click', (event) => {
       event.preventDefault();
+
+      // 原文视图下目录只用于了解结构，不参与跳转。
+      // CSS 那边已经设了 pointer-events:none，这里再拦一道，
+      // 防止用户用键盘聚焦链接后回车触发。
+      if (document.body.classList.contains(SOURCE_MODE_CLASS)) return;
+
       heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
       // 页面 URL 不变，锚点天然可用，这里只同步地址栏
       history.replaceState(null, '', `#${encodeURIComponent(heading.id)}`);
@@ -101,6 +108,17 @@ export function buildToc(root: HTMLElement, minHeadings = MIN_HEADINGS): TocHand
     ticking = false;
     if (!headings.length) return;
 
+    /*
+     * 原文视图下渲染内容被隐藏，标题元素没有布局盒，
+     * getBoundingClientRect() 会全部返回 0 —— 于是「已越过顶部」这个判定
+     * 对每个标题都成立，高亮会错误地停在最后一项。
+     * 与其显示一个错的当前位置，不如清空高亮。
+     */
+    if (document.body.classList.contains(SOURCE_MODE_CLASS)) {
+      setActive('');
+      return;
+    }
+
     let activeId = headings[0].id;
     for (const heading of headings) {
       if (heading.getBoundingClientRect().top - TOP_OFFSET <= 0) activeId = heading.id;
@@ -123,6 +141,12 @@ export function buildToc(root: HTMLElement, minHeadings = MIN_HEADINGS): TocHand
 
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
+
+  // 视图切换只改 body 的 class，不会触发 scroll/resize，
+  // 所以额外盯一下 class 变化，让高亮在切换的那一刻就更新
+  const classObserver = new MutationObserver(() => update());
+  classObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
   update();
 
   return {
@@ -130,6 +154,7 @@ export function buildToc(root: HTMLElement, minHeadings = MIN_HEADINGS): TocHand
     destroy() {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
+      classObserver.disconnect();
     },
   };
 }

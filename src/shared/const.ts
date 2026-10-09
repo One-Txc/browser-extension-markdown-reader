@@ -19,6 +19,12 @@ export const STYLE_ID = 'md-reader-styles';
 export const ROOT_CLASS = 'md-reader-root';
 
 /**
+ * 原文视图下挂在 body 上的标记 class。
+ * 由 source-view.ts 写入，toc.ts 读取 —— 放在这里避免两处各写一遍字符串。
+ */
+export const SOURCE_MODE_CLASS = 'md-reader-source-mode';
+
+/**
  * 判断当前页面是否应该由本扩展接管。
  *
  * contentType 实测为 text/markdown；同时兼容 text/plain

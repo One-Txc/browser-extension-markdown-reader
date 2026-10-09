@@ -29,6 +29,10 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', {
 });
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
+// toc.ts 里直接引用裸标识符 history，Node 环境下需要显式挂到 global
+globalThis.history = dom.window.history;
+// toc.ts 用 MutationObserver 盯 body 的 class 变化来决定高亮是否清空
+globalThis.MutationObserver = dom.window.MutationObserver;
 globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
 // jsdom 没有 scrollIntoView，目录高亮会用到
 dom.window.Element.prototype.scrollIntoView = function scrollIntoView() {};
@@ -114,6 +118,22 @@ document
   .querySelector('.md-reader-resizer')
   .dispatchEvent(new dom.window.Event('dblclick'));
 check('双击手柄请求恢复默认宽度', widthCalls.length === 1 && widthCalls[0] === 268);
+
+/* 目录项点击：渲染视图下同步地址栏，原文视图下不跳转 */
+let hashSyncs = 0;
+globalThis.history.replaceState = () => {
+  hashSyncs += 1;
+};
+const firstLink = document.querySelector('.md-reader-toc-list a');
+
+firstLink.click();
+check('渲染视图下点击目录项跳转', hashSyncs === 1);
+
+// 原文视图里目录只用于了解结构，点击不应产生任何跳转
+document.body.classList.add('md-reader-source-mode');
+firstLink.click();
+check('原文视图下点击目录项不跳转', hashSyncs === 1);
+document.body.classList.remove('md-reader-source-mode');
 
 mounted.destroy();
 check(

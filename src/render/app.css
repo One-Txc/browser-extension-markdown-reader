@@ -470,15 +470,16 @@ html.md-reader-resizing * {
   overflow-wrap: anywhere;
 }
 
-/* 原文视图里没有渲染后的标题元素，目录跳转与高亮都会失效，一并收起 */
-body.md-reader-source-mode {
-  padding-left: 0 !important;
-}
-
-body.md-reader-source-mode .md-reader-toc,
-body.md-reader-source-mode .md-reader-resizer,
-body.md-reader-source-mode .md-reader-btn-toc {
-  display: none !important;
+/*
+ * 原文视图下目录保持显示 —— 它此时的作用是「了解文档结构」，而不是导航。
+ * 原文里没有渲染后的标题元素，锚点跳转与滚动高亮都无从谈起，因此：
+ *   - 链接设为不可点击，鼠标也不会变成手型（避免"点了没反应像是坏了"）
+ *   - 高亮由 toc.ts 主动清空，理由见那里的说明
+ * 目录宽度、拖拽手柄、目录开关按钮全部保留，两种视图下的操作保持一致。
+ */
+body.md-reader-source-mode .md-reader-toc-list a {
+  pointer-events: none;
+  cursor: default;
 }
 
 /* 窄屏：目录收成可滑出的抽屉 */

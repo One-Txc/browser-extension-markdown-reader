@@ -13,9 +13,10 @@
  * 此时页面里没有渲染后的标题元素，目录跳转与滚动高亮都会失效，留着只会误导。
  */
 
+import { SOURCE_MODE_CLASS } from '../shared/const';
+
 const PANEL_CLASS = 'md-reader-source';
 const HIDDEN_CLASS = 'md-reader-hidden';
-const SOURCE_MODE_CLASS = 'md-reader-source-mode';
 
 export interface SourceViewHandle {
   /** 当前是否正在显示原文 */
