@@ -30,9 +30,15 @@ const MIN_HEADINGS = 1;
 const TOP_OFFSET = 96;
 /** 批量展开 / 收起最多提供几个层级 */
 const MAX_BULK_LEVELS = 3;
+/** 挂在 nav 上表示「不启用折叠」，由 CSS 收起 caret 与批量按钮 */
+const NO_FOLD_CLASS = 'md-reader-toc-no-fold';
 
 export interface TocHandle {
   nav: HTMLElement;
+  /** 目录项总数，供调用方决定是否启用折叠功能 */
+  count: number;
+  /** 动态开关折叠功能（短文档不需要，长了才显示） */
+  setFoldEnabled(enabled: boolean): void;
   destroy(): void;
 }
 
@@ -354,8 +360,22 @@ export function buildToc(root: HTMLElement, minHeadings = MIN_HEADINGS): TocHand
 
   update();
 
+  /*
+   * 折叠 UI（caret 与批量按钮）始终生成，是否显示由这个开关控制。
+   * 这样阈值设置变化时可以即时切换，不必重建目录 ——
+   * 重建会让折叠状态和目录自身的滚动位置全部丢失。
+   */
+  const setFoldEnabled = (enabled: boolean): void => {
+    nav.classList.toggle(NO_FOLD_CLASS, !enabled);
+    if (enabled) return;
+    // 关掉折叠时把所有节点展开，否则残留的收起状态会让一部分条目彻底看不见
+    for (const node of nodes) setNodeExpanded(node, true);
+  };
+
   return {
     nav,
+    count: headings.length,
+    setFoldEnabled,
     destroy() {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
@@ -464,10 +484,14 @@ export function mountToc(root: HTMLElement, handlers: TocHandlers): TocHandle | 
 
   document.body.append(handle.nav, resizer, button);
 
+  const destroyInner = handle.destroy;
+
   return {
     nav: handle.nav,
+    count: handle.count,
+    setFoldEnabled: handle.setFoldEnabled,
     destroy() {
-      handle.destroy();
+      destroyInner();
       resizer.remove();
       button.remove();
       handle.nav.remove();

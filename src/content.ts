@@ -154,6 +154,12 @@ function syncToc(settings: ReaderSettings): void {
 
   document.body.classList.toggle('md-reader-has-toc', settings.showToc);
   applyTocWidth(settings.tocWidth);
+
+  // 目录项不够多时不启用折叠：短文档本来一屏就能看完，多一排按钮反而是噪音
+  if (tocHandle) {
+    const { foldThreshold } = settings;
+    tocHandle.setFoldEnabled(foldThreshold <= 0 || tocHandle.count > foldThreshold);
+  }
 }
 
 async function refreshFromSettings(): Promise<void> {

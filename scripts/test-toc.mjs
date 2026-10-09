@@ -133,7 +133,18 @@ check('手动折叠后批量按钮同步为未展开态', !h1Button.classList.co
 firstCaret.click();
 check('手动展开后批量按钮同步为已展开态', h1Button.classList.contains('is-expanded'));
 
-/* ------------------------------------------------ 5. 挂载与销毁 */
+/* ------------------------------------------------ 5. 折叠开关 */
+
+check('handle 暴露目录项数量供调用方判断阈值', handle.count === 4);
+
+handle.setFoldEnabled(false);
+check('关闭折叠时 nav 带 no-fold 标记', handle.nav.classList.contains('md-reader-toc-no-fold'));
+check('关闭折叠时所有节点被展开', !handle.nav.querySelector('.is-collapsed'));
+
+handle.setFoldEnabled(true);
+check('重新启用折叠时移除 no-fold 标记', !handle.nav.classList.contains('md-reader-toc-no-fold'));
+
+/* ------------------------------------------------ 6. 挂载与销毁 */
 // 记录交互回调，用来验证按钮与手柄确实把意图交给了外部
 const visibleCalls = [];
 const widthCalls = [];

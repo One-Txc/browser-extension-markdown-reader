@@ -363,6 +363,12 @@ body.md-reader-lightbox-open {
   border-style: dashed;
 }
 
+/* 目录项不够多时不显示折叠 UI（阈值可在 popup 里调） */
+.md-reader-toc-no-fold .toc-caret,
+.md-reader-toc-no-fold .md-reader-toc-bulk {
+  display: none;
+}
+
 /* ---------- 目录树 ---------- */
 
 .md-reader-toc-list,

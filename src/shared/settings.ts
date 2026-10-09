@@ -24,6 +24,11 @@ export interface ReaderSettings {
   showToc: boolean;
   /** 侧边目录宽度（px），可拖拽调整 */
   tocWidth: number;
+  /**
+   * 折叠功能的启用阈值：目录项数量**超过**该值时才显示折叠箭头与批量按钮。
+   * 0 表示始终启用。短文档不需要折叠，多一排按钮反而是噪音。
+   */
+  foldThreshold: number;
 }
 
 /** 目录宽度的取值范围 */
@@ -39,6 +44,18 @@ export function clampTocWidth(width: number): number {
   return Math.min(TOC_WIDTH.max, Math.max(TOC_WIDTH.min, Math.round(width)));
 }
 
+/** 折叠阈值的取值范围。0 = 始终启用；上限留得足够大，便于用户实质上关掉折叠 */
+export const FOLD_THRESHOLD = {
+  default: 10,
+  min: 0,
+  max: 9999,
+} as const;
+
+export function clampFoldThreshold(value: number): number {
+  if (!Number.isFinite(value)) return FOLD_THRESHOLD.default;
+  return Math.min(FOLD_THRESHOLD.max, Math.max(FOLD_THRESHOLD.min, Math.round(value)));
+}
+
 export const DEFAULT_SETTINGS: ReaderSettings = {
   mode: 'auto',
   lightTheme: DEFAULT_LIGHT_THEME,
@@ -47,6 +64,7 @@ export const DEFAULT_SETTINGS: ReaderSettings = {
   contentWidth: 'medium',
   showToc: true,
   tocWidth: TOC_WIDTH.default,
+  foldThreshold: FOLD_THRESHOLD.default,
 };
 
 /** 实际像素值，供 buildThemeCss 注入 CSS 变量 */
@@ -84,6 +102,7 @@ export async function loadSettings(): Promise<ReaderSettings> {
       contentWidth: s.contentWidth ?? DEFAULT_SETTINGS.contentWidth,
       showToc: s.showToc ?? DEFAULT_SETTINGS.showToc,
       tocWidth: clampTocWidth(s.tocWidth ?? DEFAULT_SETTINGS.tocWidth),
+      foldThreshold: clampFoldThreshold(s.foldThreshold ?? DEFAULT_SETTINGS.foldThreshold),
     };
   } catch {
     return DEFAULT_SETTINGS;

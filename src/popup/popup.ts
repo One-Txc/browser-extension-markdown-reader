@@ -16,6 +16,7 @@
  */
 
 import {
+  clampFoldThreshold,
   loadSettings,
   saveSettings,
   type ContentWidth,
@@ -35,6 +36,7 @@ const darkEl = pick<HTMLSelectElement>('darkTheme');
 const fontSizeEl = pick<HTMLSelectElement>('fontSize');
 const contentWidthEl = pick<HTMLSelectElement>('contentWidth');
 const showTocEl = pick<HTMLInputElement>('showToc');
+const foldThresholdEl = pick<HTMLInputElement>('foldThreshold');
 const statusEl = pick<HTMLElement>('status');
 const detailEl = pick<HTMLElement>('detail');
 const metaEl = pick<HTMLElement>('meta');
@@ -115,6 +117,7 @@ async function init(): Promise<void> {
   fontSizeEl.value = settings.fontSize;
   contentWidthEl.value = settings.contentWidth;
   showTocEl.checked = settings.showToc;
+  foldThresholdEl.value = String(settings.foldThreshold);
 
   modeEl.addEventListener('change', () => void save({ mode: modeEl.value as ThemeMode }));
   lightEl.addEventListener('change', () => void save({ lightTheme: lightEl.value }));
@@ -124,6 +127,12 @@ async function init(): Promise<void> {
     void save({ contentWidth: contentWidthEl.value as ContentWidth })
   );
   showTocEl.addEventListener('change', () => void save({ showToc: showTocEl.checked }));
+  foldThresholdEl.addEventListener('change', () => {
+    // 钳制后回显，让用户看到实际生效的值（输入 0 或负数时的反馈）
+    const value = clampFoldThreshold(Number(foldThresholdEl.value));
+    foldThresholdEl.value = String(value);
+    void save({ foldThreshold: value });
+  });
 
   await renderPermission();
 }
