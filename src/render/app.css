@@ -449,11 +449,22 @@ body.md-reader-lightbox-open {
   color: var(--md-toc-active, #0969da);
 }
 
-/* 树形结构下用圆角底色表示当前位置，比左侧竖线更容易看清 */
+/*
+ * 层级区分：H1 / H2 的条目加粗，更深的层级保持常规字重。
+ *
+ * 字重只用来表达「层级」，不参与表达「当前位置」——
+ * 原来的 active 样式靠 font-weight: 500 强调，一旦 H1/H2 常态就是 600，
+ * 高亮时反而会变细，逻辑上自相矛盾。
+ */
+.toc-node.toc-level-h1 > .toc-row > a,
+.toc-node.toc-level-h2 > .toc-row > a {
+  font-weight: 600;
+}
+
+/* 当前位置：用颜色 + 圆角底色表达，与字重解耦 */
 .md-reader-toc-list a.active {
   color: var(--md-toc-active, #0969da);
   background: var(--md-toc-border, rgba(0, 0, 0, 0.07));
-  font-weight: 500;
 }
 
 /* ---------- 目录宽度拖拽手柄 ---------- */
