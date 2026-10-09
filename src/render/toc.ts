@@ -13,7 +13,12 @@
 import { TOC_WIDTH, clampTocWidth } from '../shared/settings';
 import { SOURCE_MODE_CLASS } from '../shared/const';
 
-const HEADING_SELECTOR = 'h1, h2, h3, h4';
+/*
+ * 收录到 H6。
+ * 过去只到 H4 是担心目录过长，但现在有了折叠，深度不再是问题 ——
+ * 收起到浅层就能只看骨架。
+ */
+const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6';
 /** 只要有标题就生成目录（0 个标题时自然返回 null） */
 const MIN_HEADINGS = 1;
 /**
