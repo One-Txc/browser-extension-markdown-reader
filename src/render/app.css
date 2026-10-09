@@ -324,22 +324,105 @@ body.md-reader-lightbox-open {
   opacity: 0.8;
 }
 
-.md-reader-toc-list {
+/* ---------- 批量展开 / 收起 ---------- */
+
+.md-reader-toc-bulk {
+  display: flex;
+  gap: 5px;
+  margin: 0 0 10px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--md-toc-border, rgba(0, 0, 0, 0.08));
+}
+
+.toc-bulk-btn {
+  flex: 1;
+  padding: 3px 0;
+  font: 11px/1.5 ui-monospace, Consolas, Menlo, monospace;
+  color: var(--md-toc-text, #656d76);
+  background: transparent;
+  border: 1px solid var(--md-toc-border, rgba(0, 0, 0, 0.14));
+  border-radius: 5px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.toc-bulk-btn:hover {
+  opacity: 1;
+}
+
+/* 全部展开时实心高亮；部分展开用虚线边框表示中间态 */
+.toc-bulk-btn.is-expanded {
+  opacity: 1;
+  color: var(--md-toc-active, #0969da);
+  border-color: var(--md-toc-active, #0969da);
+}
+
+.toc-bulk-btn.is-mixed {
+  opacity: 1;
+  border-style: dashed;
+}
+
+/* ---------- 目录树 ---------- */
+
+.md-reader-toc-list,
+.toc-children {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.md-reader-toc-list li {
-  margin: 0;
+/*
+ * 缩进来自嵌套深度，而不是标题的绝对层级。
+ * 文档直接从 H2 起头时不会多出一级缩进，层级跳跃（H1 → H3）也能正确表现为父子关系。
+ */
+.toc-children {
+  padding-left: 13px;
+}
+
+.toc-node.is-collapsed > .toc-children {
+  display: none;
+}
+
+.toc-row {
+  display: flex;
+  align-items: flex-start;
+}
+
+.toc-caret {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 19px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--md-toc-text, #656d76);
+  font-size: 10px;
+  line-height: 19px;
+  text-align: center;
+  cursor: pointer;
+  opacity: 0.55;
+}
+
+.toc-caret:hover {
+  opacity: 1;
+  background: var(--md-toc-border, rgba(0, 0, 0, 0.08));
+}
+
+/* 没有子标题时占位，保证同级条目的文字左边缘对齐 */
+.toc-caret-empty {
+  pointer-events: none;
 }
 
 .md-reader-toc-list a {
+  flex: 1;
+  min-width: 0;
   display: block;
-  padding: 3px 6px 3px 10px;
+  padding: 3px 6px 3px 4px;
+  border-radius: 4px;
   color: var(--md-toc-text, #656d76);
   text-decoration: none;
-  border-left: 2px solid transparent;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -349,15 +432,12 @@ body.md-reader-lightbox-open {
   color: var(--md-toc-active, #0969da);
 }
 
+/* 树形结构下用圆角底色表示当前位置，比左侧竖线更容易看清 */
 .md-reader-toc-list a.active {
   color: var(--md-toc-active, #0969da);
-  border-left-color: var(--md-toc-active, #0969da);
+  background: var(--md-toc-border, rgba(0, 0, 0, 0.07));
   font-weight: 500;
 }
-
-.toc-level-h2 a { padding-left: 22px; }
-.toc-level-h3 a { padding-left: 34px; }
-.toc-level-h4 a { padding-left: 46px; }
 
 /* ---------- 目录宽度拖拽手柄 ---------- */
 

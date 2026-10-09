@@ -1,5 +1,9 @@
 /**
- * 侧边目录：构建 + 滚动高亮。
+ * 侧边目录：树形构建 + 折叠 + 滚动高亮。
+ *
+ * ★ 为了支持折叠，目录从「扁平列表 + CSS 缩进」改成了真正的嵌套树。
+ * 折叠的前提是知道父子关系，而 CSS 的 padding-left 缩进并不携带这层信息 ——
+ * 它只是看起来有层级，结构上仍然是平级的兄弟节点。
  *
  * 高亮用 scroll 事件 + requestAnimationFrame 节流，而不是 IntersectionObserver。
  * 原因：IO 只在元素「进入/离开」观察区时回调，维护「当前章节」需要自己拼状态；
@@ -19,10 +23,25 @@ const MIN_HEADINGS = 1;
  * 而高亮判定线放在更下方，让标题刚进入视口上部就切换高亮，滚动时更跟手。
  */
 const TOP_OFFSET = 96;
+/** 批量展开 / 收起最多提供几个层级 */
+const MAX_BULK_LEVELS = 3;
 
 export interface TocHandle {
   nav: HTMLElement;
   destroy(): void;
+}
+
+interface TocNode {
+  id: string;
+  /** 标题层级，1 = h1 */
+  level: number;
+  text: string;
+  heading: HTMLElement;
+  parent: TocNode | null;
+  children: TocNode[];
+  li: HTMLLIElement;
+  caret: HTMLButtonElement | null;
+  expanded: boolean;
 }
 
 /** 取标题纯文本，去掉 markdown-it-anchor 插入的 permalink 符号 */
@@ -30,6 +49,201 @@ function headingText(el: HTMLElement): string {
   const clone = el.cloneNode(true) as HTMLElement;
   clone.querySelectorAll('.header-anchor').forEach((n) => n.remove());
   return (clone.textContent ?? '').trim();
+}
+
+/**
+ * 按标题层级建树。
+ * 用栈维护「当前的祖先链」：遇到不深于栈顶的层级就先弹栈，剩下的栈顶就是父节点。
+ */
+function buildTree(headings: HTMLElement[]): TocNode[] {
+  const roots: TocNode[] = [];
+  const stack: TocNode[] = [];
+
+  for (const heading of headings) {
+    const level = Number(heading.tagName.slice(1));
+    const node: TocNode = {
+      id: heading.id,
+      level,
+      text: headingText(heading),
+      heading,
+      parent: null,
+      children: [],
+      li: document.createElement('li'),
+      caret: null,
+      expanded: true,
+    };
+
+    while (stack.length > 0 && stack[stack.length - 1].level >= level) stack.pop();
+
+    const parent = stack[stack.length - 1] ?? null;
+    node.parent = parent;
+    if (parent) parent.children.push(node);
+    else roots.push(node);
+
+    stack.push(node);
+  }
+
+  return roots;
+}
+
+function flattenTree(nodes: TocNode[], out: TocNode[] = []): TocNode[] {
+  for (const node of nodes) {
+    out.push(node);
+    flattenTree(node.children, out);
+  }
+  return out;
+}
+
+function setNodeExpanded(node: TocNode, expanded: boolean): void {
+  node.expanded = expanded;
+  node.li.classList.toggle('is-collapsed', !expanded);
+  if (node.caret) {
+    node.caret.textContent = expanded ? '▾' : '▸';
+    node.caret.setAttribute('aria-expanded', String(expanded));
+  }
+}
+
+function renderTree(
+  nodes: TocNode[],
+  list: HTMLUListElement,
+  links: Map<string, HTMLAnchorElement>,
+  onToggle: () => void
+): void {
+  for (const node of nodes) {
+    const { li } = node;
+    li.className = `toc-node toc-level-h${node.level}`;
+
+    const row = document.createElement('div');
+    row.className = 'toc-row';
+
+    if (node.children.length > 0) {
+      const caret = document.createElement('button');
+      caret.type = 'button';
+      caret.className = 'toc-caret';
+      caret.textContent = '▾';
+      caret.title = '展开 / 收起子标题';
+      caret.setAttribute('aria-label', '展开 / 收起子标题');
+      caret.setAttribute('aria-expanded', 'true');
+      caret.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setNodeExpanded(node, !node.expanded);
+        // 手动折叠也要让批量按钮的状态跟着变，否则按钮会显示成过期的状态
+        onToggle();
+      });
+      node.caret = caret;
+      row.appendChild(caret);
+    } else {
+      // 没有子标题也占一个位置，保证同级条目的文字左边缘对齐
+      const spacer = document.createElement('span');
+      spacer.className = 'toc-caret toc-caret-empty';
+      row.appendChild(spacer);
+    }
+
+    const link = document.createElement('a');
+    link.href = `#${node.id}`;
+    link.textContent = node.text;
+    link.title = node.text;
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+
+      // 原文视图下目录只用于了解结构，不参与跳转。
+      // CSS 那边已经设了 pointer-events:none，这里再拦一道，
+      // 防止用户用键盘聚焦链接后回车触发。
+      if (document.body.classList.contains(SOURCE_MODE_CLASS)) return;
+
+      node.heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // 页面 URL 不变，锚点天然可用，这里只同步地址栏
+      history.replaceState(null, '', `#${encodeURIComponent(node.id)}`);
+    });
+
+    links.set(node.id, link);
+    row.appendChild(link);
+    li.appendChild(row);
+
+    if (node.children.length > 0) {
+      const childList = document.createElement('ul');
+      childList.className = 'toc-children';
+      renderTree(node.children, childList, links, onToggle);
+      li.appendChild(childList);
+    }
+
+    list.appendChild(li);
+  }
+}
+
+/**
+ * 把某一层级整体展开或收起。
+ *
+ * 展开时顺带把更浅的层级也展开 —— 否则目标层级藏在收起的父节点里，
+ * 点了「展开 H2」却什么都看不到。
+ */
+function applyLevel(nodes: TocNode[], level: number, expanded: boolean): void {
+  for (const node of nodes) {
+    if (node.level === level) {
+      setNodeExpanded(node, expanded);
+    } else if (expanded && node.level < level) {
+      setNodeExpanded(node, true);
+    }
+  }
+}
+
+/**
+ * 批量展开 / 收起按钮条。
+ *
+ * 层级取自「文档中实际出现过的层级」并按数字升序取前三个 ——
+ * 不是写死的 H1/H2/H3。若文档只有 H2 和 H3，这两个就分别是第 1、2 级。
+ * 某一层级若没有任何带子标题的节点，则不生成按钮（点了也没有效果）。
+ */
+function createBulkBar(nodes: TocNode[]): { bar: HTMLElement | null; refresh: () => void } {
+  const levels = [...new Set(nodes.map((n) => n.level))]
+    .sort((a, b) => a - b)
+    .slice(0, MAX_BULK_LEVELS);
+
+  const targets = (level: number): TocNode[] =>
+    nodes.filter((n) => n.level === level && n.children.length > 0);
+
+  const bar = document.createElement('div');
+  bar.className = 'md-reader-toc-bulk';
+  const buttons = new Map<number, HTMLButtonElement>();
+
+  const refresh = (level: number): void => {
+    const button = buttons.get(level);
+    const list = targets(level);
+    if (!button || list.length === 0) return;
+
+    const allExpanded = list.every((n) => n.expanded);
+    const allCollapsed = list.every((n) => !n.expanded);
+
+    button.classList.toggle('is-expanded', allExpanded);
+    button.classList.toggle('is-mixed', !allExpanded && !allCollapsed);
+    button.title = allExpanded ? `收起所有 H${level} 标题` : `展开所有 H${level} 标题`;
+  };
+
+  const refreshAll = (): void => {
+    for (const level of levels) refresh(level);
+  };
+
+  for (const level of levels) {
+    if (targets(level).length === 0) continue;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'toc-bulk-btn';
+    button.textContent = `H${level}`;
+    button.addEventListener('click', () => {
+      const list = targets(level);
+      const allExpanded = list.every((n) => n.expanded);
+      applyLevel(nodes, level, !allExpanded);
+      refreshAll();
+    });
+
+    buttons.set(level, button);
+    bar.appendChild(button);
+  }
+
+  refreshAll();
+  // 即使一个按钮都没生成，也返回一个 no-op 的 refresh，调用方不必判空
+  return { bar: buttons.size > 0 ? bar : null, refresh: refreshAll };
 }
 
 export function buildToc(root: HTMLElement, minHeadings = MIN_HEADINGS): TocHandle | null {
@@ -47,38 +261,16 @@ export function buildToc(root: HTMLElement, minHeadings = MIN_HEADINGS): TocHand
   title.textContent = '目录';
   nav.appendChild(title);
 
-  const list = document.createElement('ul');
-  list.className = 'md-reader-toc-list';
-
+  const tree = buildTree(headings);
+  const nodes = flattenTree(tree);
   const links = new Map<string, HTMLAnchorElement>();
 
-  for (const heading of headings) {
-    const item = document.createElement('li');
-    // class 形如 toc-level-h2，与 app.css 中的缩进规则对应
-    item.className = `toc-level-${heading.tagName.toLowerCase()}`;
+  const bulk = createBulkBar(nodes);
+  if (bulk.bar) nav.appendChild(bulk.bar);
 
-    const link = document.createElement('a');
-    link.href = `#${heading.id}`;
-    link.textContent = headingText(heading);
-    link.title = link.textContent;
-    link.addEventListener('click', (event) => {
-      event.preventDefault();
-
-      // 原文视图下目录只用于了解结构，不参与跳转。
-      // CSS 那边已经设了 pointer-events:none，这里再拦一道，
-      // 防止用户用键盘聚焦链接后回车触发。
-      if (document.body.classList.contains(SOURCE_MODE_CLASS)) return;
-
-      heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      // 页面 URL 不变，锚点天然可用，这里只同步地址栏
-      history.replaceState(null, '', `#${encodeURIComponent(heading.id)}`);
-    });
-
-    links.set(heading.id, link);
-    item.appendChild(link);
-    list.appendChild(item);
-  }
-
+  const list = document.createElement('ul');
+  list.className = 'md-reader-toc-list';
+  renderTree(tree, list, links, bulk.refresh);
   nav.appendChild(list);
 
   /* ------------------------------------------------------ 滚动高亮 */

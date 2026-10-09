@@ -87,7 +87,52 @@ partial.innerHTML =
 const mixed = buildToc(partial);
 check('无 id 的标题被跳过', mixed.nav.querySelectorAll('a').length === 3);
 
-/* ------------------------------------------------ 4. 挂载与销毁 */
+/* ------------------------------------------------ 4. 树形折叠 */
+
+check('有子标题的节点生成折叠按钮', handle.nav.querySelectorAll('button.toc-caret').length === 2);
+check('无子标题的节点用占位符对齐', handle.nav.querySelectorAll('.toc-caret-empty').length === 2);
+
+const bulkButtons = [...handle.nav.querySelectorAll('.toc-bulk-btn')];
+check(
+  '批量按钮取文档中实际出现的前三个层级（H3 无子标题故只有两个）',
+  bulkButtons.map((b) => b.textContent).join(',') === 'H1,H2'
+);
+
+const h1Li = handle.nav.querySelector('.toc-level-h1');
+const h2Li = handle.nav.querySelector('.toc-level-h2');
+const firstCaret = handle.nav.querySelector('button.toc-caret');
+
+firstCaret.click();
+check('点击折叠按钮收起子树', h1Li.classList.contains('is-collapsed'));
+check('折叠后箭头变为 ▸', firstCaret.textContent === '▸');
+check('aria-expanded 同步为 false', firstCaret.getAttribute('aria-expanded') === 'false');
+
+firstCaret.click();
+check('再次点击展开子树', !h1Li.classList.contains('is-collapsed'));
+
+const h1Button = bulkButtons[0];
+const h2Button = bulkButtons[1];
+
+h2Button.click();
+check('批量收起 H2', h2Li.classList.contains('is-collapsed'));
+check('批量按钮随之变为未展开态', !h2Button.classList.contains('is-expanded'));
+
+h1Button.click();
+check('批量收起 H1', h1Li.classList.contains('is-collapsed'));
+
+h2Button.click();
+// 目标层级藏在收起的父节点里时，展开必须连带展开祖先，否则点了等于没点
+check('展开下层时连带展开祖先', !h1Li.classList.contains('is-collapsed'));
+check('H2 已重新展开', !h2Li.classList.contains('is-collapsed'));
+check('批量按钮恢复已展开态', h2Button.classList.contains('is-expanded'));
+
+// 手动折叠也要让批量按钮状态同步，否则按钮会显示成过期的状态
+firstCaret.click();
+check('手动折叠后批量按钮同步为未展开态', !h1Button.classList.contains('is-expanded'));
+firstCaret.click();
+check('手动展开后批量按钮同步为已展开态', h1Button.classList.contains('is-expanded'));
+
+/* ------------------------------------------------ 5. 挂载与销毁 */
 // 记录交互回调，用来验证按钮与手柄确实把意图交给了外部
 const visibleCalls = [];
 const widthCalls = [];
