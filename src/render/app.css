@@ -391,23 +391,34 @@ body.md-reader-lightbox-open {
 
 .toc-caret {
   flex: 0 0 auto;
-  width: 16px;
-  height: 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 拉满行高：点击区域从图标本身扩展到整行，不必精确点中那个小三角 */
+  align-self: stretch;
+  width: 18px;
   padding: 0;
   border: 0;
-  border-radius: 3px;
+  border-radius: 4px;
   background: transparent;
   color: var(--md-toc-text, #656d76);
-  font-size: 10px;
-  line-height: 19px;
-  text-align: center;
   cursor: pointer;
-  opacity: 0.55;
+  opacity: 0.75;
+  transition: opacity 0.12s ease, background 0.12s ease;
 }
 
 .toc-caret:hover {
   opacity: 1;
   background: var(--md-toc-border, rgba(0, 0, 0, 0.08));
+}
+
+/* 方向交给 CSS：展开时 V 形朝下，收起时旋转 90° 朝右 */
+.toc-caret svg {
+  transition: transform 0.15s ease;
+}
+
+.toc-node.is-collapsed > .toc-row .toc-caret svg {
+  transform: rotate(-90deg);
 }
 
 /* 没有子标题时占位，保证同级条目的文字左边缘对齐 */

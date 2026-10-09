@@ -102,10 +102,11 @@ const h1Li = handle.nav.querySelector('.toc-level-h1');
 const h2Li = handle.nav.querySelector('.toc-level-h2');
 const firstCaret = handle.nav.querySelector('button.toc-caret');
 
+check('折叠按钮用内联 SVG 箭头（不依赖字体字形）', !!firstCaret.querySelector('svg'));
+
 firstCaret.click();
 check('点击折叠按钮收起子树', h1Li.classList.contains('is-collapsed'));
-check('折叠后箭头变为 ▸', firstCaret.textContent === '▸');
-check('aria-expanded 同步为 false', firstCaret.getAttribute('aria-expanded') === 'false');
+check('折叠后 aria-expanded 变为 false', firstCaret.getAttribute('aria-expanded') === 'false');
 
 firstCaret.click();
 check('再次点击展开子树', !h1Li.classList.contains('is-collapsed'));

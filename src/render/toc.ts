@@ -97,10 +97,8 @@ function flattenTree(nodes: TocNode[], out: TocNode[] = []): TocNode[] {
 function setNodeExpanded(node: TocNode, expanded: boolean): void {
   node.expanded = expanded;
   node.li.classList.toggle('is-collapsed', !expanded);
-  if (node.caret) {
-    node.caret.textContent = expanded ? '▾' : '▸';
-    node.caret.setAttribute('aria-expanded', String(expanded));
-  }
+  // 箭头方向由 CSS 依据 is-collapsed 旋转，这里只同步无障碍状态
+  node.caret?.setAttribute('aria-expanded', String(expanded));
 }
 
 function renderTree(
@@ -120,10 +118,20 @@ function renderTree(
       const caret = document.createElement('button');
       caret.type = 'button';
       caret.className = 'toc-caret';
-      caret.textContent = '▾';
       caret.title = '展开 / 收起子标题';
       caret.setAttribute('aria-label', '展开 / 收起子标题');
       caret.setAttribute('aria-expanded', 'true');
+      /*
+       * 用内联 SVG 而不是 ▾ / ▸ 字符。
+       * 那两个字形本身就叫 SMALL TRIANGLE（U+25BE / U+25B8），
+       * 小字号下笔画极细，且不同字体的渲染尺寸差异很大。
+       * 方向切换交给 CSS 旋转，这里只生成一个固定的 V 形。
+       */
+      caret.innerHTML =
+        '<svg viewBox="0 0 10 10" width="12" height="12" aria-hidden="true">' +
+        '<path d="M2 3.4 L5 6.6 L8 3.4" fill="none" stroke="currentColor" ' +
+        'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '</svg>';
       caret.addEventListener('click', (event) => {
         event.stopPropagation();
         setNodeExpanded(node, !node.expanded);
