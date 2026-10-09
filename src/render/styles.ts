@@ -30,20 +30,40 @@ export function resolveAppearance(mode: ThemeMode): Appearance {
   }
 }
 
-const PAGE_BG: Record<Appearance, string> = {
-  light: '#ffffff',
-  dark: '#0d1117',
-};
+interface AppearancePalette {
+  /** 页面背景 */
+  pageBg: string;
+  /** 代码块边框 */
+  codeBorder: string;
+  /**
+   * 正文前景色。
+   * 供原文视图等**不在 .markdown-body 内**的文本使用 ——
+   * github-markdown-css 的 --fgColor-default 只定义在 .markdown-body 作用域上，
+   * 外部的 <pre class="md-reader-source"> 拿不到它。
+   */
+  fg: string;
+  /** 次要文字色（侧栏目录等小字辅助信息）。比 fg 浅，不要拿它当正文色 */
+  muted: string;
+  toc: { border: string; text: string; active: string };
+}
 
-const CODE_BORDER: Record<Appearance, string> = {
-  light: 'rgba(0, 0, 0, 0.06)',
-  dark: 'rgba(255, 255, 255, 0.10)',
-};
-
-/** 侧边目录配色 */
-const TOC_COLORS: Record<Appearance, { border: string; text: string; active: string }> = {
-  light: { border: 'rgba(0, 0, 0, 0.08)', text: '#656d76', active: '#0969da' },
-  dark: { border: 'rgba(255, 255, 255, 0.10)', text: '#8b949e', active: '#58a6ff' },
+const PALETTE: Record<Appearance, AppearancePalette> = {
+  light: {
+    pageBg: '#ffffff',
+    codeBorder: 'rgba(0, 0, 0, 0.06)',
+    // 与 github-markdown-css 浅色主题的正文色保持一致
+    fg: '#1f2328',
+    muted: '#656d76',
+    toc: { border: 'rgba(0, 0, 0, 0.08)', text: '#656d76', active: '#0969da' },
+  },
+  dark: {
+    pageBg: '#0d1117',
+    codeBorder: 'rgba(255, 255, 255, 0.10)',
+    // 不用纯白：深色背景上的纯白有明显光晕，长时间阅读刺眼
+    fg: '#e6edf3',
+    muted: '#8b949e',
+    toc: { border: 'rgba(255, 255, 255, 0.10)', text: '#8b949e', active: '#58a6ff' },
+  },
 };
 
 /** 组装完整的样式表 */
@@ -53,18 +73,20 @@ export function buildThemeCss(settings: ReaderSettings): string {
     appearance === 'dark' ? settings.darkTheme : settings.lightTheme,
     appearance
   );
-  const toc = TOC_COLORS[appearance];
+  const palette = PALETTE[appearance];
 
   const vars = [
     ':root {',
     `  --md-code-bg: ${theme.codeBg};`,
-    `  --md-page-bg: ${PAGE_BG[appearance]};`,
-    `  --md-code-border: ${CODE_BORDER[appearance]};`,
+    `  --md-page-bg: ${palette.pageBg};`,
+    `  --md-code-border: ${palette.codeBorder};`,
+    `  --md-fg: ${palette.fg};`,
+    `  --md-muted: ${palette.muted};`,
     `  --md-font-size: ${FONT_SIZE_PX[settings.fontSize]};`,
     `  --md-content-width: ${CONTENT_WIDTH_PX[settings.contentWidth]};`,
-    `  --md-toc-border: ${toc.border};`,
-    `  --md-toc-text: ${toc.text};`,
-    `  --md-toc-active: ${toc.active};`,
+    `  --md-toc-border: ${palette.toc.border};`,
+    `  --md-toc-text: ${palette.toc.text};`,
+    `  --md-toc-active: ${palette.toc.active};`,
     `  --md-toc-width: ${clampTocWidth(settings.tocWidth)}px;`,
     `  color-scheme: ${appearance};`,
     '}',

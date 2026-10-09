@@ -460,7 +460,12 @@ html.md-reader-resizing * {
   font-family: ui-monospace, Consolas, Menlo, monospace;
   font-size: calc(var(--md-font-size, 16px) * 0.875);
   line-height: 1.7;
-  color: var(--md-toc-text, #656d76);
+  /*
+   * 用正文色 --md-fg，不要用 --md-toc-text。
+   * 后者是给侧栏那种 12.5px 小字辅助信息用的浅灰，
+   * 拿来当整页正文字色会明显偏淡（实测踩过这个坑）。
+   */
+  color: var(--md-fg, #1f2328);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
