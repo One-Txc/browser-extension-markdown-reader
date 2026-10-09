@@ -29,6 +29,18 @@ export interface ReaderSettings {
    * 0 表示始终启用。短文档不需要折叠，多一排按钮反而是噪音。
    */
   foldThreshold: number;
+  /**
+   * 启用折叠时，默认展开到第几层。
+   *
+   * N 表示「展开第 N 层」——第 N 层及更浅的节点都展开，更深的一律收起：
+   *   -1 = 全部展开
+   *    0 = 不展开任何层，只显示第一层
+   *    1 = 展开第一层，可见前两层
+   *    2 = 展开前两层，可见前三层
+   *
+   * 只在折叠策略本身变化时生效，不会覆盖用户的手动折叠。
+   */
+  defaultExpandLevel: number;
 }
 
 /** 目录宽度的取值范围 */
@@ -56,6 +68,20 @@ export function clampFoldThreshold(value: number): number {
   return Math.min(FOLD_THRESHOLD.max, Math.max(FOLD_THRESHOLD.min, Math.round(value)));
 }
 
+/** 默认展开层数的取值范围 */
+export const EXPAND_LEVEL = {
+  default: 1,
+  /** 全部展开 */
+  all: -1,
+  min: -1,
+  max: 10,
+} as const;
+
+export function clampExpandLevel(value: number): number {
+  if (!Number.isFinite(value)) return EXPAND_LEVEL.default;
+  return Math.min(EXPAND_LEVEL.max, Math.max(EXPAND_LEVEL.min, Math.round(value)));
+}
+
 export const DEFAULT_SETTINGS: ReaderSettings = {
   mode: 'auto',
   lightTheme: DEFAULT_LIGHT_THEME,
@@ -65,6 +91,7 @@ export const DEFAULT_SETTINGS: ReaderSettings = {
   showToc: true,
   tocWidth: TOC_WIDTH.default,
   foldThreshold: FOLD_THRESHOLD.default,
+  defaultExpandLevel: EXPAND_LEVEL.default,
 };
 
 /** 实际像素值，供 buildThemeCss 注入 CSS 变量 */
@@ -103,6 +130,9 @@ export async function loadSettings(): Promise<ReaderSettings> {
       showToc: s.showToc ?? DEFAULT_SETTINGS.showToc,
       tocWidth: clampTocWidth(s.tocWidth ?? DEFAULT_SETTINGS.tocWidth),
       foldThreshold: clampFoldThreshold(s.foldThreshold ?? DEFAULT_SETTINGS.foldThreshold),
+      defaultExpandLevel: clampExpandLevel(
+        s.defaultExpandLevel ?? DEFAULT_SETTINGS.defaultExpandLevel
+      ),
     };
   } catch {
     return DEFAULT_SETTINGS;

@@ -145,6 +145,15 @@ const tocHandlers: TocHandlers = {
  * 目录只挂载一次，显示/隐藏走 body class ——
  * 反复销毁重建会让滚动高亮状态和目录滚动位置丢失。
  */
+/**
+ * 上一次生效的折叠策略（是否启用 + 默认展开层数）。
+ *
+ * 存在的原因：syncToc 会在任何设置变化时被调用，包括改字号、换配色这些
+ * 与目录无关的改动。若每次都按默认层级重置展开状态，用户手动折叠好的目录
+ * 会被反复冲掉。只有策略本身变了才重新套用。
+ */
+let lastFoldPolicy = '';
+
 function syncToc(settings: ReaderSettings): void {
   if (!mainEl) return;
 
@@ -155,11 +164,16 @@ function syncToc(settings: ReaderSettings): void {
   document.body.classList.toggle('md-reader-has-toc', settings.showToc);
   applyTocWidth(settings.tocWidth);
 
+  if (!tocHandle) return;
+
   // 目录项不够多时不启用折叠：短文档本来一屏就能看完，多一排按钮反而是噪音
-  if (tocHandle) {
-    const { foldThreshold } = settings;
-    tocHandle.setFoldEnabled(foldThreshold <= 0 || tocHandle.count > foldThreshold);
-  }
+  const enabled = settings.foldThreshold <= 0 || tocHandle.count > settings.foldThreshold;
+  const policy = `${enabled}|${settings.defaultExpandLevel}`;
+  if (policy === lastFoldPolicy) return;
+  lastFoldPolicy = policy;
+
+  tocHandle.setFoldEnabled(enabled);
+  if (enabled) tocHandle.expandToLevel(settings.defaultExpandLevel);
 }
 
 async function refreshFromSettings(): Promise<void> {

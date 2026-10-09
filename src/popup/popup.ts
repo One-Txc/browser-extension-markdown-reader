@@ -16,6 +16,7 @@
  */
 
 import {
+  clampExpandLevel,
   clampFoldThreshold,
   loadSettings,
   saveSettings,
@@ -37,6 +38,7 @@ const fontSizeEl = pick<HTMLSelectElement>('fontSize');
 const contentWidthEl = pick<HTMLSelectElement>('contentWidth');
 const showTocEl = pick<HTMLInputElement>('showToc');
 const foldThresholdEl = pick<HTMLInputElement>('foldThreshold');
+const defaultExpandLevelEl = pick<HTMLSelectElement>('defaultExpandLevel');
 const statusEl = pick<HTMLElement>('status');
 const detailEl = pick<HTMLElement>('detail');
 const metaEl = pick<HTMLElement>('meta');
@@ -118,6 +120,7 @@ async function init(): Promise<void> {
   contentWidthEl.value = settings.contentWidth;
   showTocEl.checked = settings.showToc;
   foldThresholdEl.value = String(settings.foldThreshold);
+  defaultExpandLevelEl.value = String(settings.defaultExpandLevel);
 
   modeEl.addEventListener('change', () => void save({ mode: modeEl.value as ThemeMode }));
   lightEl.addEventListener('change', () => void save({ lightTheme: lightEl.value }));
@@ -133,6 +136,9 @@ async function init(): Promise<void> {
     foldThresholdEl.value = String(value);
     void save({ foldThreshold: value });
   });
+  defaultExpandLevelEl.addEventListener('change', () =>
+    void save({ defaultExpandLevel: clampExpandLevel(Number(defaultExpandLevelEl.value)) })
+  );
 
   await renderPermission();
 }

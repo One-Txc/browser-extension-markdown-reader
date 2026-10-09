@@ -144,7 +144,28 @@ check('关闭折叠时所有节点被展开', !handle.nav.querySelector('.is-col
 handle.setFoldEnabled(true);
 check('重新启用折叠时移除 no-fold 标记', !handle.nav.classList.contains('md-reader-toc-no-fold'));
 
-/* ------------------------------------------------ 6. 挂载与销毁 */
+/* ------------------------------------------------ 6. 默认展开层数 */
+// 文档结构：第一章(h1, depth0) → 1.1 背景(h2, depth1) → 1.1.1 细节(h3, depth2)
+const d0 = handle.nav.querySelector('.toc-level-h1');
+const d1 = handle.nav.querySelector('.toc-level-h2');
+const d2 = handle.nav.querySelector('.toc-level-h3');
+
+handle.expandToLevel(0);
+check('展开 0 层：第一层节点收起（只见第一层）', d0.classList.contains('is-collapsed'));
+
+handle.expandToLevel(1);
+check('展开 1 层：第一层展开', !d0.classList.contains('is-collapsed'));
+check('展开 1 层：第二层收起', d1.classList.contains('is-collapsed'));
+check('展开 1 层：第三层收起', d2.classList.contains('is-collapsed'));
+
+handle.expandToLevel(2);
+check('展开 2 层：第二层展开', !d1.classList.contains('is-collapsed'));
+check('展开 2 层：第三层仍收起', d2.classList.contains('is-collapsed'));
+
+handle.expandToLevel(-1);
+check('展开 -1：全部展开', !handle.nav.querySelector('.is-collapsed'));
+
+/* ------------------------------------------------ 7. 挂载与销毁 */
 // 记录交互回调，用来验证按钮与手柄确实把意图交给了外部
 const visibleCalls = [];
 const widthCalls = [];

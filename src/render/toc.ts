@@ -39,6 +39,11 @@ export interface TocHandle {
   count: number;
   /** 动态开关折叠功能（短文档不需要，长了才显示） */
   setFoldEnabled(enabled: boolean): void;
+  /**
+   * 按层数重置展开状态：N 表示「展开第 N 层」，即第 N 层及更浅的节点展开、
+   * 更深的一律收起（可见 N+1 层）；传 -1 表示全部展开。
+   */
+  expandToLevel(level: number): void;
   destroy(): void;
 }
 
@@ -46,6 +51,8 @@ interface TocNode {
   id: string;
   /** 标题层级，1 = h1 */
   level: number;
+  /** 在目录树中的深度，根节点为 0 */
+  depth: number;
   text: string;
   heading: HTMLElement;
   parent: TocNode | null;
@@ -72,22 +79,23 @@ function buildTree(headings: HTMLElement[]): TocNode[] {
 
   for (const heading of headings) {
     const level = Number(heading.tagName.slice(1));
+
+    while (stack.length > 0 && stack[stack.length - 1].level >= level) stack.pop();
+    const parent = stack[stack.length - 1] ?? null;
+
     const node: TocNode = {
       id: heading.id,
       level,
+      depth: parent ? parent.depth + 1 : 0,
       text: headingText(heading),
       heading,
-      parent: null,
+      parent,
       children: [],
       li: document.createElement('li'),
       caret: null,
       expanded: true,
     };
 
-    while (stack.length > 0 && stack[stack.length - 1].level >= level) stack.pop();
-
-    const parent = stack[stack.length - 1] ?? null;
-    node.parent = parent;
     if (parent) parent.children.push(node);
     else roots.push(node);
 
@@ -370,12 +378,24 @@ export function buildToc(root: HTMLElement, minHeadings = MIN_HEADINGS): TocHand
     if (enabled) return;
     // 关掉折叠时把所有节点展开，否则残留的收起状态会让一部分条目彻底看不见
     for (const node of nodes) setNodeExpanded(node, true);
+    bulk.refresh();
+  };
+
+  /** 按层数重置展开状态；-1 表示全部展开 */
+  const expandToLevel = (level: number): void => {
+    for (const node of nodes) {
+      // 深度小于 level 的节点展开 —— 这样第 level 层可见，但它自身是收起的
+      setNodeExpanded(node, level < 0 || node.depth < level);
+    }
+    // 展开状态变了，批量按钮的三态显示也要跟着更新
+    bulk.refresh();
   };
 
   return {
     nav,
     count: headings.length,
     setFoldEnabled,
+    expandToLevel,
     destroy() {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
@@ -490,6 +510,7 @@ export function mountToc(root: HTMLElement, handlers: TocHandlers): TocHandle | 
     nav: handle.nav,
     count: handle.count,
     setFoldEnabled: handle.setFoldEnabled,
+    expandToLevel: handle.expandToLevel,
     destroy() {
       destroyInner();
       resizer.remove();
