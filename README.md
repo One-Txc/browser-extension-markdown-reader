@@ -222,6 +222,10 @@ content script 发现 .md-reader-mermaid
 - 超过 3 MB 的文件跳过渲染，显示原始文本并给出提示
 - 代码高亮只覆盖 15 种常用语言，其它语言按纯文本显示
 - 目录的滚动高亮依赖真实布局，无法在 jsdom 中自动化测试
+- **与其它 Markdown 扩展共存时可能互相干扰**：实测对方注入的样式会压掉本扩展依赖的
+  `[hidden]`（UA 样式表的 `display:none` 优先级的对手是所有作者样式），导致切换原文视图白屏。
+  已改用 `.md-reader-hidden` + `display:none!important` 规避。若对方抢先完成了渲染，
+  本扩展会因找不到 `body > pre` 而走 Service Worker 兜底读取文件原文，仍能正常工作
 - **Mermaid 首次渲染有约 1 秒延迟**（要注入并解析 5MB bundle），之后浏览器会缓存
 - 需要 Chrome 111+（Mermaid 注入用到了 `world: 'MAIN'`）
 
