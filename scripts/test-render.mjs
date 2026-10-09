@@ -13,12 +13,15 @@ import * as esbuild from 'esbuild';
 import { mkdir, rm } from 'node:fs/promises';
 
 /* ---------------------------------------------------- 1. 打包 render 模块 */
-await rm('.tmp', { recursive: true, force: true });
-await mkdir('.tmp', { recursive: true });
+// ★ 用独立子目录，不要 rm 整个 .tmp ——
+// .tmp 是多个脚本共用的临时区，清空它会误删别人的东西（实际踩过）。
+const TMP = '.tmp/render';
+await rm(TMP, { recursive: true, force: true });
+await mkdir(TMP, { recursive: true });
 
 await esbuild.build({
   entryPoints: ['src/render/markdown.ts'],
-  outfile: '.tmp/render.mjs',
+  outfile: `${TMP}/markdown.mjs`,
   bundle: true,
   format: 'esm',
   platform: 'browser', // 让 dompurify 走浏览器入口
@@ -33,7 +36,7 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', {
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 
-const { renderMarkdown } = await import(new URL('../.tmp/render.mjs', import.meta.url).href);
+const { renderMarkdown } = await import(new URL(`../${TMP}/markdown.mjs`, import.meta.url).href);
 
 /* ------------------------------------------------------------ 3. 测试用例 */
 const source = [

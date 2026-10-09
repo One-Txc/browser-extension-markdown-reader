@@ -24,6 +24,9 @@ npm run build
 > ⚠️ 第 4 步不做，扩展**完全不会生效**，而且页面上不会有任何提示——因为它根本不会被注入。
 > 忘了开的话，点工具栏上的扩展图标，popup 会告诉你。
 
+> 📦 从仓库克隆时 `testMd/10-超大文件测试.md`（3.4 MB）不入库，需要执行 `npm run testdata` 生成；
+> `preview/` 与 `build/` 同样不入库，分别由 `npm run preview`、`npm run build` 生成。
+
 ---
 
 ## 为什么必须开「允许访问文件网址」

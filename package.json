@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node scripts/test-render.mjs && node scripts/test-toc.mjs",
     "preview": "node scripts/make-theme-preview.mjs",
-    "testdata": "python scripts/make-testdata.py"
+    "testdata": "python scripts/make-testdata.py",
+    "check": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "dompurify": "^3.4.16",

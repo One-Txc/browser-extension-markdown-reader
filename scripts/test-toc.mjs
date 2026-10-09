@@ -9,12 +9,14 @@ import { JSDOM } from 'jsdom';
 import * as esbuild from 'esbuild';
 import { mkdir, rm } from 'node:fs/promises';
 
-await rm('.tmp/toc.mjs', { force: true });
-await mkdir('.tmp', { recursive: true });
+// 独立子目录，与其它脚本隔离
+const TMP = '.tmp/toc';
+await rm(TMP, { recursive: true, force: true });
+await mkdir(TMP, { recursive: true });
 
 await esbuild.build({
   entryPoints: ['src/render/toc.ts'],
-  outfile: '.tmp/toc.mjs',
+  outfile: `${TMP}/toc.mjs`,
   bundle: true,
   format: 'esm',
   platform: 'browser',
@@ -31,7 +33,7 @@ globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
 // jsdom 没有 scrollIntoView，目录高亮会用到
 dom.window.Element.prototype.scrollIntoView = function scrollIntoView() {};
 
-const { buildToc, mountToc } = await import(new URL('../.tmp/toc.mjs', import.meta.url).href);
+const { buildToc, mountToc } = await import(new URL(`../${TMP}/toc.mjs`, import.meta.url).href);
 
 const cases = [];
 const check = (name, ok) => cases.push({ name, ok: !!ok });
