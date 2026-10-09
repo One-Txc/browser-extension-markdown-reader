@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>MD Reader</title>
+  <style>
+    body {
+      width: 340px;
+      margin: 0;
+      padding: 14px;
+      font: 13px/1.6 system-ui, "Segoe UI", "Microsoft YaHei", sans-serif;
+      color: #1f2328;
+    }
+    h1 { margin: 0 0 12px; font-size: 14px; }
+    fieldset {
+      border: 1px solid #d0d7de; border-radius: 7px;
+      padding: 10px 12px 12px; margin: 0 0 12px;
+    }
+    legend { padding: 0 5px; font-size: 12px; color: #656d76; }
+    label.field { display: block; font-size: 12px; color: #424a53; margin-bottom: 3px; }
+    select {
+      width: 100%; padding: 5px 7px; margin-bottom: 10px;
+      font: inherit; font-size: 12px;
+      border: 1px solid #d0d7de; border-radius: 6px; background: #fff;
+    }
+    .row { display: flex; gap: 10px; }
+    .row > div { flex: 1; min-width: 0; }
+    label.check {
+      display: flex; align-items: center; gap: 7px;
+      margin-top: 2px; font-size: 12px; color: #424a53; cursor: pointer;
+    }
+    label.check input { margin: 0; }
+    fieldset > *:last-child { margin-bottom: 0; }
+    .status { padding: 9px 11px; border-radius: 7px; font-size: 12px; line-height: 1.6; }
+    .ok  { background: #ddf4e4; border: 1px solid #a7e0be; color: #14663a; }
+    .bad { background: #fff8c5; border: 1px solid #d4a72c; color: #4d2d00; }
+    ol { margin: 7px 0 0; padding-left: 18px; }
+    li { margin-bottom: 4px; }
+    code {
+      background: #f0f1f3; padding: 1px 5px; border-radius: 4px;
+      font: 12px ui-monospace, Consolas, monospace; word-break: break-all; user-select: all;
+    }
+    .hint { color: #656d76; font-size: 11px; margin-top: 9px; }
+    .meta { color: #8c959f; font-size: 11px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>MD Reader</h1>
+
+  <fieldset>
+    <legend>配色</legend>
+
+    <label class="field" for="mode">颜色模式</label>
+    <select id="mode">
+      <option value="auto">跟随系统</option>
+      <option value="light">始终浅色</option>
+      <option value="dark">始终深色</option>
+    </select>
+
+    <label class="field" for="lightTheme">浅色代码配色</label>
+    <select id="lightTheme"></select>
+
+    <label class="field" for="darkTheme">深色代码配色</label>
+    <select id="darkTheme"></select>
+  </fieldset>
+
+  <fieldset>
+    <legend>排版</legend>
+
+    <div class="row">
+      <div>
+        <label class="field" for="fontSize">字号</label>
+        <select id="fontSize">
+          <option value="small">小</option>
+          <option value="medium">中</option>
+          <option value="large">大</option>
+        </select>
+      </div>
+      <div>
+        <label class="field" for="contentWidth">正文宽度</label>
+        <select id="contentWidth">
+          <option value="narrow">窄</option>
+          <option value="medium">中</option>
+          <option value="wide">宽</option>
+          <option value="full">全宽</option>
+        </select>
+      </div>
+    </div>
+
+    <label class="check">
+      <input type="checkbox" id="showToc">
+      显示侧边目录
+    </label>
+  </fieldset>
+
+  <div id="status" class="status">正在检测…</div>
+  <div id="detail"></div>
+  <div class="meta" id="meta"></div>
+
+  <script src="../../build/popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,403 @@
+/* MD Reader —— 在 github-markdown-css 之上的补充样式 */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body.md-reader-body {
+  margin: 0;
+  padding: 0;
+  background: var(--md-page-bg, #ffffff);
+}
+
+/* ---------- 正文容器 ---------- */
+
+.md-reader-root {
+  box-sizing: border-box;
+  max-width: var(--md-content-width, 900px);
+  margin: 0 auto;
+  padding: 32px 24px 96px;
+  min-height: 100vh;
+  font-size: var(--md-font-size, 16px);
+}
+
+.md-reader-root * {
+  box-sizing: border-box;
+}
+
+/* 宽屏有目录时，给左侧固定目录让出空间 */
+@media (min-width: 1280px) {
+  body.md-reader-has-toc {
+    padding-left: 268px;
+  }
+}
+
+/* ---------- 锚点定位 ---------- */
+
+/*
+ * 标题跳转后与视口顶部的留白。
+ *
+ * 用 scroll-margin-top 而不是手动 scrollTo(offset - N)，因为它是声明式的，
+ * 并且能同时覆盖三种跳转路径：
+ *   1. 点击侧边目录（scrollIntoView）
+ *   2. 地址栏带 #hash 直接打开（applyInitialHash 里的 scrollIntoView）
+ *   3. Markdown 里手写的 [链接](#锚点)（浏览器原生锚点跳转）
+ * 三者都会尊重 scroll-margin。
+ */
+.md-reader-root :is(h1, h2, h3, h4) {
+  scroll-margin-top: 10px;
+}
+
+/* ---------- 代码块 ---------- */
+
+/*
+ * 背景由 pre 提供，code 保持透明。
+ *
+ * 为什么不是让 highlight.js 主题自己画背景：
+ *   浅色主题（如 github）的背景是 #fff，落在白色文档上完全没有区分度；
+ *   而如果反过来让 markdown-body 的 pre 背景生效，深色主题的背景又会被压掉，
+ *   浅色文字配浅灰底会直接看不见。
+ * 所以背景统一走 CSS 变量 --md-code-bg，由所选主题注入具体值。
+ */
+.md-reader-root pre {
+  position: relative;
+  margin: 16px 0;
+  padding: 14px 16px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--md-code-bg, #f6f8fa);
+  border: 1px solid var(--md-code-border, rgba(0, 0, 0, 0.05));
+}
+
+.md-reader-root pre > code.hljs {
+  display: block;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow-x: auto;
+  font-size: calc(var(--md-font-size, 16px) * 0.875);
+  line-height: 1.55;
+  white-space: pre;
+}
+
+/* 复制按钮 */
+.md-reader-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 9px;
+  font: 12px/1.4 ui-monospace, Consolas, Menlo, monospace;
+  color: #57606a;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 5px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.md-reader-root pre:hover .md-reader-copy,
+.md-reader-copy:focus-visible {
+  opacity: 1;
+}
+
+.md-reader-copy:hover {
+  background: #ffffff;
+  color: #1f2328;
+}
+
+.md-reader-copy.done {
+  color: #1a7f37;
+  border-color: #a7e0be;
+  background: #ddf4e4;
+  opacity: 1;
+}
+
+/* ---------- Mermaid 图表 ---------- */
+
+.md-reader-mermaid {
+  margin: 16px 0;
+  padding: 16px;
+  border-radius: 6px;
+  background: var(--md-code-bg, #f6f8fa);
+  border: 1px solid var(--md-code-border, rgba(0, 0, 0, 0.05));
+  overflow-x: auto;
+  /* 渲染完成前显示原始代码，保持等宽与换行 */
+  white-space: pre;
+  font-family: ui-monospace, Consolas, Menlo, monospace;
+  font-size: calc(var(--md-font-size, 16px) * 0.875);
+  line-height: 1.55;
+  text-align: center;
+}
+
+.md-reader-mermaid-done {
+  white-space: normal;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.md-reader-mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 渲染失败时保留原始代码，并给一个可辨认的提示色 */
+.md-reader-mermaid-error {
+  white-space: pre;
+  text-align: left;
+  color: #b35900;
+}
+
+/* ---------- 图片放大 ---------- */
+
+.md-reader-zoomable {
+  cursor: zoom-in;
+}
+
+body.md-reader-lightbox-open {
+  overflow: hidden;
+}
+
+.md-reader-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.9);
+  overflow: hidden;
+  cursor: zoom-out;
+}
+
+.md-reader-lightbox img {
+  max-width: 92vw;
+  max-height: 92vh;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+  cursor: zoom-in;
+  user-select: none;
+  touch-action: none;
+  transition: transform 0.12s ease-out;
+}
+
+.md-reader-lightbox img.is-zoomed {
+  cursor: grab;
+}
+
+.md-reader-lightbox img.is-dragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+.md-reader-lightbox-hint {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ---------- 脚注 ---------- */
+
+.md-reader-root .footnotes {
+  margin-top: 36px;
+  padding-top: 16px;
+  border-top: 1px solid var(--md-toc-border, rgba(0, 0, 0, 0.08));
+  font-size: 0.9em;
+}
+
+/* markdown-it-footnote 会额外插一条 <hr>，边框已由 section 提供，这里去掉 */
+.md-reader-root .footnotes-sep {
+  display: none;
+}
+
+.md-reader-root .footnote-ref a {
+  padding: 0 2px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.md-reader-root .footnote-backref {
+  margin-left: 5px;
+  text-decoration: none;
+  opacity: 0.55;
+}
+
+.md-reader-root .footnote-backref:hover {
+  opacity: 1;
+}
+
+.md-reader-root .footnotes-list {
+  padding-left: 22px;
+}
+
+/* ---------- 表格：宽表格可横向滚动 ---------- */
+
+.md-reader-root table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow: auto;
+}
+
+/* ---------- 任务列表 ---------- */
+
+.md-reader-root li.task-list-item {
+  list-style: none;
+  margin-left: -1.4em;
+}
+
+.md-reader-root li.task-list-item input[type='checkbox'] {
+  margin-right: 0.45em;
+}
+
+/* ---------- 锚点 permalink ---------- */
+
+.md-reader-root .header-anchor {
+  float: left;
+  margin-left: -0.85em;
+  padding-right: 0.25em;
+  color: var(--md-toc-border, #d0d7de);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.md-reader-root h1:hover .header-anchor,
+.md-reader-root h2:hover .header-anchor,
+.md-reader-root h3:hover .header-anchor,
+.md-reader-root h4:hover .header-anchor {
+  opacity: 1;
+}
+
+.md-reader-root .header-anchor:hover {
+  color: var(--md-toc-active, #0969da);
+}
+
+/* ---------- 侧边目录 ---------- */
+
+.md-reader-toc {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  width: 268px;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 26px 14px 40px 16px;
+  background: var(--md-page-bg, #ffffff);
+  border-right: 1px solid var(--md-toc-border, rgba(0, 0, 0, 0.08));
+  font-size: 12.5px;
+  line-height: 1.5;
+  scrollbar-width: thin;
+}
+
+.md-reader-toc-title {
+  margin: 0 0 10px;
+  padding-left: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--md-toc-text, #656d76);
+  opacity: 0.8;
+}
+
+.md-reader-toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.md-reader-toc-list li {
+  margin: 0;
+}
+
+.md-reader-toc-list a {
+  display: block;
+  padding: 3px 6px 3px 10px;
+  color: var(--md-toc-text, #656d76);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.md-reader-toc-list a:hover {
+  color: var(--md-toc-active, #0969da);
+}
+
+.md-reader-toc-list a.active {
+  color: var(--md-toc-active, #0969da);
+  border-left-color: var(--md-toc-active, #0969da);
+  font-weight: 500;
+}
+
+.toc-level-h2 a { padding-left: 22px; }
+.toc-level-h3 a { padding-left: 34px; }
+.toc-level-h4 a { padding-left: 46px; }
+
+/* 窄屏：目录收成可滑出的抽屉 */
+.md-reader-toc-toggle {
+  display: none;
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 41;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--md-toc-border, rgba(0, 0, 0, 0.08));
+  background: var(--md-page-bg, #ffffff);
+  color: var(--md-toc-text, #656d76);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 1279px) {
+  .md-reader-toc {
+    transform: translateX(-100%);
+    transition: transform 0.18s ease;
+    box-shadow: 6px 0 20px rgba(0, 0, 0, 0.12);
+    z-index: 40;
+    width: 280px;
+  }
+
+  body.md-reader-toc-open .md-reader-toc {
+    transform: translateX(0);
+  }
+
+  body.md-reader-has-toc .md-reader-toc-toggle {
+    display: block;
+  }
+}
+
+/* ---------- 打印 ---------- */
+
+@media print {
+  .md-reader-root {
+    max-width: none;
+    padding: 0;
+  }
+
+  .md-reader-copy,
+  .md-reader-toc,
+  .md-reader-toc-toggle {
+    display: none !important;
+  }
+
+  body.md-reader-has-toc {
+    padding-left: 0;
+  }
+}

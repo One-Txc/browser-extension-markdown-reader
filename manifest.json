@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "MD Reader",
+  "version": "0.1.0",
+  "description": "直接在 Chrome 中优雅地阅读本地 .md 文件，无需任何本地服务。",
+
+  "minimum_chrome_version": "111",
+
+  "permissions": ["storage", "scripting"],
+  "host_permissions": ["file:///*"],
+
+  "background": {
+    "service_worker": "build/background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["file:///*"],
+      "js": ["build/content.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "MD Reader"
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": ["build/fonts/*"],
+      "matches": ["file:///*"]
+    }
+  ]
+}

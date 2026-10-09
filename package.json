@@ -1,0 +1,32 @@
+{
+  "name": "md-reader",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chrome 扩展：在浏览器中直接阅读本地 Markdown 文件",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/test-render.mjs && node scripts/test-toc.mjs",
+    "preview": "node scripts/make-theme-preview.mjs",
+    "testdata": "python scripts/make-testdata.py"
+  },
+  "dependencies": {
+    "dompurify": "^3.4.16",
+    "github-markdown-css": "^5.9.0",
+    "highlight.js": "^11.12.0",
+    "katex": "^0.19.0",
+    "markdown-it": "^15.0.2",
+    "markdown-it-anchor": "^10.0.0",
+    "markdown-it-footnote": "^4.0.0",
+    "markdown-it-task-lists": "^2.1.1",
+    "mermaid": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.3.4",
+    "esbuild": "^0.28.2",
+    "jsdom": "^29.1.1",
+    "typescript": "^7.0.2"
+  }
+}
