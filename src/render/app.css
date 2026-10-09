@@ -28,7 +28,13 @@ body.md-reader-body {
 /* 宽屏有目录时，给左侧固定目录让出空间 */
 @media (min-width: 1280px) {
   body.md-reader-has-toc {
-    padding-left: 268px;
+    padding-left: var(--md-toc-width, 268px);
+  }
+
+  /* 收起目录时，目录本体与拖拽手柄一起隐藏 */
+  body:not(.md-reader-has-toc) .md-reader-toc,
+  body:not(.md-reader-has-toc) .md-reader-resizer {
+    display: none;
   }
 }
 
@@ -289,7 +295,7 @@ body.md-reader-lightbox-open {
   top: 0;
   left: 0;
   z-index: 20;
-  width: 268px;
+  width: var(--md-toc-width, 268px);
   height: 100vh;
   overflow-y: auto;
   padding: 26px 14px 40px 16px;
@@ -346,25 +352,112 @@ body.md-reader-lightbox-open {
 .toc-level-h3 a { padding-left: 34px; }
 .toc-level-h4 a { padding-left: 46px; }
 
-/* 窄屏：目录收成可滑出的抽屉 */
-.md-reader-toc-toggle {
-  display: none;
+/* ---------- 目录宽度拖拽手柄 ---------- */
+
+.md-reader-resizer {
+  position: fixed;
+  top: 0;
+  left: calc(var(--md-toc-width, 268px) - 3px);
+  z-index: 21;
+  width: 7px;
+  height: 100vh;
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+
+.md-reader-resizer:hover,
+.md-reader-resizer.is-dragging {
+  background: var(--md-toc-active, #0969da);
+  opacity: 0.35;
+}
+
+/* 拖拽期间禁止选中文本，否则会把正文整片刷蓝 */
+html.md-reader-resizing,
+html.md-reader-resizing * {
+  user-select: none !important;
+  cursor: col-resize !important;
+}
+
+/* ---------- 浮动按钮 ---------- */
+
+.md-reader-btn {
   position: fixed;
   top: 12px;
-  right: 12px;
-  z-index: 41;
+  z-index: 42;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 34px;
   height: 34px;
+  padding: 0;
   border-radius: 8px;
   border: 1px solid var(--md-toc-border, rgba(0, 0, 0, 0.08));
   background: var(--md-page-bg, #ffffff);
   color: var(--md-toc-text, #656d76);
-  font-size: 15px;
-  line-height: 1;
+  font: 13px/1 ui-monospace, Consolas, Menlo, monospace;
   cursor: pointer;
+  /* 默认半透明，避免遮挡正文；hover 或激活时完全显现 */
+  opacity: 0.4;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transition: opacity 0.15s ease, left 0.18s ease;
 }
 
+.md-reader-btn:hover,
+.md-reader-btn:focus-visible {
+  opacity: 1;
+}
+
+.md-reader-btn.is-active {
+  opacity: 1;
+  color: var(--md-toc-active, #0969da);
+  border-color: var(--md-toc-active, #0969da);
+}
+
+/* 左上角：目录开关。目录展开时跟着往右让位 */
+.md-reader-btn-toc {
+  left: 12px;
+}
+
+@media (min-width: 1280px) {
+  body.md-reader-has-toc .md-reader-btn-toc {
+    left: calc(var(--md-toc-width, 268px) + 12px);
+  }
+}
+
+/* 右上角：原文 / 渲染视图切换 */
+.md-reader-btn-source {
+  right: 12px;
+}
+
+/* ---------- 原始 Markdown 视图 ---------- */
+
+.md-reader-source {
+  box-sizing: border-box;
+  max-width: var(--md-content-width, 900px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 56px 24px 96px;
+  font-family: ui-monospace, Consolas, Menlo, monospace;
+  font-size: calc(var(--md-font-size, 16px) * 0.875);
+  line-height: 1.7;
+  color: var(--md-toc-text, #656d76);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* 原文视图里没有渲染后的标题元素，目录跳转与高亮都会失效，一并收起 */
+body.md-reader-source-mode {
+  padding-left: 0 !important;
+}
+
+body.md-reader-source-mode .md-reader-toc,
+body.md-reader-source-mode .md-reader-resizer,
+body.md-reader-source-mode .md-reader-btn-toc {
+  display: none !important;
+}
+
+/* 窄屏：目录收成可滑出的抽屉 */
 @media (max-width: 1279px) {
   .md-reader-toc {
     transform: translateX(-100%);
@@ -378,8 +471,8 @@ body.md-reader-lightbox-open {
     transform: translateX(0);
   }
 
-  body.md-reader-has-toc .md-reader-toc-toggle {
-    display: block;
+  .md-reader-resizer {
+    display: none;
   }
 }
 
@@ -393,7 +486,8 @@ body.md-reader-lightbox-open {
 
   .md-reader-copy,
   .md-reader-toc,
-  .md-reader-toc-toggle {
+  .md-reader-resizer,
+  .md-reader-btn {
     display: none !important;
   }
 

@@ -32,6 +32,13 @@ globalThis.document = dom.window.document;
 globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
 // jsdom 没有 scrollIntoView，目录高亮会用到
 dom.window.Element.prototype.scrollIntoView = function scrollIntoView() {};
+// jsdom 也没有 matchMedia，而目录按钮靠它区分宽屏 / 窄屏
+dom.window.matchMedia = (query) => ({
+  matches: false,
+  media: query,
+  addEventListener() {},
+  removeEventListener() {},
+});
 
 const { buildToc, mountToc } = await import(new URL(`../${TMP}/toc.mjs`, import.meta.url).href);
 
@@ -77,20 +84,43 @@ const mixed = buildToc(partial);
 check('无 id 的标题被跳过', mixed.nav.querySelectorAll('a').length === 3);
 
 /* ------------------------------------------------ 4. 挂载与销毁 */
+// 记录交互回调，用来验证按钮与手柄确实把意图交给了外部
+const visibleCalls = [];
+const widthCalls = [];
+const handlers = {
+  getWidth: () => 268,
+  setWidth: (width) => widthCalls.push(width),
+  setVisible: (visible) => visibleCalls.push(visible),
+};
+
 const root2 = document.createElement('div');
 root2.innerHTML = '<h1 id="a">A</h1><h2 id="b">B</h2><h3 id="c">C</h3>';
 
-const mounted = mountToc(root2);
+const mounted = mountToc(root2, handlers);
 check('目录挂载到 body', !!document.querySelector('.md-reader-toc'));
-check('body 标记 has-toc', document.body.classList.contains('md-reader-has-toc'));
-check('生成了窄屏抽屉按钮', !!document.querySelector('.md-reader-toc-toggle'));
+check('生成了目录开关按钮', !!document.querySelector('.md-reader-btn-toc'));
+check('生成了拖拽手柄', !!document.querySelector('.md-reader-resizer'));
+check(
+  '手柄带分隔条语义',
+  document.querySelector('.md-reader-resizer').getAttribute('role') === 'separator'
+);
+
+/* 宽屏（matchMedia 返回 false）下点击按钮应当请求切换目录可见性 */
+document.querySelector('.md-reader-btn-toc').click();
+check('点击目录按钮请求切换可见性', visibleCalls.length === 1 && visibleCalls[0] === true);
+
+/* 双击手柄应当请求恢复默认宽度（与 settings.ts 的 TOC_WIDTH.default 一致） */
+document
+  .querySelector('.md-reader-resizer')
+  .dispatchEvent(new dom.window.Event('dblclick'));
+check('双击手柄请求恢复默认宽度', widthCalls.length === 1 && widthCalls[0] === 268);
 
 mounted.destroy();
 check(
   'destroy 后清理干净',
   !document.querySelector('.md-reader-toc') &&
-    !document.querySelector('.md-reader-toc-toggle') &&
-    !document.body.classList.contains('md-reader-has-toc')
+    !document.querySelector('.md-reader-btn-toc') &&
+    !document.querySelector('.md-reader-resizer')
 );
 
 /* ------------------------------------------------------------ 输出 */

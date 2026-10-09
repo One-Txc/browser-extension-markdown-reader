@@ -16,9 +16,16 @@
 
 import { renderMarkdown } from './render/markdown';
 import { applyTheme, injectKatexCss } from './render/styles';
-import { mountToc, type TocHandle } from './render/toc';
+import { mountToc, type TocHandle, type TocHandlers } from './render/toc';
 import { setupImageZoom } from './render/lightbox';
-import { loadSettings, type ReaderSettings } from './shared/settings';
+import { setupSourceView } from './render/source-view';
+import {
+  DEFAULT_SETTINGS,
+  clampTocWidth,
+  loadSettings,
+  saveSettings,
+  type ReaderSettings,
+} from './shared/settings';
 import {
   DONE_ATTR,
   ROOT_CLASS,
@@ -71,9 +78,9 @@ async function main(): Promise<void> {
     // 先记录容器，目录与主题都依赖它
     mainEl = main;
 
-    const settings = await loadSettings();
-    applyTheme(document, settings);
-    syncToc(settings);
+    currentSettings = await loadSettings();
+    applyTheme(document, currentSettings);
+    syncToc(currentSettings);
 
     // 只在文档真的含公式时才付出 KaTeX 样式的注入成本
     if (main.querySelector('.katex')) injectKatexCss(document);
@@ -84,6 +91,8 @@ async function main(): Promise<void> {
     document.title = titleFromPath();
     enhanceCodeBlocks(main);
     setupImageZoom(main);
+    // 原文 / 渲染视图切换。句柄只在页面卸载时才有意义，这里不需要保留
+    setupSourceView(main, raw);
     applyInitialHash();
   } catch (err) {
     // 渲染失败时保留 Chrome 原始纯文本视图，绝不留下白屏
@@ -98,19 +107,58 @@ async function main(): Promise<void> {
 /** 已渲染的正文容器，目录重建时复用 */
 let mainEl: HTMLElement | null = null;
 let tocHandle: TocHandle | null = null;
+/** 设置的内存副本，避免每次交互都读一次 storage */
+let currentSettings: ReaderSettings = DEFAULT_SETTINGS;
 
-/** 按设置同步侧边目录的显示状态（不重新渲染 Markdown） */
+/** 合并写入设置并同步内存副本 */
+async function persistSettings(partial: Partial<ReaderSettings>): Promise<void> {
+  currentSettings = { ...currentSettings, ...partial };
+  await saveSettings(currentSettings);
+}
+
+/**
+ * 应用目录宽度。
+ * 写在 documentElement 的内联样式上，优先级高于注入样式表里的默认值，
+ * 因此拖拽时可以实时生效，且不会被后续的主题重注入覆盖。
+ */
+function applyTocWidth(width: number): void {
+  document.documentElement.style.setProperty('--md-toc-width', `${clampTocWidth(width)}px`);
+}
+
+/** 目录的交互回调，交给 toc.ts 使用 */
+const tocHandlers: TocHandlers = {
+  getWidth: () => currentSettings.tocWidth,
+  setWidth: (width, commit) => {
+    applyTocWidth(width);
+    // 拖拽过程中只改样式，松手才落盘，避免高频写 storage
+    if (commit) void persistSettings({ tocWidth: clampTocWidth(width) });
+  },
+  setVisible: (visible) => {
+    document.body.classList.toggle('md-reader-has-toc', visible);
+    void persistSettings({ showToc: visible });
+  },
+};
+
+/**
+ * 同步目录的挂载与可见性。
+ *
+ * 目录只挂载一次，显示/隐藏走 body class ——
+ * 反复销毁重建会让滚动高亮状态和目录滚动位置丢失。
+ */
 function syncToc(settings: ReaderSettings): void {
-  if (settings.showToc) {
-    if (!tocHandle && mainEl) tocHandle = mountToc(mainEl);
-  } else if (tocHandle) {
-    tocHandle.destroy();
-    tocHandle = null;
+  if (!mainEl) return;
+
+  if (!tocHandle) {
+    tocHandle = mountToc(mainEl, tocHandlers);
   }
+
+  document.body.classList.toggle('md-reader-has-toc', settings.showToc);
+  applyTocWidth(settings.tocWidth);
 }
 
 async function refreshFromSettings(): Promise<void> {
   const settings = await loadSettings();
+  currentSettings = settings;
   applyTheme(document, settings);
   syncToc(settings);
 }

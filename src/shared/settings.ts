@@ -22,6 +22,21 @@ export interface ReaderSettings {
   contentWidth: ContentWidth;
   /** 是否显示侧边目录 */
   showToc: boolean;
+  /** 侧边目录宽度（px），可拖拽调整 */
+  tocWidth: number;
+}
+
+/** 目录宽度的取值范围 */
+export const TOC_WIDTH = {
+  default: 268,
+  min: 160,
+  max: 560,
+} as const;
+
+/** 把任意输入夹到合法区间，顺便处理 NaN（storage 里可能是脏数据） */
+export function clampTocWidth(width: number): number {
+  if (!Number.isFinite(width)) return TOC_WIDTH.default;
+  return Math.min(TOC_WIDTH.max, Math.max(TOC_WIDTH.min, Math.round(width)));
 }
 
 export const DEFAULT_SETTINGS: ReaderSettings = {
@@ -31,6 +46,7 @@ export const DEFAULT_SETTINGS: ReaderSettings = {
   fontSize: 'medium',
   contentWidth: 'medium',
   showToc: true,
+  tocWidth: TOC_WIDTH.default,
 };
 
 /** 实际像素值，供 buildThemeCss 注入 CSS 变量 */
@@ -67,6 +83,7 @@ export async function loadSettings(): Promise<ReaderSettings> {
       fontSize: s.fontSize ?? DEFAULT_SETTINGS.fontSize,
       contentWidth: s.contentWidth ?? DEFAULT_SETTINGS.contentWidth,
       showToc: s.showToc ?? DEFAULT_SETTINGS.showToc,
+      tocWidth: clampTocWidth(s.tocWidth ?? DEFAULT_SETTINGS.tocWidth),
     };
   } catch {
     return DEFAULT_SETTINGS;

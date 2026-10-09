@@ -6,6 +6,8 @@
  * 而计算「最后一个已越过顶部基准线的标题」用位置比较更直接也更准。
  */
 
+import { TOC_WIDTH, clampTocWidth } from '../shared/settings';
+
 const HEADING_SELECTOR = 'h1, h2, h3, h4';
 /** 只要有标题就生成目录（0 个标题时自然返回 null） */
 const MIN_HEADINGS = 1;
@@ -132,33 +134,112 @@ export function buildToc(root: HTMLElement, minHeadings = MIN_HEADINGS): TocHand
   };
 }
 
+export interface TocHandlers {
+  /** 读取当前目录宽度 */
+  getWidth(): number;
+  /** 应用目录宽度；commit 为 true 表示拖拽结束，应当持久化 */
+  setWidth(width: number, commit: boolean): void;
+  /** 显示 / 隐藏目录 */
+  setVisible(visible: boolean): void;
+}
+
+/** 窄屏阈值，必须与 app.css 里的媒体查询保持一致 */
+const NARROW_QUERY = '(max-width: 1279px)';
+
+function isNarrow(): boolean {
+  return window.matchMedia(NARROW_QUERY).matches;
+}
+
+/** 目录与内容之间的拖拽手柄 */
+function createResizer(handlers: TocHandlers): HTMLElement {
+  const bar = document.createElement('div');
+  bar.className = 'md-reader-resizer';
+  bar.setAttribute('role', 'separator');
+  bar.setAttribute('aria-orientation', 'vertical');
+  bar.title = '拖动调整目录宽度，双击恢复默认';
+
+  let dragging = false;
+  let latest = handlers.getWidth();
+
+  bar.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    dragging = true;
+    latest = handlers.getWidth();
+    bar.setPointerCapture(event.pointerId);
+    bar.classList.add('is-dragging');
+    // 拖拽期间禁止选中文本，否则会把正文整片刷蓝
+    document.documentElement.classList.add('md-reader-resizing');
+  });
+
+  bar.addEventListener('pointermove', (event) => {
+    if (!dragging) return;
+    latest = clampTocWidth(event.clientX);
+    handlers.setWidth(latest, false);
+  });
+
+  const endDrag = (event: PointerEvent): void => {
+    if (!dragging) return;
+    dragging = false;
+    bar.classList.remove('is-dragging');
+    document.documentElement.classList.remove('md-reader-resizing');
+    try {
+      bar.releasePointerCapture(event.pointerId);
+    } catch {
+      /* 指针已经释放，忽略 */
+    }
+    // 只在松手时落盘，拖拽过程中不写 storage
+    handlers.setWidth(latest, true);
+  };
+  bar.addEventListener('pointerup', endDrag);
+  bar.addEventListener('pointercancel', endDrag);
+
+  bar.addEventListener('dblclick', () => {
+    handlers.setWidth(TOC_WIDTH.default, true);
+  });
+
+  return bar;
+}
+
+/** 左上角按钮：显示 / 隐藏目录 */
+function createTocButton(handlers: TocHandlers): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'md-reader-btn md-reader-btn-toc';
+  button.textContent = '☰';
+  button.title = '显示 / 隐藏目录';
+  button.setAttribute('aria-label', '显示 / 隐藏目录');
+
+  button.addEventListener('click', () => {
+    // 窄屏下目录是覆盖式抽屉，开合属于临时状态，不去改持久化的设置
+    if (isNarrow()) {
+      document.body.classList.toggle('md-reader-toc-open');
+      return;
+    }
+    handlers.setVisible(!document.body.classList.contains('md-reader-has-toc'));
+  });
+
+  return button;
+}
+
 /**
- * 构建并挂载目录。
- * 返回 null 表示内容太短、不生成目录。
+ * 构建并挂载目录、拖拽手柄与目录开关。
+ * 返回 null 表示文档没有标题、不生成目录（此时也不会有按钮）。
  */
-export function mountToc(root: HTMLElement): TocHandle | null {
+export function mountToc(root: HTMLElement, handlers: TocHandlers): TocHandle | null {
   const handle = buildToc(root);
   if (!handle) return null;
 
-  document.body.appendChild(handle.nav);
-  document.body.classList.add('md-reader-has-toc');
+  const resizer = createResizer(handlers);
+  const button = createTocButton(handlers);
 
-  // 窄屏下的抽屉开关
-  const toggle = document.createElement('button');
-  toggle.type = 'button';
-  toggle.className = 'md-reader-toc-toggle';
-  toggle.setAttribute('aria-label', '目录');
-  toggle.textContent = '☰';
-  toggle.addEventListener('click', () => {
-    document.body.classList.toggle('md-reader-toc-open');
-  });
-  document.body.appendChild(toggle);
+  document.body.append(handle.nav, resizer, button);
 
   return {
     nav: handle.nav,
     destroy() {
       handle.destroy();
-      toggle.remove();
+      resizer.remove();
+      button.remove();
       handle.nav.remove();
       document.body.classList.remove('md-reader-has-toc', 'md-reader-toc-open');
     },

@@ -10,6 +10,7 @@ import { findTheme, type Appearance } from './theme-catalog';
 import {
   CONTENT_WIDTH_PX,
   FONT_SIZE_PX,
+  clampTocWidth,
   type ReaderSettings,
   type ThemeMode,
 } from '../shared/settings';
@@ -64,6 +65,7 @@ export function buildThemeCss(settings: ReaderSettings): string {
     `  --md-toc-border: ${toc.border};`,
     `  --md-toc-text: ${toc.text};`,
     `  --md-toc-active: ${toc.active};`,
+    `  --md-toc-width: ${clampTocWidth(settings.tocWidth)}px;`,
     `  color-scheme: ${appearance};`,
     '}',
   ].join('\n');
