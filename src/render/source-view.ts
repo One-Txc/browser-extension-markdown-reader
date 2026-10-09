@@ -4,11 +4,17 @@
  * 原始文本用 textContent 写入，不经过 innerHTML，天然免疫注入 ——
  * 展示源码不能成为新的 XSS 入口。
  *
+ * ★ 显隐用 class + display:none!important，而不是 hidden 属性。
+ * [hidden] 只是 UA 样式表里的一条 display:none，优先级的对手是作者样式表里
+ * 任何一条匹配该元素的 display 声明（例如别的 Markdown 扩展注入的全局 pre 规则），
+ * 被压过时切换原文就会看到一片空白。class + !important 不依赖这条 UA 规则。
+ *
  * 进入原文视图时会通过 body class 关掉目录与拖拽手柄：
  * 此时页面里没有渲染后的标题元素，目录跳转与滚动高亮都会失效，留着只会误导。
  */
 
 const PANEL_CLASS = 'md-reader-source';
+const HIDDEN_CLASS = 'md-reader-hidden';
 const SOURCE_MODE_CLASS = 'md-reader-source-mode';
 
 export interface SourceViewHandle {
@@ -20,7 +26,6 @@ export interface SourceViewHandle {
 export function setupSourceView(root: HTMLElement, raw: string): SourceViewHandle {
   const panel = document.createElement('pre');
   panel.className = PANEL_CLASS;
-  panel.hidden = true;
   panel.textContent = raw;
 
   const button = document.createElement('button');
@@ -30,8 +35,8 @@ export function setupSourceView(root: HTMLElement, raw: string): SourceViewHandl
   let showingSource = false;
 
   const sync = (): void => {
-    panel.hidden = !showingSource;
-    root.hidden = showingSource;
+    panel.classList.toggle(HIDDEN_CLASS, !showingSource);
+    root.classList.toggle(HIDDEN_CLASS, showingSource);
     document.body.classList.toggle(SOURCE_MODE_CLASS, showingSource);
 
     button.textContent = showingSource ? 'Aa' : '</>';

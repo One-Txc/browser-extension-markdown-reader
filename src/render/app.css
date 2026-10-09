@@ -295,6 +295,13 @@ body.md-reader-lightbox-open {
   top: 0;
   left: 0;
   z-index: 20;
+  /*
+   * 必须是 border-box。
+   * 本元素是 body 的直接子元素，拿不到 .md-reader-root * 那条 border-box 规则，
+   * 默认的 content-box 会让 width 之外再叠加 16+14 的左右 padding 与 1px 边框，
+   * 实际占位比 --md-toc-width 多 31px —— 视觉分割线、拖拽手柄、正文让位三者会全部错位。
+   */
+  box-sizing: border-box;
   width: var(--md-toc-width, 268px);
   height: 100vh;
   overflow-y: auto;
@@ -428,6 +435,18 @@ html.md-reader-resizing * {
 /* 右上角：原文 / 渲染视图切换 */
 .md-reader-btn-source {
   right: 12px;
+}
+
+/* ---------- 通用显隐 ---------- */
+
+/*
+ * 用 class + !important，而不是同时设置 hidden 属性。
+ * [hidden] 仅是 UA 样式表里的一条 display:none，任何作者样式表里匹配到该元素的
+ * display 声明都能压过它（图标库、其它 Markdown 扩展都可能注入这类全局规则），
+ * 一旦被压过，切换原文视图就会看到一片空白。
+ */
+.md-reader-hidden {
+  display: none !important;
 }
 
 /* ---------- 原始 Markdown 视图 ---------- */
