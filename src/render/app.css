@@ -417,6 +417,11 @@ body.md-reader-lightbox-open {
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
+  /*
+   * 与上方 tab 条拉开距离。
+   * 两个 pane 用同一个值，切换 tab 时内容不会上下跳。
+   */
+  padding-top: 8px;
 }
 
 /* ---------- 文件夹面板 ---------- */
