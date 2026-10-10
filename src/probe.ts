@@ -158,6 +158,31 @@ async function locateByUrl(
   log('✗ 所有候选都未通过验证');
 }
 
+/**
+ * 解析 Chrome 目录索引页里的 addRow(...) 调用。
+ *
+ * 那个页面不是静态 <a href>，而是页面加载后由脚本调 addRow(name, url, isdir, size, …)
+ * 动态建表，所以只能从脚本文本里提取。
+ */
+function parseAddRows(
+  html: string
+): Array<{ name: string; url: string; isDir: boolean; size: number }> {
+  const out: Array<{ name: string; url: string; isDir: boolean; size: number }> = [];
+  // 只取前 4 个参数就够了：name, url, isdir, size
+  const re =
+    /addRow\(\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(true|false)\s*,\s*(\d+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    out.push({
+      name: m[1].replace(/\\(.)/g, '$1'),
+      url: m[2].replace(/\\(.)/g, '$1'),
+      isDir: m[3] === 'true',
+      size: Number(m[4]),
+    });
+  }
+  return out;
+}
+
 /* ------------------------------------------------------------------ 面板 */
 
 export function maybeRunProbe(): void {
@@ -318,15 +343,24 @@ function renderPanel(): void {
         return;
       }
       log(`✓ HTTP ${res.status}，拿到 ${res.len} 字符`);
-      if (!res.text?.trim()) {
-        log('⚠ 返回内容为空 —— 这条路走不通');
+
+      const rows = parseAddRows(res.text);
+      log(`解析 addRow 调用：${rows.length} 项`);
+
+      if (rows.length === 0) {
+        log('⚠ 一项都没解析出来 —— 需要调整正则，把原始 HTML 贴出来看看');
+        log(`前 700 字符：\n${res.text.slice(0, 700)}`);
         return;
       }
-      // 看看是不是目录索引：找有没有指向同目录其它文件的链接
-      const html = res.text;
-      const looksLikeIndex = /<a\s[^>]*href=/i.test(html);
-      log(`  含 <a href=> 链接：${looksLikeIndex ? '是' : '否'}`);
-      log(`  前 700 字符：\n${html.slice(0, 700)}`);
+
+      const dirs = rows.filter((r) => r.isDir);
+      const mdFiles = rows.filter((r) => !r.isDir && /\.(md|markdown)$/i.test(r.name));
+      log(`  其中：目录 ${dirs.length} 个、md 文件 ${mdFiles.length} 个、其他 ${rows.length - dirs.length - mdFiles.length} 个`);
+      log('  全部条目：');
+      for (const r of rows) {
+        const tag = r.isDir ? '📁' : /\.(md|markdown)$/i.test(r.name) ? '📄' : '  ';
+        log(`    ${tag} ${r.name}${r.isDir ? '/' : ''}${r.isDir ? '' : `  (${r.size} B)`}`);
+      }
     })
   );
 
