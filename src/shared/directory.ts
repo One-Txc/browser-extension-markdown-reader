@@ -26,6 +26,8 @@ export interface DirEntry {
   isDir: boolean;
   /** 字节数，目录为 0 */
   size: number;
+  /** 修改时间（毫秒时间戳）；解析不到时为 0 */
+  modified: number;
 }
 
 /** 会被「文件夹」面板展示的文件类型 —— 只有 Markdown */
@@ -35,6 +37,8 @@ const MARKDOWN_EXT = ['.md', '.markdown', '.mkd'];
  * 解析 Chrome 目录索引页里的 addRow(...) 调用。
  *
  * 注意该正则来自实测可用的版本，改动前请先看文件头的说明。
+ * 参数顺序：
+ *   addRow(name, url, isdir, size, size_string, date_modified, date_modified_string)
  */
 export function parseDirectoryIndex(html: string): DirEntry[] {
   const out: DirEntry[] = [];
@@ -44,17 +48,17 @@ export function parseDirectoryIndex(html: string): DirEntry[] {
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null) {
     const name = m[1];
-    const isDir = Number.parseInt(m[3], 10) !== 0;
+
+    // 名字里如果混入了路径分隔符，说明解析可能错位，跳过以防构造出奇怪的 URL
+    if (name.includes('/') || name.includes('\\')) continue;
 
     out.push({
       name,
       path: m[2],
-      isDir,
+      isDir: Number.parseInt(m[3], 10) !== 0,
       size: Number.parseInt(m[4], 10),
+      modified: Number.parseInt(m[6], 10) || 0,
     });
-
-    // 名字里如果混入了路径分隔符，说明解析可能错位，跳过以防构造出奇怪的 URL
-    if (name.includes('/') || name.includes('\\')) out.pop();
   }
 
   return out;
@@ -63,16 +67,48 @@ export function parseDirectoryIndex(html: string): DirEntry[] {
 /**
  * 过滤出需要展示的条目：目录 + Markdown 文件。
  *
- * 排序保持「目录在前、文件在后」，各自按名称升序 ——
- * 与文件管理器一致，也让列表更稳定。
+ * 只做过滤不做排序 —— 排序取决于用户在「文件夹」面板里的设置。
+ *
+ * @param showHidden 是否保留以 . 开头的隐藏项
  */
-export function filterEntries(entries: DirEntry[]): DirEntry[] {
-  return entries
-    .filter((e) => e.isDir || MARKDOWN_EXT.some((ext) => e.name.toLowerCase().endsWith(ext)))
-    .sort((a, b) => {
-      if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
-      return a.name.localeCompare(b.name, 'zh-Hans-CN', { numeric: true });
-    });
+export function filterEntries(entries: DirEntry[], showHidden = true): DirEntry[] {
+  return entries.filter((e) => {
+    if (!showHidden && e.name.startsWith('.')) return false;
+    return e.isDir || MARKDOWN_EXT.some((ext) => e.name.toLowerCase().endsWith(ext));
+  });
+}
+
+/** 排序依据 */
+export type SortField = 'name' | 'size' | 'modified';
+
+export interface SortOptions {
+  field: SortField;
+  ascending: boolean;
+  /** 文件夹是否始终排在文件之前（升降序都生效） */
+  foldersFirst: boolean;
+}
+
+/**
+ * 按用户设置排序。
+ *
+ * 文件夹置顶的判断放在比较字段**之前**，所以升降序都会保持「目录在前」。
+ * 主字段相同时用名称兜底，避免顺序在多次渲染间抖动。
+ */
+export function sortEntries(entries: DirEntry[], opts: SortOptions): DirEntry[] {
+  const byName = (a: DirEntry, b: DirEntry): number =>
+    a.name.localeCompare(b.name, 'zh-Hans-CN', { numeric: true });
+
+  return [...entries].sort((a, b) => {
+    if (opts.foldersFirst && a.isDir !== b.isDir) return a.isDir ? -1 : 1;
+
+    let cmp = 0;
+    if (opts.field === 'size') cmp = a.size - b.size;
+    else if (opts.field === 'modified') cmp = a.modified - b.modified;
+    else cmp = byName(a, b);
+
+    if (cmp === 0) cmp = byName(a, b);
+    return opts.ascending ? cmp : -cmp;
+  });
 }
 
 /** 从文档 URL 推出所在目录的 URL（保留结尾斜杠） */

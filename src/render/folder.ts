@@ -6,19 +6,26 @@
  * 交互设计（与主流 Markdown 阅读器一致）：
  *   - 点文件夹   → 就地展开 / 收起，子目录按需加载
  *   - 点文档     → **原地替换正文，不改变 URL**，由 onOpen 回调实现
- *   - 右侧跳转图标 → 真正打开该 URL（新标签页），由 onNavigate 回调实现
+ *   - 行尾跳转图标 → 真正打开该 URL，由 onNavigate 回调实现
  *
- * 「原地打开」是刻意的：切文档时侧边栏状态、滚动习惯都不该丢。
- * 但 URL 不变意味着它不再代表正文内容，所以必须给用户一个「真跳转」的出口，
- * 这就是那个跳转图标存在的理由。
+ * 面板偏好（排序、文件夹置顶、显示隐藏项）通过 getPrefs / setPrefs 存取，
+ * 由调用方负责持久化 —— 这些选项刷新后必须保留。
  *
  * 其他要点：
  *   - 只显示目录与 Markdown 文件
  *   - 默认全部收起；文件夹图标随展开状态切换
+ *   - 空目录加载后会降级为叶子（隐藏箭头、不可点）
  *   - 图标一律用 currentColor，深浅主题自动跟随
  */
 
-import { directoryOf, resolveEntryUrl, type DirEntry } from '../shared/directory';
+import {
+  directoryOf,
+  filterEntries,
+  resolveEntryUrl,
+  sortEntries,
+  type DirEntry,
+  type SortField,
+} from '../shared/directory';
 
 /* ------------------------------------------------------------------ 图标 */
 
@@ -37,28 +44,39 @@ const ICON_CARET = `<svg viewBox="0 0 10 10"><path d="M2 3.4 L5 6.6 L8 3.4" fill
 /** 「在新标签页打开真实 URL」 */
 const ICON_JUMP = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5H3.6a1.1 1.1 0 0 0-1.1 1.1v7.8a1.1 1.1 0 0 0 1.1 1.1h7.8a1.1 1.1 0 0 0 1.1-1.1V9.5"/><path d="M9.6 2.4h4v4"/><path d="M13.3 2.7 7.6 8.4"/></svg>`;
 
+/** 折叠全部 */
+const ICON_COLLAPSE = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5h10M3 10.5h10"/><path d="M8 2.2v2M8 13.8v-2"/></svg>`;
+
+/** 设置 */
+const ICON_SETTINGS = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.1"/><path d="M8 1.6v1.6M8 12.8v1.6M14.4 8h-1.6M3.2 8H1.6M12.5 3.5l-1.1 1.1M4.6 11.4l-1.1 1.1M12.5 12.5l-1.1-1.1M4.6 4.6 3.5 3.5"/></svg>`;
+
 /* ------------------------------------------------------------------ 类型 */
 
+/** 文件夹面板的偏好，由调用方持久化 */
+export interface FolderPrefs {
+  sortField: SortField;
+  sortAsc: boolean;
+  foldersFirst: boolean;
+  showHidden: boolean;
+}
+
 export interface FolderPaneOptions {
-  /** 当前文档的绝对 URL（首次挂载时的真实地址） */
+  /** 当前文档的绝对 URL */
   documentUrl: string;
-  /**
-   * 点击文档项时的回调 —— 由调用方决定如何展示（本项目的做法是原地替换正文）。
-   * 不传则退化为直接导航。
-   */
+  /** 读取当前偏好 */
+  getPrefs(): FolderPrefs;
+  /** 更新偏好（调用方负责落盘；面板会据此重新渲染） */
+  setPrefs(patch: Partial<FolderPrefs>): void;
+  /** 点击文档项 → 由调用方决定如何展示（本项目为原地替换正文） */
   onOpen?: (url: string) => void;
-  /**
-   * 点击行尾跳转图标时的回调 —— 真正打开该 URL。
-   * 不传则默认新标签页打开。
-   */
+  /** 点击行尾跳转图标 → 真正打开该 URL */
   onNavigate?: (url: string) => void;
 }
 
 export interface FolderPaneHandle {
   element: HTMLElement;
-  /** 重新加载根目录 */
   reload(): void;
-  /** 原地切换后更新选中项（传入当前正在显示的文档 URL） */
+  /** 原地切换后更新选中项 */
   setCurrent(url: string): void;
   destroy(): void;
 }
@@ -68,7 +86,6 @@ interface DirNode {
   childrenEl: HTMLElement;
   caret: HTMLButtonElement;
   iconEl: HTMLElement;
-  rowEl: HTMLElement;
   loaded: boolean;
   expanded: boolean;
 }
@@ -95,11 +112,10 @@ async function fetchDirectory(
 
 export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
   const rootDir = directoryOf(options.documentUrl);
-
-  /** 当前「正在显示」的文档 URL —— 原地切换后由 setCurrent 更新 */
   let currentUrl = options.documentUrl;
-
   const nodes: DirNode[] = [];
+
+  /* ---------------- 顶栏 ---------------- */
 
   const bar = document.createElement('div');
   bar.className = 'md-reader-folder-bar';
@@ -112,7 +128,112 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
   const barCount = document.createElement('span');
   barCount.className = 'count';
 
-  bar.append(barName, barCount);
+  const mkTool = (icon: string, title: string, onClick: () => void): HTMLButtonElement => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'folder-tool';
+    b.title = title;
+    b.setAttribute('aria-label', title);
+    b.innerHTML = icon;
+    b.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      onClick();
+    });
+    return b;
+  };
+
+  const collapseBtn = mkTool(ICON_COLLAPSE, '折叠全部', () => collapseAll());
+  const settingsBtn = mkTool(ICON_SETTINGS, '显示设置', () => {
+    settingsEl.classList.toggle('md-reader-hidden');
+    settingsBtn.classList.toggle('is-active');
+  });
+
+  bar.append(barName, barCount, collapseBtn, settingsBtn);
+
+  /* ---------------- 设置面板 ---------------- */
+
+  const settingsEl = document.createElement('div');
+  settingsEl.className = 'folder-settings md-reader-hidden';
+
+  // 排序字段
+  const sortRow = document.createElement('div');
+  sortRow.className = 'folder-setting-row';
+  const sortLabel = document.createElement('span');
+  sortLabel.className = 'folder-setting-label';
+  sortLabel.textContent = '排序';
+
+  const sortSelect = document.createElement('select');
+  sortSelect.className = 'folder-select';
+  for (const [value, label] of [
+    ['name', '名称'],
+    ['size', '大小'],
+    ['modified', '修改日期'],
+  ] as const) {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = label;
+    sortSelect.append(opt);
+  }
+  sortSelect.addEventListener('change', () => {
+    options.setPrefs({ sortField: sortSelect.value as SortField });
+    void reload();
+  });
+
+  const ascBtn = document.createElement('button');
+  ascBtn.type = 'button';
+  ascBtn.className = 'folder-tool folder-asc';
+  ascBtn.addEventListener('click', () => {
+    options.setPrefs({ sortAsc: !options.getPrefs().sortAsc });
+    syncSettingsUi();
+    void reload();
+  });
+
+  sortRow.append(sortLabel, sortSelect, ascBtn);
+
+  // 复选框
+  const mkCheck = (label: string, get: () => boolean, set: (v: boolean) => void): HTMLLabelElement => {
+    const wrap = document.createElement('label');
+    wrap.className = 'folder-check';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = get();
+    input.addEventListener('change', () => {
+      set(input.checked);
+      void reload();
+    });
+    const span = document.createElement('span');
+    span.textContent = label;
+    wrap.append(input, span);
+    return wrap;
+  };
+
+  const foldersFirstCheck = mkCheck(
+    '文件夹置顶',
+    () => options.getPrefs().foldersFirst,
+    (v) => options.setPrefs({ foldersFirst: v })
+  );
+  const showHiddenCheck = mkCheck(
+    '显示隐藏项',
+    () => options.getPrefs().showHidden,
+    (v) => options.setPrefs({ showHidden: v })
+  );
+
+  settingsEl.append(sortRow, foldersFirstCheck, showHiddenCheck);
+
+  /** 把偏好回填到设置控件（排序/方向可能被外部改动） */
+  function syncSettingsUi(): void {
+    const p = options.getPrefs();
+    sortSelect.value = p.sortField;
+    ascBtn.textContent = p.sortAsc ? '↑ 升序' : '↓ 降序';
+    ascBtn.title = p.sortAsc ? '当前升序，点击改为降序' : '当前降序，点击改为升序';
+    const a = foldersFirstCheck.querySelector('input');
+    if (a) a.checked = p.foldersFirst;
+    const b = showHiddenCheck.querySelector('input');
+    if (b) b.checked = p.showHidden;
+  }
+  syncSettingsUi();
+
+  /* ---------------- 列表 ---------------- */
 
   const list = document.createElement('ul');
   list.className = 'md-reader-folder-list';
@@ -123,16 +244,39 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
 
   const element = document.createElement('div');
   element.className = 'md-reader-folder';
-  element.append(bar, scroll);
+  element.append(bar, settingsEl, scroll);
+
+  /* ---------------- 行为 ---------------- */
 
   /** 高亮当前正在显示的文档 */
   function applyCurrent(): void {
     const target = decodeURIComponent(currentUrl);
-    for (const row of list.querySelectorAll<HTMLElement>('.folder-row')) {
+    for (const row of element.querySelectorAll<HTMLElement>('.folder-row')) {
       row.classList.toggle('is-current', row.dataset.url === target);
     }
-    const active = list.querySelector('.is-current');
+    const active = element.querySelector('.is-current');
     if (active) requestAnimationFrame(() => active.scrollIntoView({ block: 'nearest' }));
+  }
+
+  /** 折叠全部已展开的目录 */
+  function collapseAll(): void {
+    for (const node of nodes) {
+      if (!node.expanded) continue;
+      node.expanded = false;
+      node.childrenEl.classList.add('md-reader-hidden');
+      node.caret.classList.add('is-collapsed');
+      node.iconEl.innerHTML = ICON_FOLDER;
+    }
+  }
+
+  /** 按当前偏好过滤 + 排序 */
+  function ordered(entries: DirEntry[]): DirEntry[] {
+    const p = options.getPrefs();
+    return sortEntries(filterEntries(entries, p.showHidden), {
+      field: p.sortField,
+      ascending: p.sortAsc,
+      foldersFirst: p.foldersFirst,
+    });
   }
 
   /** 渲染一行 */
@@ -175,9 +319,10 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
     const label = document.createElement('span');
     label.className = 'folder-name';
     label.textContent = entry.name;
+    label.title = entry.name;
     row.append(label);
 
-    // 4. 跳转图标：真正打开这个 URL（原地打开时 URL 不再代表正文，需要这个出口）
+    // 4. 跳转图标
     const jump = document.createElement('button');
     jump.type = 'button';
     jump.className = 'folder-jump';
@@ -193,7 +338,6 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
 
     li.append(row);
 
-    /* ---- 目录：子容器 + 懒加载 ---- */
     if (entry.isDir && caret) {
       const childList = document.createElement('ul');
       childList.className = 'md-reader-folder-list folder-children md-reader-hidden';
@@ -204,15 +348,12 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
         childrenEl: childList,
         caret,
         iconEl: icon,
-        rowEl: row,
         loaded: false,
         expanded: false,
       };
       nodes.push(node);
-
       row.addEventListener('click', () => void toggleDir(node));
     } else {
-      // 文件：原地打开
       row.addEventListener('click', () => {
         if (options.onOpen) options.onOpen(url);
         else location.href = url;
@@ -250,16 +391,14 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
         node.childrenEl.append(err);
       } else if (entries.length === 0) {
         /*
-         * 空目录：不给任何提示，直接把它降级成叶子 —— 箭头隐藏、不可点。
-         *
-         * 用 is-leaf（visibility: hidden）而不是移除元素，是为了保住那 17px 的
-         * 占位宽度，否则该行的图标会向左跳、与上下行错位。
+         * 空目录：不给提示，直接降级为叶子。
+         * 用 is-leaf（visibility: hidden）而不是移除元素，保住 17px 占位，
+         * 否则该行图标会左移、与上下行错位。
          */
-        node.caret.classList.add('is-leaf');
-        node.caret.classList.add('is-collapsed');
+        node.caret.classList.add('is-leaf', 'is-collapsed');
         return;
       } else {
-        for (const child of entries) {
+        for (const child of ordered(entries)) {
           node.childrenEl.append(renderRow(child, node.url));
         }
       }
@@ -286,10 +425,10 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
       return;
     }
 
-    const entries = res.entries ?? [];
+    const entries = ordered(res.entries ?? []);
     barCount.textContent = `${entries.length} 项`;
 
-    // 空了就留白，不做任何提示（提示本身也是噪音）
+    // 空了就留白，不做任何提示
     for (const entry of entries) list.append(renderRow(entry, rootDir));
     applyCurrent();
   }

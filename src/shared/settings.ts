@@ -41,6 +41,17 @@ export interface ReaderSettings {
    * 只在折叠策略本身变化时生效，不会覆盖用户的手动折叠。
    */
   defaultExpandLevel: number;
+
+  /* ---------------- 「文件夹」面板的偏好（刷新后保留） ---------------- */
+
+  /** 排序依据 */
+  folderSortField: 'name' | 'size' | 'modified';
+  /** 是否升序 */
+  folderSortAsc: boolean;
+  /** 文件夹是否始终排在文件之前 */
+  folderFoldersFirst: boolean;
+  /** 是否显示以 . 开头的隐藏项 */
+  folderShowHidden: boolean;
 }
 
 /** 目录宽度的取值范围 */
@@ -92,6 +103,11 @@ export const DEFAULT_SETTINGS: ReaderSettings = {
   tocWidth: TOC_WIDTH.default,
   foldThreshold: FOLD_THRESHOLD.default,
   defaultExpandLevel: EXPAND_LEVEL.default,
+
+  folderSortField: 'name',
+  folderSortAsc: true,
+  folderFoldersFirst: true,
+  folderShowHidden: true,
 };
 
 /** 实际像素值，供 buildThemeCss 注入 CSS 变量 */
@@ -133,6 +149,14 @@ export async function loadSettings(): Promise<ReaderSettings> {
       defaultExpandLevel: clampExpandLevel(
         s.defaultExpandLevel ?? DEFAULT_SETTINGS.defaultExpandLevel
       ),
+
+      folderSortField:
+        s.folderSortField === 'size' || s.folderSortField === 'modified'
+          ? s.folderSortField
+          : DEFAULT_SETTINGS.folderSortField,
+      folderSortAsc: s.folderSortAsc ?? DEFAULT_SETTINGS.folderSortAsc,
+      folderFoldersFirst: s.folderFoldersFirst ?? DEFAULT_SETTINGS.folderFoldersFirst,
+      folderShowHidden: s.folderShowHidden ?? DEFAULT_SETTINGS.folderShowHidden,
     };
   } catch {
     return DEFAULT_SETTINGS;

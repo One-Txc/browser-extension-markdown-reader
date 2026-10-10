@@ -453,6 +453,94 @@ body.md-reader-lightbox-open {
   color: var(--md-muted, #a0a8b0);
 }
 
+/* 顶栏上的小图标按钮（折叠全部 / 设置） */
+.folder-tool {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  min-width: 22px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  color: var(--md-muted, #656d76);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.folder-tool:hover,
+.folder-tool.is-active {
+  background: rgba(0, 0, 0, 0.07);
+  color: var(--md-fg, #1f2328);
+}
+
+.folder-tool svg {
+  display: block;
+  width: 13px;
+  height: 13px;
+}
+
+/* 排序方向的按钮带文字，宽一点 */
+.folder-tool.folder-asc {
+  padding: 0 7px;
+  min-width: 0;
+}
+
+/* ---------- 设置面板 ---------- */
+
+.folder-settings {
+  flex: 0 0 auto;
+  padding: 7px 10px 9px;
+  border-bottom: 1px solid var(--md-toc-border, rgba(0, 0, 0, 0.06));
+  font-size: 11.5px;
+  color: var(--md-muted, #656d76);
+}
+
+.folder-setting-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+
+.folder-setting-label {
+  flex: 0 0 auto;
+  color: var(--md-muted, #656d76);
+}
+
+.folder-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 3px 5px;
+  font: inherit;
+  font-size: 11.5px;
+  color: var(--md-fg, #1f2328);
+  background: var(--md-page-bg, #fff);
+  border: 1px solid var(--md-code-border, #d0d7de);
+  border-radius: 4px;
+}
+
+.folder-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  cursor: pointer;
+}
+
+.folder-check input {
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.folder-check span {
+  flex: 1 1 auto;
+}
+
 .md-reader-folder-scroll {
   flex: 1 1 auto;
   min-height: 0;

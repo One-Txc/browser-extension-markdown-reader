@@ -223,6 +223,26 @@ const tocHandlers: TocHandlers = {
   createFolderPane: () => {
     folderHandle = mountFolderPane({
       documentUrl: currentDocUrl,
+      getPrefs: () => ({
+        sortField: currentSettings.folderSortField,
+        sortAsc: currentSettings.folderSortAsc,
+        foldersFirst: currentSettings.folderFoldersFirst,
+        showHidden: currentSettings.folderShowHidden,
+      }),
+      /*
+       * 面板偏好的键名与设置里的键名不同（前者面向面板，后者面向存储），
+       * 这里做一次显式映射，避免两处命名被迫耦合。
+       */
+      setPrefs: (patch) => {
+        const next: Partial<ReaderSettings> = {};
+        if (patch.sortField !== undefined) next.folderSortField = patch.sortField;
+        if (patch.sortAsc !== undefined) next.folderSortAsc = patch.sortAsc;
+        if (patch.foldersFirst !== undefined) next.folderFoldersFirst = patch.foldersFirst;
+        if (patch.showHidden !== undefined) next.folderShowHidden = patch.showHidden;
+
+        currentSettings = { ...currentSettings, ...next };
+        void persistSettings(next);
+      },
       onOpen: (url) => void openInPlace(url),
     });
     return folderHandle.element;
