@@ -4,6 +4,12 @@
   <meta charset="utf-8">
   <title>MD Reader</title>
   <style>
+    /*
+     * 默认的 content-box 会让 width:100% + padding + border 一起溢出容器 ——
+     * 并排的两个控件就是因此重叠的（输入框压到了下拉框上）。
+     */
+    *, *::before, *::after { box-sizing: border-box; }
+
     body {
       width: 340px;
       margin: 0;
@@ -27,7 +33,10 @@
     /* 并排的控件不留底部间距，统一由下方 .hint 控制 */
     .row select,
     .row input[type="number"] {
-      display: block; margin-bottom: 0;
+      display: block;
+      /* min-width 不能省：表单控件有基于 size 的内在宽度，会撑破弹性列 */
+      min-width: 0;
+      margin-bottom: 0;
     }
     .row { display: flex; gap: 10px; }
     .row > div { flex: 1; min-width: 0; }
