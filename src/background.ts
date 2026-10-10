@@ -115,12 +115,17 @@ async function listDirectory(
 /**
  * 按需注入 Mermaid（约 5MB，见 mermaid-entry.ts 的说明）。
  *
- * ★ 用 world: 'MAIN' 而不是默认的 ISOLATED。
- * MV3 扩展的 CSP 是 `script-src 'self'`，不允许 eval / new Function，
- * 而 Mermaid 的部分图表类型会用到它们。file:// 页面自身没有 CSP，
- * 注入到页面 world 可以避开这个限制。
- * 代价是 Mermaid 的变量会出现在页面的 window 上 —— IIFE 打包不会主动挂全局，
- * 影响可控。
+ * ★ 用默认的 ISOLATED world，**不要改成 world: 'MAIN'**。
+ *
+ * 曾经改成 MAIN，理由是 MV3 扩展的 CSP 为 `script-src 'self'`、不允许 eval，
+ * 而 Mermaid 的部分图表类型会用到它；而 file:// 页面自身没有 CSP，
+ * 注入页面 world 就能绕开扩展的这条限制。
+ *
+ * 那个理由只在本地成立 —— **在线页面有自己的 CSP**，一旦注入 MAIN world，
+ * 就得受页面 CSP 约束，GitHub raw 这类站点的 script-src 很严，
+ * Mermaid 会整体失败，表现为 ```mermaid 代码块原样留在页面上。
+ * 所以换回 ISOLATED：它对本地和在线一视同仁，代价是少数依赖 eval 的
+ * 图表类型（不是主流用法）会渲染失败 —— 这已有降级：保留原始代码并标注错误。
  */
 async function injectMermaid(tabId?: number): Promise<{ ok: boolean; error?: string }> {
   if (tabId == null) return { ok: false, error: t('noTabId') };
@@ -129,7 +134,6 @@ async function injectMermaid(tabId?: number): Promise<{ ok: boolean; error?: str
     await chrome.scripting.executeScript({
       target: { tabId },
       files: ['build/mermaid.js'],
-      world: 'MAIN',
     });
     return { ok: true };
   } catch (err) {
