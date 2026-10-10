@@ -62,6 +62,16 @@ async function main(): Promise<void> {
   html.style.visibility = 'hidden';
   markPerf('hidden');
 
+  /*
+   * 设置读取与内容读取互不依赖，一开始就并行发起。
+   * chrome.storage.sync 的冷读实测可达上百毫秒（表现为 themed 阶段的剧烈波动），
+   * 串行等待等于把这笔开销直接加在首屏上。
+   */
+  const settingsPromise = loadSettings().then((value) => {
+    markPerf('settings-loaded');
+    return value;
+  });
+
   try {
     const raw = await readSource();
     markPerf('source-read');
@@ -84,7 +94,7 @@ async function main(): Promise<void> {
     // 先记录容器，目录与主题都依赖它
     mainEl = main;
 
-    currentSettings = await loadSettings();
+    currentSettings = await settingsPromise;
     applyTheme(document, currentSettings);
     markPerf('themed');
 

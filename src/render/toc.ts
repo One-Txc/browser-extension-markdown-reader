@@ -366,7 +366,15 @@ export function buildToc(root: HTMLElement, minHeadings = MIN_HEADINGS): TocHand
   const classObserver = new MutationObserver(() => update());
   classObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
-  update();
+  /*
+   * 首次高亮延后一帧再算。
+   *
+   * update() 里的 getBoundingClientRect 会强制浏览器做一次完整的样式计算与布局，
+   * 而此刻我们刚注入 60–80KB 的 CSS。实测这一步能占掉上百毫秒，
+   * 若压在「恢复可见」之前，用户就要多等这么久才能看到内容。
+   * 延后一帧的代价仅仅是高亮晚一帧出现，人眼无感。
+   */
+  requestAnimationFrame(() => update());
 
   /*
    * 折叠 UI（caret 与批量按钮）始终生成，是否显示由这个开关控制。
