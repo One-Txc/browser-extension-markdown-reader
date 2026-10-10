@@ -78,9 +78,9 @@ check(
     !!handle.nav.querySelector('.toc-level-h3')
 );
 check('链接指向标题 id', handle.nav.querySelector('a').getAttribute('href') === '#ch1');
-// 侧边栏顶部现在改成了 tab 条（目录 / 文件夹），取代原来的纯文本标题。
-// 这里没传 handlers.createFolderPane，所以只应出现「目录」一个 tab。
-check('侧边栏有「目录」tab', handle.nav.querySelector('.md-reader-tab')?.textContent === '目录');
+// 侧边栏顶部现在是 tab 条（大纲 / 文件夹），取代了原来的纯文本标题。
+// 这里没传 handlers.createFolderPane，所以只应出现「大纲」一个 tab。
+check('侧边栏有「大纲」tab', handle.nav.querySelector('.md-reader-tab')?.textContent === '大纲');
 check(
   '目录树放在 outline pane 内',
   handle.nav.querySelector('.md-reader-pane')?.dataset.pane === 'outline'

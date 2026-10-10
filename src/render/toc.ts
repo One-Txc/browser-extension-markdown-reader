@@ -323,7 +323,13 @@ export function buildToc(
     return btn;
   };
 
-  const outlineTab = makeTab('outline', '目录');
+  /*
+   * tab 叫「大纲」而不是「目录」：
+   * 「目录」在中文里既指 directory 又指 table of contents，
+   * 而隔壁 tab 正是文件夹列表，两者撞词会让人分不清。
+   * 「大纲」是这个领域的通行叫法（VS Code / Typora / Obsidian 均如此）。
+   */
+  const outlineTab = makeTab('outline', '大纲');
   tabs.append(outlineTab);
   if (folderPane) {
     tabs.append(makeTab('folder', '文件夹'));
@@ -549,7 +555,7 @@ function createResizer(handlers: TocHandlers): HTMLElement {
   bar.className = 'md-reader-resizer';
   bar.setAttribute('role', 'separator');
   bar.setAttribute('aria-orientation', 'vertical');
-  bar.title = '拖动调整目录宽度，双击恢复默认';
+  bar.title = '拖动调整侧边栏宽度，双击恢复默认';
 
   let dragging = false;
   let latest = handlers.getWidth();
