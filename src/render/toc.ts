@@ -258,9 +258,19 @@ function createBulkBar(nodes: TocNode[]): { bar: HTMLElement | null; refresh: ()
 
     button.classList.toggle('is-expanded', allExpanded);
     button.classList.toggle('is-mixed', !allExpanded && !allCollapsed);
+
+    /*
+     * tooltip 也用层数说法，与按钮文字保持一致 ——
+     * 这里原先说的是「收起所有 H2 标题」，用绝对 H 级别描述影响范围，
+     * 与按钮上的「显示前两层」不是一套语言，容易让人以为是两回事。
+     *
+     * 第 N 个按钮（从 1 起算）控制第 N 层标题的展开：
+     * 收起它显示到第 N 层，展开它显示到第 N+1 层。
+     */
+    const depth = levels.indexOf(level) + 1;
     button.title = allExpanded
-      ? t('tocCollapseLevel', [String(level)])
-      : t('tocExpandLevel', [String(level)]);
+      ? t('tocBulkCollapse', [String(depth)])
+      : t('tocBulkExpand', [String(depth + 1)]);
   };
 
   const refreshAll = (): void => {
