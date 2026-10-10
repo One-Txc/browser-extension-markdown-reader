@@ -52,7 +52,9 @@ check('生成了原文面板', !!panel);
 check('生成了切换按钮', !!button);
 check('初始：渲染内容可见', !isHidden(root));
 check('初始：原文面板隐藏', isHidden(panel));
-check('初始：按钮显示 </>', button.textContent === '</>');
+// 按钮现在用内联 SVG 表示「点击后会看到的视图」，不再是 </> / Aa 字形
+const iconBefore = button.innerHTML;
+check('初始：按钮含图标', !!button.querySelector('svg'));
 check('原文已写入面板', panel.textContent.includes('正文内容。'));
 // 用 textContent 写入，因此面板内不应该有任何子元素
 check('原文以纯文本写入（无子元素）', panel.children.length === 0);
@@ -61,7 +63,8 @@ button.click();
 
 check('切到原文：渲染内容隐藏', isHidden(root));
 check('切到原文：面板可见', !isHidden(panel));
-check('切到原文：按钮变为 Aa', button.textContent === 'Aa');
+check('切到原文：按钮图标换成另一个', button.innerHTML !== iconBefore);
+check('切到原文：仍含图标', !!button.querySelector('svg'));
 check('切到原文：body 标记 source-mode', document.body.classList.contains('md-reader-source-mode'));
 
 button.click();

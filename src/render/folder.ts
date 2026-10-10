@@ -44,11 +44,20 @@ const ICON_CARET = `<svg viewBox="0 0 10 10"><path d="M2 3.4 L5 6.6 L8 3.4" fill
 /** 「在新标签页打开真实 URL」 */
 const ICON_JUMP = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5H3.6a1.1 1.1 0 0 0-1.1 1.1v7.8a1.1 1.1 0 0 0 1.1 1.1h7.8a1.1 1.1 0 0 0 1.1-1.1V9.5"/><path d="M9.6 2.4h4v4"/><path d="M13.3 2.7 7.6 8.4"/></svg>`;
 
-/** 折叠全部 */
-const ICON_COLLAPSE = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5h10M3 10.5h10"/><path d="M8 2.2v2M8 13.8v-2"/></svg>`;
+/**
+ * 折叠全部：两个 V 形叠着朝上，表示「一路收到顶层」。
+ * 这是编辑器里「折叠全部」的通行画法（VS Code 同款）。
+ */
+const ICON_COLLAPSE = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.4 8 3.4l4 4"/><path d="M4 12.4 8 8.4l4 4"/></svg>`;
 
-/** 设置 */
-const ICON_SETTINGS = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.1"/><path d="M8 1.6v1.6M8 12.8v1.6M14.4 8h-1.6M3.2 8H1.6M12.5 3.5l-1.1 1.1M4.6 11.4l-1.1 1.1M12.5 12.5l-1.1-1.1M4.6 4.6 3.5 3.5"/></svg>`;
+/**
+ * 齿轮。
+ *
+ * ★ 齿必须是**粗短的方齿**，不能用同样的细线画成放射状 ——
+ * 细放射线 + 中心圆看起来是「发光的灯泡」而不是齿轮（实际返工过一次）。
+ * 所以齿用加粗的 butt 端直线，与齿根圆分成两个元素各自设 stroke-width。
+ */
+const ICON_SETTINGS = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linejoin="round"><path d="M12.6 8h2M8 3.4v-2M3.4 8h-2M8 12.6v2M11.25 4.75l1.42-1.42M4.75 4.75 3.33 3.33M4.75 11.25l-1.42 1.42M11.25 11.25l1.42 1.42" stroke-width="2.3" stroke-linecap="butt"/><circle cx="8" cy="8" r="4.6" stroke-width="1.4"/><circle cx="8" cy="8" r="1.8" stroke-width="1.4"/></svg>`;
 
 /* ------------------------------------------------------------------ 类型 */
 

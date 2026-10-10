@@ -600,13 +600,20 @@ function createResizer(handlers: TocHandlers): HTMLElement {
 }
 
 /** 左上角按钮：显示 / 隐藏目录 */
+/**
+ * 侧边栏开关：一个矩形、左边一条分隔线，加一个向左的箭头。
+ * 轮廓表示「侧边栏」，箭头表示「点击收起」—— 比 ☰ 更贴切，
+ * 后者在网页里普遍指「导航菜单」。
+ */
+const ICON_TOGGLE_TOC = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="1.8" y="3" width="12.4" height="10" rx="1.5"/><path d="M6.2 3v10"/><path d="M11.4 8H8.2M9.6 6.4 8 8l1.6 1.6"/></svg>`;
+
 function createTocButton(handlers: TocHandlers): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'md-reader-btn md-reader-btn-toc';
-  button.textContent = '☰';
-  button.title = '显示 / 隐藏目录';
-  button.setAttribute('aria-label', '显示 / 隐藏目录');
+  button.innerHTML = ICON_TOGGLE_TOC;
+  button.title = '显示 / 隐藏侧边栏';
+  button.setAttribute('aria-label', '显示 / 隐藏侧边栏');
 
   button.addEventListener('click', () => {
     // 窄屏下目录是覆盖式抽屉，开合属于临时状态，不去改持久化的设置

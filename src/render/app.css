@@ -884,6 +884,13 @@ html.md-reader-resizing * {
   opacity: 1;
 }
 
+/* 按钮内的图标统一尺寸；原来这两个按钮用的是文字字形 */
+.md-reader-btn svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
 .md-reader-btn.is-active {
   opacity: 1;
   color: var(--md-toc-active, #0969da);

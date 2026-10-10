@@ -18,6 +18,18 @@ import { SOURCE_MODE_CLASS } from '../shared/const';
 const PANEL_CLASS = 'md-reader-source';
 const HIDDEN_CLASS = 'md-reader-hidden';
 
+/*
+ * 两个图标表示「点击后会看到的视图」：
+ *   渲染中 → 显示花括号（提示可以切到源码）
+ *   源码中 → 显示眼睛（提示可以切回渲染）
+ *
+ * 不用文字字形（原来的 </> 与 Aa）：Aa 依赖系统字体渲染，
+ * 各家字形差异很大，15px 下容易糊，与旁边手绘的线条图标也不统一。
+ */
+const ICON_TO_SOURCE = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.4 2.6c-1.6 0-1.9.9-1.9 2v1.7c0 1-.5 1.6-1.5 1.7 1 .1 1.5.7 1.5 1.7v1.7c0 1.1.3 2 1.9 2M9.6 2.6c1.6 0 1.9.9 1.9 2v1.7c0 1 .5 1.6 1.5 1.7-1 .1-1.5.7-1.5 1.7v1.7c0 1.1-.3 2-1.9 2"/></svg>`;
+
+const ICON_TO_RENDERED = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.6 8S3.9 4 8 4s6.4 4 6.4 4-2.3 4-6.4 4S1.6 8 1.6 8Z"/><circle cx="8" cy="8" r="1.8"/></svg>`;
+
 export interface SourceViewHandle {
   /** 当前是否正在显示原文 */
   isShowingSource(): boolean;
@@ -40,7 +52,8 @@ export function setupSourceView(root: HTMLElement, raw: string): SourceViewHandl
     root.classList.toggle(HIDDEN_CLASS, showingSource);
     document.body.classList.toggle(SOURCE_MODE_CLASS, showingSource);
 
-    button.textContent = showingSource ? 'Aa' : '</>';
+    // 图标表达「点击后会看到的视图」
+    button.innerHTML = showingSource ? ICON_TO_RENDERED : ICON_TO_SOURCE;
     button.title = showingSource ? '返回渲染视图' : '查看原始 Markdown';
     button.setAttribute('aria-label', button.title);
     button.setAttribute('aria-pressed', String(showingSource));
