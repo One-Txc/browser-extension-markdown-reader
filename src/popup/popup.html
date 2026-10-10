@@ -40,9 +40,13 @@
     }
     .row { display: flex; gap: 10px; }
     .row > div { flex: 1; min-width: 0; }
+    /*
+     * 上下都留白：它相邻的是并排控件行，而那类行的底部间距已被归零
+     * （见 .row select / .row input），所以间距得由这里自己出。
+     */
     label.check {
       display: flex; align-items: center; gap: 7px;
-      margin-top: 2px; font-size: 12px; color: #424a53; cursor: pointer;
+      margin: 10px 0; font-size: 12px; color: #424a53; cursor: pointer;
     }
     label.check input { margin: 0; }
     fieldset > *:last-child { margin-bottom: 0; }
