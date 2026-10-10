@@ -1,103 +1,354 @@
 {
   "extName": {
     "message": "MD Reader",
-    "description": "扩展名称，不翻译"
+    "description": "扩展名称。显示在浏览器扩展管理页与商店卡片上。品牌名，各语言均不翻译。"
   },
   "extDescription": {
-    "message": "直接在浏览器中优雅地阅读本地 .md 文件，无需任何本地服务。"
+    "message": "直接在浏览器中优雅地阅读本地 .md 文件，无需任何本地服务。",
+    "description": "扩展简介。显示在扩展管理页与商店列表，一句话概括产品用途。"
   },
 
-  "sidebar": { "message": "侧边栏" },
-  "tabOutline": { "message": "大纲" },
-  "tabFolder": { "message": "文件夹" },
-  "tocCaret": { "message": "展开 / 收起子标题" },
-  "tocCollapseLevel": { "message": "收起所有 H$1 标题" },
-  "tocExpandLevel": { "message": "展开所有 H$1 标题" },
-  "resizerHint": { "message": "拖动调整侧边栏宽度，双击恢复默认" },
-  "toggleSidebar": { "message": "显示 / 隐藏侧边栏" },
+  "sidebar": {
+    "message": "侧边栏",
+    "description": "侧边栏整体的无障碍标签（aria-label），供屏幕阅读器朗读，不显示在界面上。"
+  },
+  "tabOutline": {
+    "message": "大纲",
+    "description": "侧边栏顶部左侧的标签页按钮。点击后显示文档的标题层级树。尽量用短词，两到四字为宜。"
+  },
+  "tabFolder": {
+    "message": "文件夹",
+    "description": "侧边栏顶部右侧的标签页按钮。点击后显示当前文档所在文件夹的内容列表。尽量用短词。"
+  },
+  "tocCaret": {
+    "message": "展开 / 收起子标题",
+    "description": "大纲树里每个可折叠标题左侧小箭头的悬停提示与无障碍标签。"
+  },
+  "tocCollapseLevel": {
+    "message": "收起所有 H$1 标题",
+    "description": "大纲顶部的批量按钮，悬停提示。$1 是标题层级数字（如 2 表示 H2）。点击后收起该层级下的所有子标题。"
+  },
+  "tocExpandLevel": {
+    "message": "展开所有 H$1 标题",
+    "description": "大纲顶部的批量按钮，悬停提示。$1 是标题层级数字（如 2 表示 H2）。点击后展开该层级下的所有子标题。"
+  },
+  "resizerHint": {
+    "message": "拖动调整侧边栏宽度，双击恢复默认",
+    "description": "侧边栏右边缘那条可拖拽分隔线的悬停提示。"
+  },
+  "toggleSidebar": {
+    "message": "显示 / 隐藏侧边栏",
+    "description": "页面左上角浮动圆形按钮的悬停提示与无障碍标签。点击切换整个侧边栏的显示与隐藏。"
+  },
 
-  "copy": { "message": "复制" },
-  "copied": { "message": "已复制" },
-  "copyFailed": { "message": "复制失败" },
-  "tooLarge": { "message": "文件过大（$1 MB），已跳过渲染，显示原始文本。" },
+  "copy": {
+    "message": "复制",
+    "description": "代码块右上角复制按钮的默认文字。鼠标悬停代码块时才出现。请用短词，按钮很窄。"
+  },
+  "copied": {
+    "message": "已复制",
+    "description": "点击复制按钮后 1.5 秒内显示的反馈文字。请用短词。"
+  },
+  "copyFailed": {
+    "message": "复制失败",
+    "description": "复制到剪贴板失败时显示的反馈文字。请用短词。"
+  },
+  "tooLarge": {
+    "message": "文件过大（$1 MB），已跳过渲染，显示原始文本。",
+    "description": "文档超过体积上限时，页面顶部提示条的文字。$1 是文件大小的 MB 数值。此时页面不渲染 Markdown，直接显示纯文本。"
+  },
 
-  "viewSource": { "message": "查看原始 Markdown" },
-  "viewRendered": { "message": "返回渲染视图" },
+  "viewSource": {
+    "message": "查看原始 Markdown",
+    "description": "页面右上角浮动按钮的悬停提示。当前显示渲染后的文档，点击后切换到未渲染的原始 Markdown 文本。"
+  },
+  "viewRendered": {
+    "message": "返回渲染视图",
+    "description": "页面右上角浮动按钮的悬停提示。当前显示原始 Markdown 文本，点击后回到渲染后的文档。"
+  },
 
-  "imagePreview": { "message": "图片预览" },
-  "imagePreviewHint": { "message": "滚轮缩放 · 拖动平移 · Esc 关闭" },
+  "imagePreview": {
+    "message": "图片预览",
+    "description": "点击正文图片后弹出的全屏放大层的无障碍标签，供屏幕阅读器朗读。"
+  },
+  "imagePreviewHint": {
+    "message": "滚轮缩放 · 拖动平移 · Esc 关闭",
+    "description": "图片放大层底部的一行操作提示，用间隔号分隔三个操作。"
+  },
 
-  "themeNoteGithubLight": { "message": "原配，配色偏淡" },
+  "themeNoteGithubLight": {
+    "message": "原配，配色偏淡",
+    "description": "设置弹窗里代码配色下拉框中 GitHub Light 这一项的补充说明，显示为「GitHub Light · 原配，配色偏淡」。说明它饱和度低、不刺眼，且是默认选项。"
+  },
 
-  "dirOnly": { "message": "仅支持 file:// 目录" },
-  "dirEmpty": { "message": "目录返回为空" },
-  "noTabId": { "message": "拿不到标签页 id" },
-  "fileOnly": { "message": "仅允许读取 file:// 路径" },
+  "dirOnly": {
+    "message": "仅支持 file:// 目录",
+    "description": "错误提示：试图列出一个非本地路径的目录时出现。通常用户看不到。"
+  },
+  "dirEmpty": {
+    "message": "目录返回为空",
+    "description": "错误提示：浏览器没有返回目录内容时出现。通常用户看不到。"
+  },
+  "noTabId": {
+    "message": "拿不到标签页 id",
+    "description": "错误提示：无法获取当前标签页标识时出现。通常用户看不到。"
+  },
+  "fileOnly": {
+    "message": "仅允许读取 file:// 路径",
+    "description": "错误提示：试图读取非本地文件时出现，属于安全限制。通常用户看不到。"
+  },
 
-  "folder_collapseAll": { "message": "折叠全部" },
-  "folder_settings": { "message": "显示设置" },
-  "folder_sort": { "message": "排序" },
-  "folder_sortName": { "message": "名称" },
-  "folder_sortSize": { "message": "大小" },
-  "folder_sortModified": { "message": "修改日期" },
-  "folder_foldersFirst": { "message": "文件夹置顶" },
-  "folder_showHidden": { "message": "显示隐藏项" },
-  "folder_sortAsc": { "message": "↑ 升序" },
-  "folder_sortDesc": { "message": "↓ 降序" },
-  "folder_sortAscHint": { "message": "当前升序，点击改为降序" },
-  "folder_sortDescHint": { "message": "当前降序，点击改为升序" },
-  "folder_toggle": { "message": "展开 / 收起" },
-  "folder_openDirInNewTab": { "message": "在新标签页打开该目录" },
-  "folder_openFileInNewTab": { "message": "在新标签页打开该文件" },
-  "folder_readFailed": { "message": "读取失败：$1" },
-  "folder_listFailed": { "message": "无法读取目录：$1" },
-  "folder_count": { "message": "$1 项" },
-  "folder_noResponse": { "message": "无响应" },
-  "folder_unknownError": { "message": "未知错误" },
+  "folder_collapseAll": {
+    "message": "折叠全部",
+    "description": "「文件夹」标签页面板顶栏的图标按钮（悬停提示）。点击后收起所有已展开的子文件夹。"
+  },
+  "folder_settings": {
+    "message": "显示设置",
+    "description": "「文件夹」标签页面板顶栏的齿轮图标按钮（悬停提示）。点击后展开排序与显示项设置。"
+  },
+  "folder_sort": {
+    "message": "排序",
+    "description": "「文件夹」面板设置区里，排序方式下拉框前面的标签。"
+  },
+  "folder_sortName": {
+    "message": "名称",
+    "description": "排序方式下拉框的选项：按文件名排序。"
+  },
+  "folder_sortSize": {
+    "message": "大小",
+    "description": "排序方式下拉框的选项：按文件体积排序。"
+  },
+  "folder_sortModified": {
+    "message": "修改日期",
+    "description": "排序方式下拉框的选项：按文件最后修改时间排序。"
+  },
+  "folder_foldersFirst": {
+    "message": "文件夹置顶",
+    "description": "「文件夹」面板设置区的复选框标签。勾选后子文件夹始终排在文件前面，无论升降序。"
+  },
+  "folder_showHidden": {
+    "message": "显示隐藏项",
+    "description": "「文件夹」面板设置区的复选框标签。勾选后显示以点开头的隐藏文件与文件夹。"
+  },
+  "folder_sortAsc": {
+    "message": "↑ 升序",
+    "description": "排序方向切换按钮上的文字，表示当前是升序。请保留 ↑ 符号与一个空格。"
+  },
+  "folder_sortDesc": {
+    "message": "↓ 降序",
+    "description": "排序方向切换按钮上的文字，表示当前是降序。请保留 ↓ 符号与一个空格。"
+  },
+  "folder_sortAscHint": {
+    "message": "当前升序，点击改为降序",
+    "description": "排序方向按钮在升序状态下的悬停提示，说明点击后的结果。"
+  },
+  "folder_sortDescHint": {
+    "message": "当前降序，点击改为升序",
+    "description": "排序方向按钮在降序状态下的悬停提示，说明点击后的结果。"
+  },
+  "folder_toggle": {
+    "message": "展开 / 收起",
+    "description": "「文件夹」面板中，每个子文件夹左侧小箭头的悬停提示与无障碍标签。"
+  },
+  "folder_openDirInNewTab": {
+    "message": "在新标签页打开该目录",
+    "description": "「文件夹」面板中，文件夹那一行右侧跳转图标的悬停提示。点击会在新标签页打开该目录。"
+  },
+  "folder_openFileInNewTab": {
+    "message": "在新标签页打开该文件",
+    "description": "「文件夹」面板中，文件那一行右侧跳转图标的悬停提示。点击会在新标签页打开该文件。"
+  },
+  "folder_readFailed": {
+    "message": "读取失败：$1",
+    "description": "「文件夹」面板里读取某个子文件夹内容失败时，就地显示的灰色错误行。$1 是系统给出的错误原因。"
+  },
+  "folder_listFailed": {
+    "message": "无法读取目录：$1",
+    "description": "「文件夹」面板整个根目录都读不出来时显示的灰色错误行。$1 是系统给出的错误原因。"
+  },
+  "folder_count": {
+    "message": "$1 项",
+    "description": "「文件夹」面板顶栏左侧的计数，表示当前这一层有几个文档或子文件夹。$1 是数量。请保持简短，例如英文用 items、日文用 件。"
+  },
+  "folder_noResponse": {
+    "message": "无响应",
+    "description": "错误原因：后台脚本没有回应请求。会作为 folder_readFailed 或 folder_listFailed 里的 $1 出现。"
+  },
+  "folder_unknownError": {
+    "message": "未知错误",
+    "description": "错误原因：出了错但拿不到具体原因。会作为 folder_readFailed 或 folder_listFailed 里的 $1 出现。"
+  },
 
-  "popupAppearance": { "message": "配色" },
-  "popupMode": { "message": "颜色模式" },
-  "popupModeAuto": { "message": "跟随系统" },
-  "popupModeLight": { "message": "始终浅色" },
-  "popupModeDark": { "message": "始终深色" },
-  "popupLightTheme": { "message": "浅色代码配色" },
-  "popupDarkTheme": { "message": "深色代码配色" },
-  "popupLayout": { "message": "排版" },
-  "popupFontSize": { "message": "字号" },
-  "popupSizeSmall": { "message": "小" },
-  "popupSizeMedium": { "message": "中" },
-  "popupSizeLarge": { "message": "大" },
-  "popupContentWidth": { "message": "正文宽度" },
-  "popupWidthNarrow": { "message": "窄" },
-  "popupWidthMedium": { "message": "中" },
-  "popupWidthWide": { "message": "宽" },
-  "popupWidthFull": { "message": "全宽" },
-  "popupShowSidebar": { "message": "显示侧边栏" },
-  "popupFoldThreshold": { "message": "折叠阈值" },
-  "popupExpandLevel": { "message": "默认展开层数" },
-  "popupExpandAll": { "message": "全部展开" },
-  "popupExpand0": { "message": "只显示第一层" },
-  "popupExpand1": { "message": "展开第一层" },
-  "popupExpand2": { "message": "展开前两层" },
-  "popupExpand3": { "message": "展开前三层" },
-  "popupExpand4": { "message": "展开前四层" },
+  "popupAppearance": {
+    "message": "配色",
+    "description": "设置弹窗里第一个分组框的标题，里面放颜色模式与代码配色。"
+  },
+  "popupMode": {
+    "message": "颜色模式",
+    "description": "设置弹窗里下拉框的标签：选择浅色、深色还是跟随系统。"
+  },
+  "popupModeAuto": {
+    "message": "跟随系统",
+    "description": "颜色模式下拉框的选项：随操作系统的浅色/深色设置自动切换。"
+  },
+  "popupModeLight": {
+    "message": "始终浅色",
+    "description": "颜色模式下拉框的选项：无论系统设置，始终使用浅色。"
+  },
+  "popupModeDark": {
+    "message": "始终深色",
+    "description": "颜色模式下拉框的选项：无论系统设置，始终使用深色。"
+  },
+  "popupLightTheme": {
+    "message": "浅色代码配色",
+    "description": "下拉框标签：选择浅色模式下代码块的语法高亮配色方案。"
+  },
+  "popupDarkTheme": {
+    "message": "深色代码配色",
+    "description": "下拉框标签：选择深色模式下代码块的语法高亮配色方案。"
+  },
+  "popupLayout": {
+    "message": "排版",
+    "description": "设置弹窗里第二个分组框的标题，里面放字号、正文宽度、侧边栏与大纲相关设置。"
+  },
+  "popupFontSize": {
+    "message": "字号",
+    "description": "下拉框标签：选择正文字体大小。"
+  },
+  "popupSizeSmall": {
+    "message": "小",
+    "description": "字号下拉框选项：小号字。请用一个词。"
+  },
+  "popupSizeMedium": {
+    "message": "中",
+    "description": "字号下拉框选项：中号字（默认）。请用一个词。"
+  },
+  "popupSizeLarge": {
+    "message": "大",
+    "description": "字号下拉框选项：大号字。请用一个词。"
+  },
+  "popupContentWidth": {
+    "message": "正文宽度",
+    "description": "下拉框标签：选择正文内容区的最大宽度。"
+  },
+  "popupWidthNarrow": {
+    "message": "窄",
+    "description": "正文宽度下拉框选项：窄栏排版，每行字数少、易读。请用一个词。"
+  },
+  "popupWidthMedium": {
+    "message": "中",
+    "description": "正文宽度下拉框选项：中等宽度（默认）。请用一个词。"
+  },
+  "popupWidthWide": {
+    "message": "宽",
+    "description": "正文宽度下拉框选项：较宽的正文区。请用一个词。"
+  },
+  "popupWidthFull": {
+    "message": "全宽",
+    "description": "正文宽度下拉框选项：占满整个窗口宽度。请用短词。"
+  },
+  "popupShowSidebar": {
+    "message": "显示侧边栏",
+    "description": "复选框标签：控制页面左侧那条侧边栏是否显示。"
+  },
+  "popupFoldThreshold": {
+    "message": "折叠阈值",
+    "description": "数字输入框的标签。大纲条目数超过这个值时，才显示折叠箭头与批量按钮；填 0 表示始终显示。"
+  },
+  "popupExpandLevel": {
+    "message": "默认展开层数",
+    "description": "下拉框标签：打开文档时，大纲默认展开到第几层。"
+  },
+  "popupExpandAll": {
+    "message": "全部展开",
+    "description": "默认展开层数下拉框的选项：打开文档时展开所有层级。"
+  },
+  "popupExpand0": {
+    "message": "只显示第一层",
+    "description": "默认展开层数下拉框的选项：只列出最顶层标题，其下全部收起。"
+  },
+  "popupExpand1": {
+    "message": "展开第一层",
+    "description": "默认展开层数下拉框的选项：展开最顶层，可见前两层标题。"
+  },
+  "popupExpand2": {
+    "message": "展开前两层",
+    "description": "默认展开层数下拉框的选项：展开前两层，可见前三层标题。"
+  },
+  "popupExpand3": {
+    "message": "展开前三层",
+    "description": "默认展开层数下拉框的选项：展开前三层，可见前四层标题。"
+  },
+  "popupExpand4": {
+    "message": "展开前四层",
+    "description": "默认展开层数下拉框的选项：展开前四层，可见前五层标题。"
+  },
   "popupFoldHint": {
-    "message": "目录项超过阈值时显示折叠按钮（填 0 表示始终显示）；默认展开层数决定打开文档时展开到第几层。"
+    "message": "目录项超过阈值时显示折叠按钮（填 0 表示始终显示）；默认展开层数决定打开文档时展开到第几层。",
+    "description": "并排的「折叠阈值」与「默认展开层数」两个控件下方的一行小字说明，同时解释这两个控件。较长的句子。"
   },
-  "popupLocale": { "message": "界面语言" },
-  "popupLocaleAuto": { "message": "跟随浏览器" },
-  "popupReset": { "message": "恢复默认设置" },
-  "popupResetConfirm": { "message": "再点一次确认恢复" },
-  "popupResetDone": { "message": "已恢复默认" },
-  "popupChecking": { "message": "正在检测…" },
-  "popupActive": { "message": "已在本地 Markdown 页面上生效" },
-  "popupActiveHint": { "message": "改动设置后，当前页面会立即更新，无需刷新。" },
-  "popupInactive": { "message": "尚未在本地 Markdown 页面生效" },
-  "popupInactiveReason": { "message": "常见原因是缺少文件访问权限。" },
-  "popupStep1": { "message": "在地址栏打开：" },
-  "popupStep2": { "message": "找到「MD Reader」，打开「允许访问文件网址」" },
-  "popupStep3": { "message": "回到 .md 页面按 F5 刷新" },
-  "popupNever": { "message": "从未" },
-  "popupLastActive": { "message": "最近一次生效：" },
-  "popupVersion": { "message": "v$1 · 构建于 $2" }
+  "popupLocale": {
+    "message": "界面语言",
+    "description": "下拉框标签：选择扩展界面的显示语言。"
+  },
+  "popupLocaleAuto": {
+    "message": "跟随浏览器",
+    "description": "界面语言下拉框的选项：自动跟随浏览器的语言设置。"
+  },
+  "popupReset": {
+    "message": "恢复默认设置",
+    "description": "设置弹窗底部的整宽按钮。第一次点击后文字会临时变成「再点一次确认恢复」。"
+  },
+  "popupResetConfirm": {
+    "message": "再点一次确认恢复",
+    "description": "重置按钮在待确认状态下的文字，3 秒后自动变回「恢复默认设置」。按钮宽度有限，请尽量简短。"
+  },
+  "popupResetDone": {
+    "message": "已恢复默认",
+    "description": "重置成功后的短暂反馈文字，1.5 秒后变回「恢复默认设置」。请用短词。"
+  },
+  "popupChecking": {
+    "message": "正在检测…",
+    "description": "设置弹窗打开瞬间，状态区显示的加载文字。检测完成后会被替换。"
+  },
+  "popupActive": {
+    "message": "已在本地 Markdown 页面上生效",
+    "description": "绿色状态条的主文字：说明扩展已经能正常处理本地 md 文件。"
+  },
+  "popupActiveHint": {
+    "message": "改动设置后，当前页面会立即更新，无需刷新。",
+    "description": "绿色状态条下方的一行小字，告诉用户改设置不用刷新页面。"
+  },
+  "popupInactive": {
+    "message": "尚未在本地 Markdown 页面生效",
+    "description": "黄色警告条的主文字：说明扩展还不能处理本地 md 文件。"
+  },
+  "popupInactiveReason": {
+    "message": "常见原因是缺少文件访问权限。",
+    "description": "黄色警告条的副文字，紧跟在主文字后面，说明最可能的原因。下面会列出解决步骤。"
+  },
+  "popupStep1": {
+    "message": "在地址栏打开：",
+    "description": "解决步骤第 1 步的文字，后面会紧跟一个 chrome://extensions 链接。请保留末尾的冒号。"
+  },
+  "popupStep2": {
+    "message": "找到「MD Reader」，打开「允许访问文件网址」",
+    "description": "解决步骤第 2 步：在扩展管理页里为 MD Reader 打开文件访问开关。请沿用本语言习惯的引号样式。"
+  },
+  "popupStep3": {
+    "message": "回到 .md 页面按 F5 刷新",
+    "description": "解决步骤第 3 步：回到 Markdown 页面刷新。.md 与 F5 不要翻译。"
+  },
+  "popupNever": {
+    "message": "从未",
+    "description": "表示扩展从未在本地页面上生效过。出现在弹窗底部的时间行里。请用短词。"
+  },
+  "popupLastActive": {
+    "message": "最近一次生效：",
+    "description": "弹窗底部时间行的前缀，后面紧跟日期时间，或「从未」。请保留末尾的冒号。"
+  },
+  "popupVersion": {
+    "message": "v$1 · 构建于 $2",
+    "description": "弹窗最底部一行，显示版本号与构建时间。$1 是版本号（如 0.1.0），$2 是构建时间（如 2026/10/10 15:17）。v 与间隔号请保留。"
+  }
 }
