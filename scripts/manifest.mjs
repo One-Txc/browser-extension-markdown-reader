@@ -155,7 +155,7 @@ export function buildManifest(target) {
         persistent: false,
       },
       // MV2 的 web_accessible_resources 是纯路径数组，没有 matches 概念
-      web_accessible_resources: [p('fonts/*')],
+      web_accessible_resources: [p('fonts/*'), 'icons/*'],
       browser_specific_settings: {
         gecko: { id: GECKO_ID, strict_min_version: GECKO_MIN_VERSION },
       },
@@ -169,7 +169,12 @@ export function buildManifest(target) {
     minimum_chrome_version: '111',
     host_permissions: MATCHES,
     background: { service_worker: p('background.js') },
-    // 字体要让 http(s) 页面也能取到，否则在线文档里的公式会退化成回退字体
-    web_accessible_resources: [{ resources: [p('fonts/*')], matches: MATCHES }],
+    /*
+     * fonts：在线文档里的公式要取 KaTeX 字体，否则退化成回退字体。
+     * icons：content script 会给渲染后的页面插一个 <link rel="icon">，
+     *        让标签页显示本扩展的图标；读 chrome-extension:// 资源必须在这里声明，
+     *        否则会被拒绝。
+     */
+    web_accessible_resources: [{ resources: [p('fonts/*'), 'icons/*'], matches: MATCHES }],
   };
 }

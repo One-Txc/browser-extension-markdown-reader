@@ -184,6 +184,33 @@ function renderDocument(raw: string, url: string, settings: ReaderSettings): voi
    */
   sourceViewHandle?.destroy();
   sourceViewHandle = setupSourceView(main, raw);
+  applyFavicon();
+}
+
+/**
+ * 把标签页图标换成本扩展的图标。
+ *
+ * 渲染之前，Chrome 给 file:// 页面用的是通用文件图标，在线页面则是站点自己的
+ * favicon；既然这份内容已经被我们渲染成 Markdown 了，标签页上挂本扩展的图标更合适。
+ *
+ * 两个要点：
+ *   - 先清掉页面原有的 icon 链接，否则浏览器可能仍沿用旧的那个；
+ *   - 读取 chrome-extension:// 资源需要 icons/* 出现在清单的
+ *     web_accessible_resources 里，没声明会被拒绝。
+ *
+ * 用 rel~="icon" 而不是精确匹配：它同时覆盖 rel="icon" 与 rel="shortcut icon"。
+ */
+function applyFavicon(): void {
+  const head = document.head;
+  if (!head) return;
+
+  for (const el of head.querySelectorAll('link[rel~="icon"]')) el.remove();
+
+  const link = document.createElement('link');
+  link.rel = 'icon';
+  link.type = 'image/png';
+  link.href = chrome.runtime.getURL('icons/icon48.png');
+  head.append(link);
 }
 
 /**
