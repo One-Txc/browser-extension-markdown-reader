@@ -26,6 +26,7 @@ import {
   saveSettings,
   type ReaderSettings,
 } from './shared/settings';
+import { markPerf, publishPerf } from './shared/perf';
 import {
   DONE_ATTR,
   ROOT_CLASS,
@@ -41,6 +42,7 @@ async function main(): Promise<void> {
   if (!isMarkdownPage()) return;
 
   const html = await ensureDocumentElement();
+  markPerf('dom-ready');
 
   // 幂等：刷新或与其它 Markdown 扩展共存时不重复处理
   if (html.hasAttribute(DONE_ATTR)) return;
@@ -58,9 +60,11 @@ async function main(): Promise<void> {
 
   const prevVisibility = html.style.visibility;
   html.style.visibility = 'hidden';
+  markPerf('hidden');
 
   try {
     const raw = await readSource();
+    markPerf('source-read');
     if (!raw || !raw.trim()) return; // 读不到就原样保留，什么都不做
 
     if (raw.length > MAX_RENDER_LENGTH) {
@@ -71,16 +75,21 @@ async function main(): Promise<void> {
     const main = document.createElement('main');
     main.className = `markdown-body ${ROOT_CLASS}`;
     main.innerHTML = renderMarkdown(raw, location.href);
+    markPerf('rendered');
 
     document.body.replaceChildren(main);
     document.body.classList.add('md-reader-body');
+    markPerf('dom-swapped');
 
     // 先记录容器，目录与主题都依赖它
     mainEl = main;
 
     currentSettings = await loadSettings();
     applyTheme(document, currentSettings);
+    markPerf('themed');
+
     syncToc(currentSettings);
+    markPerf('toc');
 
     // 只在文档真的含公式时才付出 KaTeX 样式的注入成本
     if (main.querySelector('.katex')) injectKatexCss(document);
@@ -99,6 +108,9 @@ async function main(): Promise<void> {
     console.error('[MD Reader] 渲染失败，已保留原始文本视图：', err);
   } finally {
     html.style.visibility = prevVisibility;
+    // 恢复可见即用户看到内容，这一刻就是白屏的结束点
+    markPerf('visible');
+    publishPerf();
   }
 }
 
