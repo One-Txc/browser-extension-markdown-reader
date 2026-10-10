@@ -2,7 +2,7 @@
   "name": "md-reader",
   "version": "0.1.0",
   "private": true,
-  "description": "Chrome 扩展：在浏览器中直接阅读本地 Markdown 文件",
+  "description": "浏览器扩展：直接阅读本地与在线 Markdown 文档",
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
@@ -13,7 +13,10 @@
     "test": "node scripts/test-render.mjs && node scripts/test-toc.mjs && node scripts/test-source-view.mjs",
     "preview": "node scripts/make-theme-preview.mjs",
     "testdata": "python scripts/make-testdata.py",
-    "check": "npm run typecheck && npm test && npm run build"
+    "check": "npm run typecheck && npm test && npm run build",
+    "locales": "python scripts/check-locales.py",
+    "icons": "python scripts/make-icons.py",
+    "package": "npm run build:all && python scripts/package.py"
   },
   "dependencies": {
     "dompurify": "^3.4.16",

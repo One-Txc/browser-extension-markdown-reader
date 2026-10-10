@@ -25,3 +25,9 @@ testMd/10-超大文件测试.md
 
 # 由 npm run preview 生成的主题预览页
 preview/
+
+# 由 npm run package 生成的应用商店上架包
+dist/
+
+# 文件管理器复制出来的副本
+*副本*
