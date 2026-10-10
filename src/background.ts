@@ -1,12 +1,16 @@
 /**
  * MD Reader —— Service Worker
  *
- * 两个职责：
+ * 三个职责：
  *   1. 记录「文件访问权限已被证明」（content script 成功注入即证明）
  *      —— 因为 chrome.extension.isAllowedFileSchemeAccess 在 content script 中不可用（M0 实测）
  *   2. 兜底读取本地文件，并做编码嗅探
  *      —— content script 受页面 CORS 约束读不了 file://，但 SW 有 host_permissions 可以
+ *   3. 列举目录内容（「文件夹」面板的数据来源）
+ *      —— 同样是 CORS 的原因，必须由 SW 发起
  */
+
+import { filterEntries, parseDirectoryIndex, type DirEntry } from './shared/directory';
 
 /** 记录最近一次收到注入上报的时间，供 popup 判断权限状态 */
 chrome.runtime.onMessage.addListener(
@@ -32,31 +36,36 @@ chrome.runtime.onMessage.addListener(
       return true;
     }
 
-    // 【临时·探针】测试 SW 能否 fetch 目录 URL 并拿到 Chrome 生成的索引 HTML
-    if (msg.type === 'probe-fetch-dir') {
-      probeFetchDir(msg.url ?? '').then(sendResponse);
+    if (msg.type === 'list-directory') {
+      listDirectory(msg.url ?? '').then(sendResponse);
       return true;
     }
   }
 );
 
 /**
- * 【临时·探针】背景脚本尝试请求目录 URL。
+ * 列举目录内容。
  *
- * 起因：第三方插件通过「让用户直接打开目录 URL、再解析 Chrome 生成的索引页面」
- * 实现文件树，说明 Chrome 确实会为目录 URL 产出 HTML。
- * 如果背景脚本也能 fetch 到同一份内容，就完全不需要用户授权目录了。
+ * ★ 原理：Chrome 会为 file:// 的目录 URL 生成一份索引 HTML，
+ * 直接 fetch 它、解析其中的 addRow(...) 调用即可，不需要任何用户授权。
+ * 细节与踩过的坑见 shared/directory.ts 的文件头。
  */
-async function probeFetchDir(
-  url: string
-): Promise<{ ok: boolean; status?: number; len?: number; text?: string; error?: string }> {
+async function listDirectory(
+  dirUrl: string
+): Promise<{ ok: boolean; entries?: DirEntry[]; error?: string }> {
+  if (!dirUrl.startsWith('file://')) {
+    return { ok: false, error: '仅支持 file:// 目录' };
+  }
+
   try {
-    const res = await fetch(url, { cache: 'no-store' });
-    const text = await res.text();
-    // ★ 必须返回完整文本。
-    // 之前这里截断成 6000 字符，而目录数据在 HTML 的后半段，
-    // 导致解析出来永远是 0 项，白白得出了「fetch 拿不到数据」的错误结论。
-    return { ok: true, status: res.status, len: text.length, text };
+    const res = await fetch(dirUrl, { cache: 'no-store' });
+    const html = await res.text();
+
+    // ★ 不能用 res.ok 判断：file:// 的 Response 是 ok:false / status:0，但 body 完整
+    if (!html) return { ok: false, error: '目录返回为空' };
+
+    const entries = filterEntries(parseDirectoryIndex(html));
+    return { ok: true, entries };
   } catch (err) {
     return { ok: false, error: String(err) };
   }
