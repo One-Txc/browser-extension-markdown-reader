@@ -24,8 +24,10 @@
       font: inherit; font-size: 12px;
       border: 1px solid #d0d7de; border-radius: 6px; background: #fff;
     }
-    input[type="number"] {
-      display: block; width: 90px; margin-bottom: 0;
+    /* 并排的控件不留底部间距，统一由下方 .hint 控制 */
+    .row select,
+    .row input[type="number"] {
+      display: block; margin-bottom: 0;
     }
     .row { display: flex; gap: 10px; }
     .row > div { flex: 1; min-width: 0; }
@@ -106,24 +108,25 @@
       显示侧边栏
     </label>
 
-    <label class="field" for="foldThreshold">折叠功能阈值</label>
-    <input type="number" id="foldThreshold" min="0" max="9999" step="5">
-    <div class="hint">
-      目录项数量<strong>超过</strong>该值时才显示折叠箭头与批量按钮。短文档一屏就能看完，
-      多一排按钮反而是噪音。填 0 表示始终显示。
+    <div class="row">
+      <div>
+        <label class="field" for="foldThreshold">折叠阈值</label>
+        <input type="number" id="foldThreshold" min="0" max="9999" step="5">
+      </div>
+      <div>
+        <label class="field" for="defaultExpandLevel">默认展开层数</label>
+        <select id="defaultExpandLevel">
+          <option value="-1">全部展开</option>
+          <option value="0">只显示第一层</option>
+          <option value="1">展开第一层</option>
+          <option value="2">展开前两层</option>
+          <option value="3">展开前三层</option>
+          <option value="4">展开前四层</option>
+        </select>
+      </div>
     </div>
-
-    <label class="field" for="defaultExpandLevel">默认展开层数</label>
-    <select id="defaultExpandLevel">
-      <option value="-1">全部展开</option>
-      <option value="0">只显示第一层</option>
-      <option value="1">展开第一层（可见前两层）</option>
-      <option value="2">展开前两层（可见前三层）</option>
-      <option value="3">展开前三层（可见前四层）</option>
-      <option value="4">展开前四层</option>
-    </select>
     <div class="hint">
-      仅在折叠功能启用时生效，且只决定<strong>初始</strong>状态——之后的手动折叠不会被覆盖。
+      目录项超过阈值时显示折叠按钮（填 0 表示始终显示）；默认展开层数决定打开文档时展开到第几层。
     </div>
   </fieldset>
 
