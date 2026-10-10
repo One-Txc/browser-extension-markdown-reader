@@ -10,6 +10,9 @@ build/
 build-firefox/
 manifest.json
 
+# 用于参考的第三方插件打包产物（体积大，不入库）
+test/
+
 # 由 npm run testdata 生成的 3.4MB 超大文件测试文档（其余测试数据体积很小，保留在仓库里）
 testMd/10-超大文件测试.md
 
