@@ -297,7 +297,40 @@ function renderPanel(): void {
     })
   );
 
-  /* ---- 5. 清空 ---- */
+  /* ---- 5. 尝试直接 fetch 目录 URL（不需要任何授权）---- */
+  buttons.append(
+    btn('⑤ fetch 目录 URL', async () => {
+      // 当前页面的目录：去掉 URL 最后一段文件名
+      const dirUrl = location.href.replace(/[^/]*$/, '');
+      log(`请求目录：${dirUrl}`);
+
+      const res = (await chrome.runtime.sendMessage({
+        type: 'probe-fetch-dir',
+        url: dirUrl,
+      })) as { ok: boolean; status?: number; len?: number; text?: string; error?: string } | undefined;
+
+      if (!res) {
+        log('✗ 没有收到响应（后台可能没跑起来）');
+        return;
+      }
+      if (!res.ok) {
+        log(`✗ 请求失败：${res.error}`);
+        return;
+      }
+      log(`✓ HTTP ${res.status}，拿到 ${res.len} 字符`);
+      if (!res.text?.trim()) {
+        log('⚠ 返回内容为空 —— 这条路走不通');
+        return;
+      }
+      // 看看是不是目录索引：找有没有指向同目录其它文件的链接
+      const html = res.text;
+      const looksLikeIndex = /<a\s[^>]*href=/i.test(html);
+      log(`  含 <a href=> 链接：${looksLikeIndex ? '是' : '否'}`);
+      log(`  前 700 字符：\n${html.slice(0, 700)}`);
+    })
+  );
+
+  /* ---- 6. 清空 ---- */
   buttons.append(
     btn('清空探针数据', async () => {
       await idbClear();

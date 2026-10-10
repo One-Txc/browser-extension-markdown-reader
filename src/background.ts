@@ -31,8 +31,33 @@ chrome.runtime.onMessage.addListener(
       injectMermaid(sender.tab?.id).then(sendResponse);
       return true;
     }
+
+    // 【临时·探针】测试 SW 能否 fetch 目录 URL 并拿到 Chrome 生成的索引 HTML
+    if (msg.type === 'probe-fetch-dir') {
+      probeFetchDir(msg.url ?? '').then(sendResponse);
+      return true;
+    }
   }
 );
+
+/**
+ * 【临时·探针】背景脚本尝试请求目录 URL。
+ *
+ * 起因：第三方插件通过「让用户直接打开目录 URL、再解析 Chrome 生成的索引页面」
+ * 实现文件树，说明 Chrome 确实会为目录 URL 产出 HTML。
+ * 如果背景脚本也能 fetch 到同一份内容，就完全不需要用户授权目录了。
+ */
+async function probeFetchDir(
+  url: string
+): Promise<{ ok: boolean; status?: number; len?: number; text?: string; error?: string }> {
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    const text = await res.text();
+    return { ok: true, status: res.status, len: text.length, text: text.slice(0, 6000) };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
 
 /**
  * 按需注入 Mermaid（约 5MB，见 mermaid-entry.ts 的说明）。
