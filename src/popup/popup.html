@@ -38,6 +38,24 @@
       min-width: 0;
       margin-bottom: 0;
     }
+
+    /* ---------- 可折叠的「高级设置」分组标题 ---------- */
+
+    .adv-toggle {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 0; border: 0; background: transparent;
+      font: inherit; font-size: 12px; font-weight: 600;
+      color: #424a53; cursor: pointer;
+    }
+    .adv-toggle:hover { color: #0969da; }
+    .adv-caret {
+      display: block; width: 9px; height: 9px;
+      transition: transform 0.15s ease;
+    }
+    .adv-toggle[aria-expanded="true"] .adv-caret { transform: rotate(90deg); }
+
+    /* 收起时不占位，也不参与 Tab 焦点顺序 */
+    .adv-body.is-collapsed { display: none; }
     .row { display: flex; gap: 10px; }
     .row > div { flex: 1; min-width: 0; }
     /*
@@ -77,7 +95,7 @@
   <h1>MD Reader</h1>
 
   <fieldset>
-    <legend data-i18n="popupAppearance">配色</legend>
+    <legend data-i18n="popupBasic">基本设置</legend>
 
     <label class="field" for="mode" data-i18n="popupMode">颜色模式</label>
     <select id="mode">
@@ -91,56 +109,6 @@
 
     <label class="field" for="darkTheme" data-i18n="popupDarkTheme">深色代码配色</label>
     <select id="darkTheme"></select>
-  </fieldset>
-
-  <fieldset>
-    <legend data-i18n="popupLayout">排版</legend>
-
-    <div class="row">
-      <div>
-        <label class="field" for="fontSize" data-i18n="popupFontSize">字号</label>
-        <select id="fontSize">
-          <option value="small" data-i18n="popupSizeSmall">小</option>
-          <option value="medium" data-i18n="popupSizeMedium">中</option>
-          <option value="large" data-i18n="popupSizeLarge">大</option>
-        </select>
-      </div>
-      <div>
-        <label class="field" for="contentWidth" data-i18n="popupContentWidth">正文宽度</label>
-        <select id="contentWidth">
-          <option value="narrow" data-i18n="popupWidthNarrow">窄</option>
-          <option value="medium" data-i18n="popupWidthMedium">中</option>
-          <option value="wide" data-i18n="popupWidthWide">宽</option>
-          <option value="full" data-i18n="popupWidthFull">全宽</option>
-        </select>
-      </div>
-    </div>
-
-    <label class="check">
-      <input type="checkbox" id="showToc">
-      <span data-i18n="popupShowSidebar">显示侧边栏</span>
-    </label>
-
-    <div class="row">
-      <div>
-        <label class="field" for="foldThreshold" data-i18n="popupFoldThreshold">折叠阈值</label>
-        <input type="number" id="foldThreshold" min="0" max="9999" step="5">
-      </div>
-      <div>
-        <label class="field" for="defaultExpandLevel" data-i18n="popupExpandLevel">默认展开层数</label>
-        <select id="defaultExpandLevel">
-          <option value="-1" data-i18n="popupExpandAll">全部展开</option>
-          <option value="0" data-i18n="popupExpand0">只显示第一层</option>
-          <option value="1" data-i18n="popupExpand1">展开第一层</option>
-          <option value="2" data-i18n="popupExpand2">展开前两层</option>
-          <option value="3" data-i18n="popupExpand3">展开前三层</option>
-          <option value="4" data-i18n="popupExpand4">展开前四层</option>
-        </select>
-      </div>
-    </div>
-    <div class="hint" data-i18n="popupFoldHint">
-      目录项超过阈值时显示折叠按钮（填 0 表示始终显示）；默认展开层数决定打开文档时展开到第几层。
-    </div>
 
     <label class="field" for="locale" data-i18n="popupLocale">界面语言</label>
     <select id="locale">
@@ -151,6 +119,68 @@
       <option value="ja">日本語</option>
       <option value="ko">한국어</option>
     </select>
+
+    <label class="check">
+      <input type="checkbox" id="showToc">
+      <span data-i18n="popupShowSidebar">显示侧边栏</span>
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <!--
+      legend 里可以放按钮（button 属于 phrasing content）。
+      这样不必为了一个「可折叠的标题」放弃 fieldset 的默认样式。
+    -->
+    <legend>
+      <button type="button" id="advancedToggle" class="adv-toggle" aria-expanded="false"
+              aria-controls="advancedBody">
+        <svg class="adv-caret" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2 7 5 3.5 8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span data-i18n="popupAdvanced">高级设置</span>
+      </button>
+    </legend>
+
+    <div id="advancedBody" class="adv-body">
+      <div class="row">
+        <div>
+          <label class="field" for="fontSize" data-i18n="popupFontSize">字号</label>
+          <select id="fontSize">
+            <option value="small" data-i18n="popupSizeSmall">小</option>
+            <option value="medium" data-i18n="popupSizeMedium">中</option>
+            <option value="large" data-i18n="popupSizeLarge">大</option>
+          </select>
+        </div>
+        <div>
+          <label class="field" for="contentWidth" data-i18n="popupContentWidth">正文宽度</label>
+          <select id="contentWidth">
+            <option value="narrow" data-i18n="popupWidthNarrow">窄</option>
+            <option value="medium" data-i18n="popupWidthMedium">中</option>
+            <option value="wide" data-i18n="popupWidthWide">宽</option>
+            <option value="full" data-i18n="popupWidthFull">全宽</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label class="field" for="foldThreshold" data-i18n="popupFoldThreshold">折叠阈值</label>
+          <input type="number" id="foldThreshold" min="0" max="9999" step="5">
+        </div>
+        <div>
+          <label class="field" for="defaultExpandLevel" data-i18n="popupExpandLevel">默认展开层数</label>
+          <select id="defaultExpandLevel">
+            <option value="-1" data-i18n="popupExpandAll">全部展开</option>
+            <option value="0" data-i18n="popupExpand0">只显示第一层</option>
+            <option value="1" data-i18n="popupExpand1">展开第一层</option>
+            <option value="2" data-i18n="popupExpand2">展开前两层</option>
+            <option value="3" data-i18n="popupExpand3">展开前三层</option>
+            <option value="4" data-i18n="popupExpand4">展开前四层</option>
+          </select>
+        </div>
+      </div>
+      <div class="hint" data-i18n="popupFoldHint">
+        目录项超过阈值时显示折叠按钮（填 0 表示始终显示）；默认展开层数决定打开文档时展开到第几层。
+      </div>
+    </div>
   </fieldset>
 
   <button type="button" id="reset" class="reset-btn" data-i18n="popupReset">恢复默认设置</button>

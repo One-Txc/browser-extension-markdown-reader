@@ -44,6 +44,8 @@ const foldThresholdEl = pick<HTMLInputElement>('foldThreshold');
 const defaultExpandLevelEl = pick<HTMLSelectElement>('defaultExpandLevel');
 const resetEl = pick<HTMLButtonElement>('reset');
 const localeEl = pick<HTMLSelectElement>('locale');
+const advancedToggle = pick<HTMLButtonElement>('advancedToggle');
+const advancedBody = pick<HTMLElement>('advancedBody');
 const statusEl = pick<HTMLElement>('status');
 const detailEl = pick<HTMLElement>('detail');
 const metaEl = pick<HTMLElement>('meta');
@@ -161,6 +163,8 @@ async function handleResetClick(): Promise<void> {
   // 而重置要的是整体覆盖 —— 用合并写会把用户没改过的项也带过来，反而留下旧值。
   await saveSettings(DEFAULT_SETTINGS);
   applySettingsToForm(DEFAULT_SETTINGS);
+  // 折叠状态不在表单里，要单独复位（默认是收起）
+  applyAdvancedState(DEFAULT_SETTINGS.advancedOpen);
   await notifyActiveTab();
 
   resetEl.textContent = t('popupResetDone');
@@ -199,6 +203,17 @@ async function renderPermission(): Promise<void> {
   metaEl.textContent = t('popupLastActive') + last;
 }
 
+/**
+ * 应用「高级设置」分组的展开状态。
+ *
+ * 收起时用 display: none 而非仅隐藏视觉 —— 这样内部的控件也不会进入
+ * Tab 焦点顺序，键盘用户不会 Tab 到看不见的下拉框上。
+ */
+function applyAdvancedState(open: boolean): void {
+  advancedBody.classList.toggle('is-collapsed', !open);
+  advancedToggle.setAttribute('aria-expanded', String(open));
+}
+
 /* ------------------------------------------------------------------ 启动 */
 
 /**
@@ -222,6 +237,7 @@ async function render(settings: ReaderSettings): Promise<void> {
   fillOptions(darkEl, 'dark');
 
   applySettingsToForm(settings);
+  applyAdvancedState(settings.advancedOpen);
   await renderPermission();
 }
 
@@ -247,6 +263,12 @@ async function init(): Promise<void> {
     void save({ defaultExpandLevel: clampExpandLevel(Number(defaultExpandLevelEl.value)) })
   );
   resetEl.addEventListener('click', () => void handleResetClick());
+  advancedToggle.addEventListener('click', () => {
+    // 依据 DOM 当前状态翻转，避免与实际显示不一致
+    const open = advancedToggle.getAttribute('aria-expanded') !== 'true';
+    applyAdvancedState(open);
+    void save({ advancedOpen: open });
+  });
   localeEl.addEventListener('change', async () => {
     await save({ locale: localeEl.value as Locale });
     // 语言变了，popup 自己这一屏的文案也要立刻换过来

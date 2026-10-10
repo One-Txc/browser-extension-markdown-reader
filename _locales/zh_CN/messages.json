@@ -179,9 +179,9 @@
     "description": "错误原因：出了错但拿不到具体原因。会作为 folder_readFailed 或 folder_listFailed 里的 $1 出现。"
   },
 
-  "popupAppearance": {
-    "message": "配色",
-    "description": "设置弹窗里第一个分组框的标题，里面放颜色模式与代码配色。"
+  "popupBasic": {
+    "message": "基本设置",
+    "description": "设置弹窗里第一个分组框的标题。放普通用户会关心的项：颜色模式、代码配色、界面语言、是否显示侧边栏。"
   },
   "popupMode": {
     "message": "颜色模式",
@@ -207,9 +207,9 @@
     "message": "深色代码配色",
     "description": "下拉框标签：选择深色模式下代码块的语法高亮配色方案。"
   },
-  "popupLayout": {
-    "message": "排版",
-    "description": "设置弹窗里第二个分组框的标题，里面放字号、正文宽度、侧边栏与大纲相关设置。"
+  "popupAdvanced": {
+    "message": "高级设置",
+    "description": "设置弹窗里第二个分组框的标题，默认处于收起状态，点击标题才展开。放的是调过一次基本不再改的项：字号、正文宽度、大纲折叠阈值与默认展开层数。"
   },
   "popupFontSize": {
     "message": "字号",

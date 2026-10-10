@@ -59,6 +59,9 @@ export interface ReaderSettings {
 
   /** 界面语言；auto 表示跟随浏览器 */
   locale: Locale;
+
+  /** 设置弹窗里「高级设置」分组是否展开（默认收起，大部分人不改它） */
+  advancedOpen: boolean;
 }
 
 /** 目录宽度的取值范围 */
@@ -118,6 +121,8 @@ export const DEFAULT_SETTINGS: ReaderSettings = {
   folderSettingsOpen: true,
 
   locale: 'auto',
+
+  advancedOpen: false,
 };
 
 /** 实际像素值，供 buildThemeCss 注入 CSS 变量 */
@@ -173,6 +178,8 @@ export async function loadSettings(): Promise<ReaderSettings> {
       locale: LOCALES.includes(s.locale as Locale)
         ? (s.locale as Locale)
         : DEFAULT_SETTINGS.locale,
+
+      advancedOpen: s.advancedOpen ?? DEFAULT_SETTINGS.advancedOpen,
     };
   } catch {
     return DEFAULT_SETTINGS;

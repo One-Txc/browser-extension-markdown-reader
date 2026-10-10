@@ -259,8 +259,14 @@ const tocHandlers: TocHandlers = {
     if (commit) void persistSettings({ tocWidth: clampTocWidth(width) });
   },
   setVisible: (visible) => {
+    /*
+     * ★ 只切换当前页面的显示状态，**不写入设置**。
+     *
+     * 左上角那个按钮是「临时让开视线」用的开关；持久化的入口在设置弹窗里。
+     * 早先这里会落盘，结果是用户随手点一下隐藏，下次打开所有文档都不见了侧边栏，
+     * 而他又不知道是哪里改的 —— 临时操作不该产生永久副作用。
+     */
     document.body.classList.toggle('md-reader-has-toc', visible);
-    void persistSettings({ showToc: visible });
   },
   /*
    * 「文件夹」面板。懒创建 —— 只有真正渲染侧边栏时才会调到这里，
