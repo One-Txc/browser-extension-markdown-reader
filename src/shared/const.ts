@@ -82,3 +82,19 @@ export async function ensureDocumentElement(timeout = 3000): Promise<HTMLElement
   }
   return document.documentElement;
 }
+
+/**
+ * 等待 <body> 可用。
+ *
+ * 与 documentElement 不同：document_start 阶段 documentElement 可能已经存在，
+ * 而 body 还没有。任何往 body 上挂元素的操作（浮动按钮、提示气泡）都必须先等它，
+ * 否则会抛 "Cannot read properties of null (reading 'append')"。
+ */
+export async function ensureBody(timeout = 3000): Promise<HTMLElement> {
+  const deadline = Date.now() + timeout;
+  while (!document.body) {
+    if (Date.now() > deadline) throw new Error('body 超时未就绪');
+    await sleep(10);
+  }
+  return document.body;
+}

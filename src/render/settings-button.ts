@@ -13,6 +13,7 @@
  */
 
 import { t } from '../shared/i18n';
+import { ensureBody } from '../shared/const';
 
 /**
  * 齿轮。
@@ -24,7 +25,16 @@ const ICON_SETTINGS = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor
 const TOAST_CLASS = 'md-reader-toast';
 const TOAST_MS = 4200;
 
-export function mountSettingsButton(): void {
+/**
+ * 挂载设置按钮。
+ *
+ * ★ 必须先等 <body>：本函数在 main 的早期被调用，那时 content script 刚在
+ * document_start 跑起来，documentElement 可能已有、body 还没有 ——
+ * 直接 append 会抛 "Cannot read properties of null"。
+ */
+export async function mountSettingsButton(): Promise<void> {
+  const body = await ensureBody();
+
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'md-reader-btn md-reader-btn-settings';
@@ -34,7 +44,7 @@ export function mountSettingsButton(): void {
 
   button.addEventListener('click', () => void openSettings(button));
 
-  document.body.append(button);
+  body.append(button);
 }
 
 /** 请求 background 打开 popup；打不开就给出可操作的提示 */

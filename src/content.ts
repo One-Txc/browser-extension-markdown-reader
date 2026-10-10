@@ -56,8 +56,11 @@ async function main(): Promise<void> {
   /*
    * 右上角的设置按钮。它不依赖文档内容，所以尽早挂上 ——
    * 万一渲染失败（页面停在纯文本），用户至少还能从这里改设置。
+   *
+   * 不 await：它内部会等 <body> 出现，而此刻 body 可能还不存在，
+   * 等在这里会把首屏渲染也一起拖住。
    */
-  mountSettingsButton();
+  void mountSettingsButton();
 
   // content script 能跑起来 = 文件访问权限已开。上报给 SW 供 popup 显示状态。
   // M0 证实 chrome.extension.isAllowedFileSchemeAccess 在 content script 中不可用。
