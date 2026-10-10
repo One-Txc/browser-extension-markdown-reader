@@ -105,9 +105,15 @@ check('有子标题的节点生成折叠按钮', handle.nav.querySelectorAll('bu
 check('无子标题的节点用占位符对齐', handle.nav.querySelectorAll('.toc-caret-empty').length === 2);
 
 const bulkButtons = [...handle.nav.querySelectorAll('.toc-bulk-btn')];
+/*
+ * 按钮文案是「显示前 N 层」而不是 H1/H2 —— H 级别要用户自己换算，
+ * 层数说法直接对应他看到的结果。层数取相对序号，所以这里断言的是
+ * 「第一层 / 前两层」，而不是标题的绝对级别。
+ * jsdom 里没有 chrome.i18n，t() 会逐级回退到 zh_CN 基准文案。
+ */
 check(
   '批量按钮取文档中实际出现的前三个层级（H3 无子标题故只有两个）',
-  bulkButtons.map((b) => b.textContent).join(',') === 'H1,H2'
+  bulkButtons.map((b) => b.textContent).join(',') === '显示第一层,显示前两层'
 );
 
 const h1Li = handle.nav.querySelector('.toc-level-h1');

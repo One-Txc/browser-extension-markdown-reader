@@ -267,13 +267,24 @@ function createBulkBar(nodes: TocNode[]): { bar: HTMLElement | null; refresh: ()
     for (const level of levels) refresh(level);
   };
 
-  for (const level of levels) {
+  /*
+   * 按钮文案按「显示前 N 层」表述，而不是 H1/H2/H3。
+   * H 级别要求用户自己在脑子里换算一次「H2 展开后能看到几层」，
+   * 层数说法则直接对应他看到的结果。
+   *
+   * ★ 用相对序号（index+1）而不是标题的绝对级别：
+   * 文档若从 H2 起头，第一个按钮控制的是最外那层，
+   * 按绝对级别写成 H2 就与「第一层」对不上了。
+   */
+  const LABEL_KEYS = ['tocBulkLevel1', 'tocBulkLevel2', 'tocBulkLevel3'];
+
+  for (const [index, level] of levels.entries()) {
     if (targets(level).length === 0) continue;
 
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'toc-bulk-btn';
-    button.textContent = `H${level}`;
+    button.textContent = t(LABEL_KEYS[index] ?? 'tocBulkLevel3');
     button.addEventListener('click', () => {
       const list = targets(level);
       const allExpanded = list.every((n) => n.expanded);
