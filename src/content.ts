@@ -265,6 +265,7 @@ const tocHandlers: TocHandlers = {
         sortAsc: currentSettings.folderSortAsc,
         foldersFirst: currentSettings.folderFoldersFirst,
         showHidden: currentSettings.folderShowHidden,
+        settingsOpen: currentSettings.folderSettingsOpen,
       }),
       /*
        * 面板偏好的键名与设置里的键名不同（前者面向面板，后者面向存储），
@@ -276,6 +277,7 @@ const tocHandlers: TocHandlers = {
         if (patch.sortAsc !== undefined) next.folderSortAsc = patch.sortAsc;
         if (patch.foldersFirst !== undefined) next.folderFoldersFirst = patch.foldersFirst;
         if (patch.showHidden !== undefined) next.folderShowHidden = patch.showHidden;
+        if (patch.settingsOpen !== undefined) next.folderSettingsOpen = patch.settingsOpen;
 
         currentSettings = { ...currentSettings, ...next };
         void persistSettings(next);

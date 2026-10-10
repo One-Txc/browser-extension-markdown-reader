@@ -52,6 +52,8 @@ export interface ReaderSettings {
   folderFoldersFirst: boolean;
   /** 是否显示以 . 开头的隐藏项 */
   folderShowHidden: boolean;
+  /** 设置面板是否展开（默认展开，收起后刷新仍保留收起状态） */
+  folderSettingsOpen: boolean;
 }
 
 /** 目录宽度的取值范围 */
@@ -108,6 +110,7 @@ export const DEFAULT_SETTINGS: ReaderSettings = {
   folderSortAsc: true,
   folderFoldersFirst: true,
   folderShowHidden: true,
+  folderSettingsOpen: true,
 };
 
 /** 实际像素值，供 buildThemeCss 注入 CSS 变量 */
@@ -157,6 +160,7 @@ export async function loadSettings(): Promise<ReaderSettings> {
       folderSortAsc: s.folderSortAsc ?? DEFAULT_SETTINGS.folderSortAsc,
       folderFoldersFirst: s.folderFoldersFirst ?? DEFAULT_SETTINGS.folderFoldersFirst,
       folderShowHidden: s.folderShowHidden ?? DEFAULT_SETTINGS.folderShowHidden,
+      folderSettingsOpen: s.folderSettingsOpen ?? DEFAULT_SETTINGS.folderSettingsOpen,
     };
   } catch {
     return DEFAULT_SETTINGS;
