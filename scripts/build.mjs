@@ -1,17 +1,27 @@
 /**
  * 构建脚本：esbuild 打包 content script 与 service worker。
  *
- * 为什么不用 Vite：
- * content script 必须是自包含的 IIFE（不能有 ESM import，也不能依赖 web_accessible_resources），
- * esbuild 的 `format: 'iife'` + `loader: { '.css': 'text' }` 正好覆盖这个需求，且零配置负担。
+ * 为什么不用框架（Vite / WXT / Plasmo）：
+ * content script 必须是自包含的 IIFE（不能有 ESM import，也不能依赖
+ * web_accessible_resources），esbuild 的 `format: 'iife'` + `loader: {'.css':'text'}`
+ * 正好覆盖这个需求，且零配置负担。
  *
- * 关键点：CSS 以 `text` loader 打包成字符串，运行时注入 <style>。
- * 这样不需要 web_accessible_resources，也不需要 <link> 指向 chrome-extension:// 资源。
+ * 这个项目真正费劲的地方在于几处定制构建（ASCII 兜底、字体复制、CSS 作为字符串、
+ * Mermaid 独立产物），框架并不会替你解决这些 —— 引入框架后仍然要自己写插件，
+ * 反而多一层需要绕开的抽象。跨浏览器那点清单差异用 manifest.mjs 表达就够了。
+ *
+ * 用法：
+ *   node scripts/build.mjs                    # Chrome / Edge（MV3）
+ *   node scripts/build.mjs --target=firefox   # Firefox（MV2）
+ *   node scripts/build.mjs --watch            # 监听重建
  */
 import * as esbuild from 'esbuild';
 import { rm, mkdir, cp, readFile, writeFile } from 'node:fs/promises';
+import { buildManifest, LAYOUT } from './manifest.mjs';
 
 const watch = process.argv.includes('--watch');
+const target = process.argv.includes('--target=firefox') ? 'firefox' : 'chrome';
+const { outDir, manifestPath, extRoot } = LAYOUT[target];
 
 /**
  * 兜底把产物转成纯 ASCII。
@@ -91,20 +101,29 @@ const base = {
 };
 
 const entries = [
-  { in: 'src/content.ts', out: 'build/content.js' },
-  { in: 'src/background.ts', out: 'build/background.js' },
-  { in: 'src/popup/popup.ts', out: 'build/popup.js' },
+  { in: 'src/content.ts', out: `${outDir}/content.js` },
+  { in: 'src/background.ts', out: `${outDir}/background.js` },
+  { in: 'src/popup/popup.ts', out: `${outDir}/popup.js` },
   // Mermaid 单独打包：只在页面真的含 ```mermaid 时按需注入，不拖累常规页面
-  { in: 'src/render/mermaid-entry.ts', out: 'build/mermaid.js' },
+  { in: 'src/render/mermaid-entry.ts', out: `${outDir}/mermaid.js` },
 ];
 
-await rm('build', { recursive: true, force: true });
-await mkdir('build', { recursive: true });
+// 清理范围要覆盖整个扩展根：Firefox 的产物在 build-firefox/build 下，
+// 但扩展根可能残留上一次构建（路径结构不同）留下的旧文件。
+// Chrome 的扩展根就是项目根，绝不能删，所以只清 build/。
+await rm(extRoot === '.' ? outDir : extRoot, { recursive: true, force: true });
+await mkdir(outDir, { recursive: true });
+
+// 清单也由脚本生成：两个平台的字段差异集中在 manifest.mjs，避免两份静态 JSON 漂移
+await writeFile(manifestPath, JSON.stringify(buildManifest(target), null, 2) + '\n', 'utf8');
+
+// popup 的 HTML 一并产出到产物目录，这样清单里可以统一写相对路径
+await cp('src/popup/popup.html', `${outDir}/popup.html`);
 
 // KaTeX 字体：只复制 woff2（20 个 / 约 260KB），浏览器优先使用它。
-// 这些文件要由 file:// 页面加载，因此必须在 manifest 的
-// web_accessible_resources 里声明，且路径以 chrome-extension:// 绝对地址引用。
-await cp('node_modules/katex/dist/fonts', 'build/fonts', {
+// 这些文件要由 file:// 页面加载，因此必须在清单的 web_accessible_resources
+// 里声明，且路径以 chrome-extension:// 绝对地址引用。
+await cp('node_modules/katex/dist/fonts', `${outDir}/fonts`, {
   recursive: true,
   filter: (src) => !src.endsWith('.ttf') && !src.endsWith('.woff'),
 });
@@ -119,9 +138,9 @@ const entryOptions = (e) => ({
 if (watch) {
   const contexts = await Promise.all(entries.map((e) => esbuild.context(entryOptions(e))));
   await Promise.all(contexts.map((c) => c.watch()));
-  console.log('[build] watching for changes…');
+  console.log(`[build] watching for changes… (target=${target})`);
 } else {
   const started = Date.now();
   await Promise.all(entries.map((e) => esbuild.build(entryOptions(e))));
-  console.log(`[build] done in ${Date.now() - started}ms`);
+  console.log(`[build] done in ${Date.now() - started}ms (target=${target}, out=${outDir})`);
 }

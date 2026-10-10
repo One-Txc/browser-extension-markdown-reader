@@ -1,6 +1,6 @@
 # MD Reader
 
-在 Chrome 里直接阅读本地 Markdown 文件。打开 `file:///.../foo.md`，看到的是渲染后的文档，而不是一屏纯文本。
+在 Chrome / Edge / Firefox 里直接阅读本地 Markdown 文件。打开 `file:///.../foo.md`，看到的是渲染后的文档，而不是一屏纯文本。
 
 无需本地服务、无需 Node 后端，全部在浏览器内完成。
 
@@ -10,16 +10,30 @@
 
 ```bash
 npm install
-npm run build
+npm run build          # Chrome / Edge（MV3）
+npm run build:firefox  # Firefox（MV2）
 ```
 
-然后：
+### Chrome / Edge
+
+构建后扩展根就是本目录（`markdown_reader`）：
 
 1. 地址栏打开 `chrome://extensions`
 2. 右上角开启 **开发者模式**
 3. 点 **加载已解压的扩展程序**，选择本目录（`markdown_reader`）
 4. **关键一步**：找到「MD Reader」→ 点「详情」→ 打开 **「允许访问文件网址」**
 5. 打开任意 `.md` 文件（若已打开，按 `F5` 刷新）
+
+### Firefox
+
+构建产物在 `build-firefox/`，整个目录就是扩展根：
+
+1. 地址栏打开 `about:debugging#/runtime/this-firefox`
+2. 点 **临时载入附加组件**，选择 `build-firefox/manifest.json`
+3. **关键一步**：`about:addons` → 本扩展 → 权限 → 打开 **「访问文件 URL」**
+
+> Firefox 目标最低要求 **128 版**：Mermaid 注入依赖 `scripting.executeScript` 的
+> `world: 'MAIN'`，该能力从 Firefox 128 起提供（Mozilla 把这个 MV3 API 一并回移到了 MV2）。
 
 > ⚠️ 第 4 步不做，扩展**完全不会生效**，而且页面上不会有任何提示——因为它根本不会被注入。
 > 忘了开的话，点工具栏上的扩展图标，popup 会告诉你。
@@ -63,7 +77,9 @@ Chrome 要求扩展显式获得用户授权才能读写 `file://` 路径，manif
 ## 开发
 
 ```bash
-npm run watch      # esbuild 监听重建
+npm run watch           # esbuild 监听重建（Chrome 目标）
+npm run build:firefox   # 构建 Firefox 目标（产物在 build-firefox/）
+npm run build:all       # 两个目标都构建
 npm run typecheck  # tsc 类型检查
 npm test           # 渲染管线 + 目录测试（jsdom，30 项断言）
 npm run preview    # 生成代码高亮主题对比页（输出到 preview/）
@@ -82,9 +98,10 @@ npm run testdata   # 重新生成 testMd/ 的图片、GBK 文件与超大文件
 
 ```
 markdown_reader/
-├─ manifest.json            # MV3 配置，指向 build/ 产物
+├─ manifest.json            # 【生成物】Chrome/Edge 清单，由 scripts/manifest.mjs 生成
 ├─ scripts/
-│  ├─ build.mjs             # esbuild 构建（content + background + popup）
+│  ├─ build.mjs             # esbuild 构建（content + background + popup + mermaid）
+│  ├─ manifest.mjs          # 清单生成：两个平台的字段差异集中在这一个文件
 │  ├─ test-render.mjs       # 渲染管线测试
 │  ├─ test-toc.mjs          # 目录构建测试
 │  ├─ make-theme-preview.mjs

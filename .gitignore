@@ -3,6 +3,13 @@ build/
 .tmp/
 *.log
 
+# manifest.json 改由 scripts/manifest.mjs 生成：两个平台的字段差异较大，
+# 维护两份静态 JSON 迟早漂移。clone 后先跑一次 npm run build。
+manifest.json
+
+# Firefox 目标的产物目录
+build-firefox/
+
 # 由 npm run testdata 生成的 3.4MB 超大文件测试文档（其余测试数据体积很小，保留在仓库里）
 testMd/10-超大文件测试.md
 
