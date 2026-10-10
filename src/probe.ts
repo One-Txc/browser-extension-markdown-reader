@@ -388,7 +388,74 @@ function renderPanel(): void {
     })
   );
 
-  /* ---- 6. 清空 ---- */
+  /* ---- 6. 用隐藏 iframe 借浏览器的目录页渲染 ----
+   *
+   * fetch 只能拿到模板（数据由浏览器进程在渲染时注入，不在 HTML 文本里）。
+   * 但让浏览器真的去渲染一个目录页，数据就会出现在它的 DOM 里 ——
+   * file:// 之间同源，所以能读 iframe.contentDocument 把它取出来。 */
+  buttons.append(
+    btn('⑥ iframe 读目录页 DOM', async () => {
+      const dirUrl = location.href.replace(/[^/]*$/, '');
+      log(`在隐藏 iframe 里加载：${dirUrl}`);
+
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText =
+        'position:fixed;left:-10000px;top:0;width:900px;height:600px;border:0';
+      iframe.src = dirUrl;
+
+      const loaded = new Promise<void>((resolve, reject) => {
+        iframe.onload = () => resolve();
+        const timer = window.setTimeout(() => reject(new Error('加载超时 8s')), 8000);
+        void timer;
+      });
+
+      document.documentElement.appendChild(iframe);
+
+      try {
+        await loaded;
+      } catch (err) {
+        log(`✗ ${String(err)}`);
+        iframe.remove();
+        return;
+      }
+
+      // 等它把表格建完
+      await new Promise((r) => window.setTimeout(r, 250));
+
+      const doc = iframe.contentDocument;
+      if (!doc) {
+        log('✗ 拿不到 contentDocument（跨源被拦）');
+        iframe.remove();
+        return;
+      }
+
+      const html = doc.body?.outerHTML ?? '';
+      log(`✓ 拿到渲染后的 DOM：${html.length} 字符`);
+
+      const rows = parseAddRows(html);
+      log(`解析 addRow：${rows.length} 项`);
+
+      if (rows.length === 0) {
+        const anchors = doc.querySelectorAll('a');
+        log(`  DOM 里的 <a> 数量：${anchors.length}`);
+        log(`  前 5 个链接文本：${[...anchors].slice(0, 5).map((a) => a.textContent).join(' | ')}`);
+        log(`  DOM 片段（前 600 字符）：\n${html.slice(0, 600)}`);
+      } else {
+        const dirs = rows.filter((r) => r.isDir);
+        const mds = rows.filter((r) => !r.isDir && /\.(md|markdown)$/i.test(r.name));
+        log(`  目录 ${dirs.length} 个、md ${mds.length} 个`);
+        for (const r of rows) {
+          const tag = r.isDir ? '📁' : /\.(md|markdown)$/i.test(r.name) ? '📄' : '  ';
+          log(`    ${tag} ${r.name}`);
+        }
+      }
+
+      iframe.remove();
+      log('（iframe 已移除）');
+    })
+  );
+
+  /* ---- 7. 清空 ---- */
   buttons.append(
     btn('清空探针数据', async () => {
       await idbClear();
