@@ -199,29 +199,29 @@
     "message": "始终深色",
     "description": "颜色模式下拉框的选项：无论系统设置，始终使用深色。"
   },
-  "popupModeEyeCareGroup": {
-    "message": "护眼配色",
-    "description": "颜色模式下拉框里，下面五项护眼配色的分组标题（optgroup 的 label）。这五项都是浅色或深色的变体，只是底色与文字色不同。"
+  "popupModeEyecare": {
+    "message": "护眼模式",
+    "description": "颜色模式下拉框的选项，与「跟随系统 / 始终浅色 / 始终深色」并列（它最常用，所以不放进下面的分组）。豆沙绿底色，国内用户最熟悉的「护眼绿」。"
   },
   "popupModeParchment": {
     "message": "羊皮纸",
-    "description": "护眼配色选项：米黄底色，最接近纸质书，暖度明显。"
+    "description": "颜色模式下拉框「其他配色」分组里的选项：米黄底色，最接近纸质书，暖度明显。"
   },
-  "popupModeEyecare": {
-    "message": "护眼模式",
-    "description": "护眼配色选项：豆沙绿底色，国内用户最熟悉的「护眼绿」。"
+  "popupModeOtherGroup": {
+    "message": "其他配色",
+    "description": "颜色模式下拉框里最后四项的分组标题（optgroup 的 label）。它们也都是浅色或深色的变体，只是底色与文字色不同。"
   },
   "popupModeWarmWhite": {
     "message": "暖白",
-    "description": "护眼配色选项：比纯白略暖，变化最轻。适合只是觉得纯白刺眼、不想页面明显发黄的人。"
+    "description": "其他配色选项：比纯白略暖，变化最轻。适合只是觉得纯白刺眼、不想页面明显发黄的人。"
   },
   "popupModeSoftGray": {
     "message": "柔灰",
-    "description": "护眼配色选项：灰白底色，只降低对比度、不改变色相。适合不喜欢暖色的人。"
+    "description": "其他配色选项：灰白底色，只降低对比度、不改变色相。适合不喜欢暖色的人。"
   },
   "popupModeDarkWarm": {
     "message": "暗夜暖调",
-    "description": "护眼配色选项：深棕底色配暖色文字，夜间阅读用，比纯深色柔和、没有冷蓝感。"
+    "description": "其他配色选项：深棕底色配暖色文字，夜间阅读用，比纯深色柔和、没有冷蓝感。"
   },
   "popupLightTheme": {
     "message": "浅色代码配色",
