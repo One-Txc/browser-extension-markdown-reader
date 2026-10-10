@@ -584,6 +584,15 @@ body.md-reader-lightbox-open {
   opacity: 0.4;
 }
 
+/*
+ * 空目录：加载后确认没有任何可显示的子项，就不再是可以展开的节点。
+ * 用 visibility 隐藏而非移除 —— 保住那 17px 占位，图标列才不会错位。
+ */
+.folder-caret.is-leaf {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* 文件行用等宽占位补上箭头，保证所有行的图标左边缘对齐 */
 .folder-caret-empty {
   flex: 0 0 auto;

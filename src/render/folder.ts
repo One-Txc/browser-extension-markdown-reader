@@ -224,6 +224,9 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
 
   /** 展开 / 收起目录，首次展开时才取数据 */
   async function toggleDir(node: DirNode): Promise<void> {
+    // 已确认是空目录（叶子），点整行也不该有反应
+    if (node.caret.classList.contains('is-leaf')) return;
+
     if (node.expanded) {
       node.expanded = false;
       node.childrenEl.classList.add('md-reader-hidden');
@@ -238,18 +241,25 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
       node.caret.classList.remove('is-loading');
       node.loaded = true;
 
+      const entries = res.ok ? (res.entries ?? []) : [];
+
       if (!res.ok) {
         const err = document.createElement('li');
         err.className = 'folder-error';
         err.textContent = `读取失败：${res.error ?? '未知错误'}`;
         node.childrenEl.append(err);
-      } else if (!res.entries?.length) {
-        const empty = document.createElement('li');
-        empty.className = 'folder-empty';
-        empty.textContent = '没有 Markdown 文件';
-        node.childrenEl.append(empty);
+      } else if (entries.length === 0) {
+        /*
+         * 空目录：不给任何提示，直接把它降级成叶子 —— 箭头隐藏、不可点。
+         *
+         * 用 is-leaf（visibility: hidden）而不是移除元素，是为了保住那 17px 的
+         * 占位宽度，否则该行的图标会向左跳、与上下行错位。
+         */
+        node.caret.classList.add('is-leaf');
+        node.caret.classList.add('is-collapsed');
+        return;
       } else {
-        for (const child of res.entries) {
+        for (const child of entries) {
           node.childrenEl.append(renderRow(child, node.url));
         }
       }
@@ -279,14 +289,7 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
     const entries = res.entries ?? [];
     barCount.textContent = `${entries.length} 项`;
 
-    if (!entries.length) {
-      const empty = document.createElement('li');
-      empty.className = 'folder-empty';
-      empty.textContent = '这个目录里没有 Markdown 文件';
-      list.append(empty);
-      return;
-    }
-
+    // 空了就留白，不做任何提示（提示本身也是噪音）
     for (const entry of entries) list.append(renderRow(entry, rootDir));
     applyCurrent();
   }
