@@ -368,12 +368,14 @@ function renderPanel(): void {
 
         log(`  addRow( 共出现 ${total} 次`);
         if (firstCall < 0) {
-          log('  ✗ 只有函数定义，没有任何调用 —— fetch 拿不到数据，此路不通');
-          log(`  HTML 尾部 900 字符：\n${html.slice(-900)}`);
+          log('  ✗ 只有函数定义，没有任何调用');
         } else {
           log('  ✓ 有调用，但正则没匹配上。实际格式如下：');
           log(`${html.slice(Math.max(0, firstCall - 40), firstCall + 460)}`);
         }
+        // 全文长度也要打出来 —— 上一轮就是因为 background 截断到 6000 字符，
+        // 数据落在后半段而一直解析不到
+        log(`  本次拿到的文本长度：${html.length} 字符`);
         return;
       }
 

@@ -53,7 +53,10 @@ async function probeFetchDir(
   try {
     const res = await fetch(url, { cache: 'no-store' });
     const text = await res.text();
-    return { ok: true, status: res.status, len: text.length, text: text.slice(0, 6000) };
+    // ★ 必须返回完整文本。
+    // 之前这里截断成 6000 字符，而目录数据在 HTML 的后半段，
+    // 导致解析出来永远是 0 项，白白得出了「fetch 拿不到数据」的错误结论。
+    return { ok: true, status: res.status, len: text.length, text };
   } catch (err) {
     return { ok: false, error: String(err) };
   }
