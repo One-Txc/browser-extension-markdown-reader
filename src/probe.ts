@@ -167,17 +167,22 @@ async function locateByUrl(
 function parseAddRows(
   html: string
 ): Array<{ name: string; url: string; isDir: boolean; size: number }> {
-  const out: Array<{ name: string; url: string; isDir: boolean; size: number }> = [];
-  // 只取前 4 个参数就够了：name, url, isdir, size
+  /*
+   * 正则来自第三方插件已验证可用的版本（照搬）。
+   * 我最初自己写的版本有两个错误，导致一条都匹配不上：
+   *   1. 第 3 个参数 isdir 是 1/0 数字，不是 true/false
+   *   2. 整个调用结尾有一个分号
+   * 参数顺序：addRow(name, url, isdir, size, size_string, date_modified, date_modified_string)
+   */
   const re =
-    /addRow\(\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(true|false)\s*,\s*(\d+)/g;
+    /addRow\("(.*?)",\s*"(.*?)",\s*(\d+),\s*(\d+),\s*"([\d.]+ [BkMG]B?)",\s*(\d+),\s*"(.*?)"\);/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null) {
     out.push({
-      name: m[1].replace(/\\(.)/g, '$1'),
-      url: m[2].replace(/\\(.)/g, '$1'),
-      isDir: m[3] === 'true',
-      size: Number(m[4]),
+      name: m[1],
+      url: m[2],
+      isDir: Number.parseInt(m[3], 10) !== 0,
+      size: Number.parseInt(m[4], 10),
     });
   }
   return out;
