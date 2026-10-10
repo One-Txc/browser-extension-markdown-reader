@@ -85,6 +85,79 @@ async function listDir(handle: FileSystemDirectoryHandle): Promise<string[]> {
   return out.sort();
 }
 
+/* ------------------------------------------------------------------ 定位算法 */
+
+/**
+ * 用当前页面的 URL 路径，在已授权的目录 handle 里定位到本文件。
+ *
+ * 思路：handle 只暴露目录名（拿不到绝对路径），所以把名字当作**锚点**，
+ * 在 URL 的路径段里找到它的位置，然后拿其后的段逐级向下走。
+ *
+ * 关键点是**每一级都到真实文件系统里验证**，而不是纯字符串猜测：
+ * 因此可以逐个候选位置试，取第一个能走通的，重名目录也能处理。
+ *
+ * @param handle 用户授权的目录
+ * @param log 输出日志
+ */
+async function locateByUrl(
+  handle: FileSystemDirectoryHandle,
+  log: (msg: string) => void
+): Promise<void> {
+  // location.pathname 对 file:// 形如 /D:/a/b/c.md（Windows）或 /Users/x/a.md
+  const segments = decodeURIComponent(location.pathname).split('/').filter(Boolean);
+  log(`URL 路径段：${segments.join(' / ')}`);
+  log(`授权目录名：${handle.name}`);
+
+  const positions: number[] = [];
+  segments.forEach((seg, i) => {
+    if (seg === handle.name) positions.push(i);
+  });
+
+  if (positions.length === 0) {
+    log('✗ 授权目录名在 URL 路径里没有出现 —— 无法自动定位，需用户手动导航');
+    return;
+  }
+  log(`锚点候选位置（从后往前试）：${[...positions].reverse().join(', ')}`);
+
+  // 从后往前试：越靠后的同名目录越可能是目标
+  for (const pos of [...positions].reverse()) {
+    const rest = segments.slice(pos + 1);
+    log(`— 试位置 ${pos}，其后 ${rest.length} 段：${rest.join(' / ') || '（就是它本身）'}`);
+
+    let cur: FileSystemDirectoryHandle = handle;
+    let ok = true;
+
+    // 除最后一段（文件名）外，逐级进入子目录
+    for (let i = 0; i < rest.length - 1; i++) {
+      try {
+        cur = await cur.getDirectoryHandle(rest[i]);
+      } catch {
+        log(`  ✗ 没有子目录 "${rest[i]}"`);
+        ok = false;
+        break;
+      }
+    }
+    if (!ok) continue;
+
+    const fileName = rest[rest.length - 1];
+    if (!fileName) {
+      log('  ✓ 命中：URL 指向的就是这个目录本身');
+      return;
+    }
+
+    try {
+      await cur.getFileHandle(fileName);
+      log(`  ✓ 定位成功：该目录下确实存在 "${fileName}"`);
+      log(`    最终目录 = ${cur.name}`);
+      return;
+    } catch {
+      log(`  ✗ 目录里没有文件 "${fileName}"`);
+    }
+  }
+
+  log('✗ 所有候选都未通过验证');
+}
+
 /* ------------------------------------------------------------------ 面板 */
 
 export function maybeRunProbe(): void {
@@ -212,7 +285,19 @@ function renderPanel(): void {
     })
   );
 
-  /* ---- 4. 清空 ---- */
+  /* ---- 4. 用当前 URL 定位（演示目录名链匹配）---- */
+  buttons.append(
+    btn('④ 用当前 URL 定位', async () => {
+      const raw = await idbGet();
+      if (!raw) {
+        log('! 请先执行 ① ②');
+        return;
+      }
+      await locateByUrl(raw as FileSystemDirectoryHandle, log);
+    })
+  );
+
+  /* ---- 5. 清空 ---- */
   buttons.append(
     btn('清空探针数据', async () => {
       await idbClear();
