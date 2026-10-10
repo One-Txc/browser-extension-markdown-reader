@@ -201,8 +201,13 @@ async function renderPermission(): Promise<void> {
 
 /* ------------------------------------------------------------------ 启动 */
 
-async function init(): Promise<void> {
-  const settings = await loadSettings();
+/**
+ * 把「当前语言 + 当前设置」渲染到界面上。
+ *
+ * 单独抽出来是因为**切换语言后要再跑一次**：文案是在创建 DOM 时一次性
+ * t() 出来的，不重跑的话 popup 得关掉重开才会换语言。
+ */
+async function render(settings: ReaderSettings): Promise<void> {
   /*
    * 语言要在最前面定好：下面的 applyI18n、fillOptions 都依赖 t()，
    * 而 t() 读的就是这里设进去的语言。
@@ -211,11 +216,19 @@ async function init(): Promise<void> {
   applyI18n();
   renderVersion();
 
+  // 主题下拉的选项名里带 noteKey，也要跟着语言走；
+  // 它会重建 <option>，所以必须排在 applySettingsToForm 之前，否则选中值会丢
   fillOptions(lightEl, 'light');
   fillOptions(darkEl, 'dark');
 
   applySettingsToForm(settings);
+  await renderPermission();
+}
 
+async function init(): Promise<void> {
+  await render(await loadSettings());
+
+  // 事件只绑一次，与 render 分开
   modeEl.addEventListener('change', () => void save({ mode: modeEl.value as ThemeMode }));
   lightEl.addEventListener('change', () => void save({ lightTheme: lightEl.value }));
   darkEl.addEventListener('change', () => void save({ darkTheme: darkEl.value }));
@@ -234,9 +247,11 @@ async function init(): Promise<void> {
     void save({ defaultExpandLevel: clampExpandLevel(Number(defaultExpandLevelEl.value)) })
   );
   resetEl.addEventListener('click', () => void handleResetClick());
-  localeEl.addEventListener('change', () => void save({ locale: localeEl.value as Locale }));
-
-  await renderPermission();
+  localeEl.addEventListener('change', async () => {
+    await save({ locale: localeEl.value as Locale });
+    // 语言变了，popup 自己这一屏的文案也要立刻换过来
+    await render(await loadSettings());
+  });
 }
 
 void init();
