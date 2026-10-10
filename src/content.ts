@@ -133,6 +133,8 @@ function renderDocument(raw: string, url: string, settings: ReaderSettings): voi
   // 先记录容器，目录与主题都依赖它
   mainEl = main;
   currentSettings = settings;
+  // 留一份原文：切换语言时要靠它把整份内容重建一遍
+  currentRaw = raw;
   applyTheme(document, settings);
   markPerf('themed');
 
@@ -224,6 +226,14 @@ let folderHandle: FolderPaneHandle | null = null;
 let sourceViewHandle: SourceViewHandle | null = null;
 /** 设置的内存副本，避免每次交互都读一次 storage */
 let currentSettings: ReaderSettings = DEFAULT_SETTINGS;
+
+/**
+ * 当前正文的 Markdown 原文。
+ *
+ * 切换语言时要重建整份内容才能让文案换过来（原因见 refreshFromSettings），
+ * 而重建需要原文，所以留一份。
+ */
+let currentRaw = '';
 
 /** 合并写入设置并同步内存副本 */
 async function persistSettings(partial: Partial<ReaderSettings>): Promise<void> {
@@ -338,9 +348,33 @@ function applyFoldPolicy(settings: ReaderSettings): void {
 
 async function refreshFromSettings(): Promise<void> {
   const settings = await loadSettings();
+  const localeChanged = settings.locale !== currentSettings.locale;
   currentSettings = settings;
   setLocale(settings.locale);
   applyTheme(document, settings);
+
+  if (localeChanged && mainEl && currentRaw) {
+    /*
+     * 语言变了 → 重建整份内容。
+     *
+     * 文案是在**创建 DOM 的那一刻**一次性 t() 出来的，已有的文本节点不会
+     * 重新求值（样式能「活」是因为它走 CSS 变量与 class，文本不行）。
+     * 所以要覆盖新文案就只能重建：侧边栏 tab 名、文件夹面板、各处 tooltip、
+     * 以及代码块上那排复制按钮。
+     *
+     * 顺序要紧：先销毁侧边栏句柄 —— renderDocument 对已存在的 tocHandle
+     * 只调 setRoot（不重建 nav），不先销毁的话 tab 名之类的文案留在原处。
+     * tab 选择由 toc.ts 的模块级 lastActivePane 自动恢复，
+     * 但文件夹面板的展开状态与目录折叠状态会重置，语言切换是低频操作，可以接受。
+     */
+    tocHandle?.destroy();
+    tocHandle = null;
+    folderHandle = null;
+    lastFoldPolicy = '';
+    renderDocument(currentRaw, currentDocUrl, settings);
+    return;
+  }
+
   syncToc(settings);
 }
 
