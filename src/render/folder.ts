@@ -27,6 +27,7 @@ import {
   type SortField,
 } from '../shared/directory';
 import { t } from '../shared/i18n';
+import { safeDecode } from '../shared/const';
 
 /* ------------------------------------------------------------------ 图标 */
 
@@ -135,7 +136,7 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
   const barName = document.createElement('span');
   barName.className = 'name';
   const segs = rootDir.replace(/\/$/, '').split('/');
-  barName.textContent = decodeURIComponent(segs[segs.length - 1] ?? '') || '/';
+  barName.textContent = safeDecode(segs[segs.length - 1] ?? '') || '/';
 
   const barCount = document.createElement('span');
   barCount.className = 'count';
@@ -271,7 +272,7 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
 
   /** 高亮当前正在显示的文档 */
   function applyCurrent(): void {
-    const target = decodeURIComponent(currentUrl);
+    const target = safeDecode(currentUrl);
     for (const row of element.querySelectorAll<HTMLElement>('.folder-row')) {
       row.classList.toggle('is-current', row.dataset.url === target);
     }
@@ -306,7 +307,7 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
     const row = document.createElement('div');
     row.className = 'folder-row';
     const url = resolveEntryUrl(parentUrl, entry);
-    row.dataset.url = decodeURIComponent(url);
+    row.dataset.url = safeDecode(url);
     if (entry.isDir) row.classList.add('is-dir');
 
     // 1. 折叠箭头（仅目录；文件用等宽占位保证图标列对齐）

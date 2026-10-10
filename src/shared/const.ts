@@ -39,6 +39,22 @@ export function isMarkdownPage(): boolean {
 }
 
 /**
+ * 安全解码 URL 片段。
+ *
+ * decodeURIComponent 遇到非法转义序列（最典型的是裸的 `%`，例如文件名
+ * 「100%完成.md」若没被正确编码）会抛 URIError。这类调用散布在列表渲染
+ * 的循环里，一抛就整个面板渲染中断 —— 所以统一兜住：解不开就原样返回，
+ * 最坏情况是显示成编码后的字面量，而不是白屏。
+ */
+export function safeDecode(text: string): string {
+  try {
+    return decodeURIComponent(text);
+  } catch {
+    return text;
+  }
+}
+
+/**
  * 从 file:// URL 取出文件名（已解码）作为标题。
  *
  * 接受 URL 参数而不是直接读 location：原地切换文档时页面地址不变，
@@ -47,7 +63,7 @@ export function isMarkdownPage(): boolean {
 export function titleFromUrl(url: string): string {
   try {
     const seg = new URL(url).pathname.split('/').pop() ?? '';
-    return decodeURIComponent(seg);
+    return safeDecode(seg);
   } catch {
     return '';
   }
