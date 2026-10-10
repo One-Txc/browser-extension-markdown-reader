@@ -76,6 +76,21 @@ const DESCRIPTION = '__MSG_extDescription__';
  */
 const MATCHES = ['file:///*', 'http://*/*', 'https://*/*'];
 
+/*
+ * 扩展图标。形状取自 folder.ts 里表示 Markdown 文件的那枚
+ * （圆角卡片 + M 折线），PNG 由 scripts/make-icons.py 生成 ——
+ * manifest 只接受位图，认不了 SVG。
+ *
+ * 路径不带 build/ 前缀：_locales 与 icons 这类资源必须位于扩展根目录，
+ * Firefox 目标由 build.mjs 复制过去（同 _locales 的处理）。
+ */
+const ICONS = {
+  16: 'icons/icon16.png',
+  32: 'icons/icon32.png',
+  48: 'icons/icon48.png',
+  128: 'icons/icon128.png',
+};
+
 /**
  * Firefox 要求显式扩展 ID。
  * strict_min_version 定在 128：scripting.executeScript 的 world:'MAIN'
@@ -108,6 +123,12 @@ export function buildManifest(target) {
      */
     default_locale: 'zh_CN',
     permissions: ['storage', 'scripting'],
+    /*
+     * 扩展图标，形状取自 folder.ts 里表示 Markdown 文件的那枚
+     * （圆角卡片 + M 折线）。PNG 由 scripts/make-icons.py 生成 ——
+     * manifest 只接受位图，认不了 SVG。
+     */
+    icons: ICONS,
     content_scripts: [
       {
         matches: MATCHES,
@@ -119,6 +140,7 @@ export function buildManifest(target) {
     action: {
       default_popup: p('popup.html'),
       default_title: NAME,
+      default_icon: ICONS,
     },
   };
 

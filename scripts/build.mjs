@@ -140,12 +140,13 @@ await writeFile(manifestPath, JSON.stringify(buildManifest(target), null, 2) + '
 await cp('src/popup/popup.html', `${outDir}/popup.html`);
 
 /*
- * 语言包必须位于**扩展根目录**，浏览器靠它解析清单里的 __MSG_ 占位。
- * Chrome 的扩展根就是项目根，_locales 本来就在那儿，无需处理；
+ * 语言包与图标都必须位于**扩展根目录**：浏览器靠前者解析清单里的 __MSG_ 占位，
+ * 靠后者显示工具栏与管理页图标。Chrome 的扩展根就是项目根，两者本来就在那儿；
  * Firefox 的扩展根是 output/MV2，得复制一份过去。
  */
 if (extRoot !== '.') {
   await cp('_locales', `${extRoot}/_locales`, { recursive: true });
+  await cp('icons', `${extRoot}/icons`, { recursive: true });
 }
 
 // KaTeX 字体：只复制 woff2（20 个 / 约 260KB），浏览器优先使用它。
