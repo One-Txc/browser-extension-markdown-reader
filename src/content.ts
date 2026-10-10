@@ -35,7 +35,7 @@ import {
   titleFromUrl,
 } from './shared/const';
 import { mountFolderPane, type FolderPaneHandle } from './render/folder';
-import { setLocale } from './shared/i18n';
+import { setLocale, t } from './shared/i18n';
 
 /** 超过此长度不做渲染，避免超大文件卡死标签页 */
 const MAX_RENDER_LENGTH = 3 * 1024 * 1024;
@@ -512,19 +512,19 @@ function enhanceCodeBlocks(root: HTMLElement): void {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'md-reader-copy';
-    btn.textContent = '复制';
+    btn.textContent = t('copy');
 
     btn.addEventListener('click', async () => {
       const code = pre.querySelector('code')?.textContent ?? '';
       try {
         await navigator.clipboard.writeText(code);
-        btn.textContent = '已复制';
+        btn.textContent = t('copied');
       } catch {
-        btn.textContent = '复制失败';
+        btn.textContent = t('copyFailed');
       }
       btn.classList.add('done');
       setTimeout(() => {
-        btn.textContent = '复制';
+        btn.textContent = t('copy');
         btn.classList.remove('done');
       }, 1500);
     });
@@ -542,7 +542,7 @@ function renderTooLargeNotice(size: number): void {
     'padding:8px 14px', 'background:#fff8c5', 'border-bottom:1px solid #d4a72c',
     'font:13px/1.5 system-ui,"Segoe UI","Microsoft YaHei",sans-serif', 'color:#4d2d00',
   ].join(';');
-  bar.textContent = `MD Reader：文件过大（${mb} MB），已跳过渲染，显示原始文本。`;
+  bar.textContent = `MD Reader: ${t('tooLarge', [mb])}`;
   document.documentElement.appendChild(bar);
 }
 

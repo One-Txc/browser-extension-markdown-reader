@@ -12,6 +12,7 @@
 
 import { TOC_WIDTH, clampTocWidth } from '../shared/settings';
 import { SOURCE_MODE_CLASS } from '../shared/const';
+import { t } from '../shared/i18n';
 
 /*
  * 收录到 H6。
@@ -151,8 +152,8 @@ function renderTree(
       const caret = document.createElement('button');
       caret.type = 'button';
       caret.className = 'toc-caret';
-      caret.title = '展开 / 收起子标题';
-      caret.setAttribute('aria-label', '展开 / 收起子标题');
+      caret.title = t('tocCaret');
+      caret.setAttribute('aria-label', t('tocCaret'));
       caret.setAttribute('aria-expanded', 'true');
       /*
        * 用内联 SVG 而不是 ▾ / ▸ 字符。
@@ -257,7 +258,9 @@ function createBulkBar(nodes: TocNode[]): { bar: HTMLElement | null; refresh: ()
 
     button.classList.toggle('is-expanded', allExpanded);
     button.classList.toggle('is-mixed', !allExpanded && !allCollapsed);
-    button.title = allExpanded ? `收起所有 H${level} 标题` : `展开所有 H${level} 标题`;
+    button.title = allExpanded
+      ? t('tocCollapseLevel', [String(level)])
+      : t('tocExpandLevel', [String(level)]);
   };
 
   const refreshAll = (): void => {
@@ -294,7 +297,7 @@ export function buildToc(
 ): TocHandle | null {
   const nav = document.createElement('nav');
   nav.className = 'md-reader-toc';
-  nav.setAttribute('aria-label', '侧边栏');
+  nav.setAttribute('aria-label', t('sidebar'));
 
   /*
    * 顶部是 tab 条：目录 / 文件夹。
@@ -329,10 +332,10 @@ export function buildToc(
    * 而隔壁 tab 正是文件夹列表，两者撞词会让人分不清。
    * 「大纲」是这个领域的通行叫法（VS Code / Typora / Obsidian 均如此）。
    */
-  const outlineTab = makeTab('outline', '大纲');
+  const outlineTab = makeTab('outline', t('tabOutline'));
   tabs.append(outlineTab);
   if (folderPane) {
-    tabs.append(makeTab('folder', '文件夹'));
+    tabs.append(makeTab('folder', t('tabFolder')));
     folderPaneWrap.append(folderPane);
   }
 
@@ -555,7 +558,7 @@ function createResizer(handlers: TocHandlers): HTMLElement {
   bar.className = 'md-reader-resizer';
   bar.setAttribute('role', 'separator');
   bar.setAttribute('aria-orientation', 'vertical');
-  bar.title = '拖动调整侧边栏宽度，双击恢复默认';
+  bar.title = t('resizerHint');
 
   let dragging = false;
   let latest = handlers.getWidth();
@@ -612,8 +615,8 @@ function createTocButton(handlers: TocHandlers): HTMLButtonElement {
   button.type = 'button';
   button.className = 'md-reader-btn md-reader-btn-toc';
   button.innerHTML = ICON_TOGGLE_TOC;
-  button.title = '显示 / 隐藏侧边栏';
-  button.setAttribute('aria-label', '显示 / 隐藏侧边栏');
+  button.title = t('toggleSidebar');
+  button.setAttribute('aria-label', t('toggleSidebar'));
 
   button.addEventListener('click', () => {
     // 窄屏下目录是覆盖式抽屉，开合属于临时状态，不去改持久化的设置

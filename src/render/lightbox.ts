@@ -9,6 +9,8 @@
  *       放大后按住拖动平移 → Esc 或点击空白关闭。
  */
 
+import { t } from '../shared/i18n';
+
 const OVERLAY_CLASS = 'md-reader-lightbox';
 const BODY_LOCK_CLASS = 'md-reader-lightbox-open';
 const MIN_SCALE = 0.5;
@@ -52,7 +54,7 @@ function openLightbox(source: HTMLImageElement): void {
   box.className = OVERLAY_CLASS;
   box.setAttribute('role', 'dialog');
   box.setAttribute('aria-modal', 'true');
-  box.setAttribute('aria-label', '图片预览');
+  box.setAttribute('aria-label', t('imagePreview'));
 
   const img = document.createElement('img');
   img.src = src;
@@ -61,7 +63,7 @@ function openLightbox(source: HTMLImageElement): void {
 
   const hint = document.createElement('div');
   hint.className = 'md-reader-lightbox-hint';
-  hint.textContent = '滚轮缩放 · 拖动平移 · Esc 关闭';
+  hint.textContent = t('imagePreviewHint');
 
   box.append(img, hint);
 
