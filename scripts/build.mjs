@@ -97,6 +97,22 @@ const base = {
   charset: 'ascii',
   define: {
     'process.env.NODE_ENV': watch ? '"development"' : '"production"',
+    /*
+     * 构建时间，显示在 popup 里。
+     *
+     * 版本号在开发期几乎不变，看不出「浏览器里加载的是不是刚才那次构建」；
+     * 构建时间每次都不一样，刷新 popup 一眼就能确认。
+     */
+    __BUILD_TIME__: JSON.stringify(
+      new Date().toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+    ),
   },
 };
 

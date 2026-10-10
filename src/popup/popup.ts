@@ -44,6 +44,15 @@ const resetEl = pick<HTMLButtonElement>('reset');
 const statusEl = pick<HTMLElement>('status');
 const detailEl = pick<HTMLElement>('detail');
 const metaEl = pick<HTMLElement>('meta');
+const versionEl = pick<HTMLElement>('version');
+
+/**
+ * 版本与构建时间。
+ *
+ * 版本号在开发期几乎不变，光看它无法判断「浏览器里跑的是不是刚构建的那份」；
+ * 构建时间每次构建都不同，刷新 popup 即可确认。
+ */
+versionEl.textContent = `v${chrome.runtime.getManifest().version} · 构建于 ${__BUILD_TIME__}`;
 
 const SETTINGS_URL = 'chrome://extensions/?id=' + chrome.runtime.id;
 
