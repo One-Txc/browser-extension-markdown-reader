@@ -44,7 +44,7 @@ let lastActivePane = 'outline';
 export interface TocHandle {
   nav: HTMLElement;
   /** 目录项总数，供调用方决定是否启用折叠功能 */
-  count: number;
+  readonly count: number;
   /** 动态开关折叠功能（短文档不需要，长了才显示） */
   setFoldEnabled(enabled: boolean): void;
   /**
@@ -52,6 +52,12 @@ export interface TocHandle {
    * 更深的一律收起（可见 N+1 层）；传 -1 表示全部展开。
    */
   expandToLevel(level: number): void;
+  /**
+   * 换一份正文，只重建目录树的内容。
+   * nav 与「文件夹」面板保持不动 —— 销毁整个侧边栏会让文件夹 tab 闪一下
+   * 并丢掉它的展开状态。
+   */
+  setRoot(newRoot: HTMLElement): void;
   destroy(): void;
 }
 
@@ -286,11 +292,6 @@ export function buildToc(
   minHeadings = MIN_HEADINGS,
   handlers?: TocHandlers
 ): TocHandle | null {
-  const headings = Array.from(root.querySelectorAll<HTMLElement>(HEADING_SELECTOR)).filter(
-    (h) => h.id
-  );
-  if (headings.length < minHeadings) return null;
-
   const nav = document.createElement('nav');
   nav.className = 'md-reader-toc';
   nav.setAttribute('aria-label', '侧边栏');
@@ -349,17 +350,18 @@ export function buildToc(
   // 恢复上次选中的 tab；若这次没有文件夹面板（未提供）则退回「目录」
   switchPane(folderPane ? lastActivePane : 'outline');
 
-  const tree = buildTree(headings);
-  const nodes = flattenTree(tree);
-  const links = new Map<string, HTMLAnchorElement>();
-
-  const bulk = createBulkBar(nodes);
-  if (bulk.bar) outlinePane.appendChild(bulk.bar);
-
-  const list = document.createElement('ul');
-  list.className = 'md-reader-toc-list';
-  renderTree(tree, list, links, bulk.refresh);
-  outlinePane.appendChild(list);
+  /*
+   * 目录树的状态。
+   *
+   * 之所以都用 let 并集中在这里：切换文档时要按新正文重建目录树，
+   * 但 nav 本身（tab 条、文件夹面板）不能动 —— 销毁重建会让文件夹 tab
+   * 闪一下并丢掉展开状态。
+   */
+  let headings: HTMLElement[] = [];
+  let nodes: TocNode[] = [];
+  let links = new Map<string, HTMLAnchorElement>();
+  /** 批量按钮的状态刷新器；重建目录树时会换成新的 */
+  let bulkRefresh: () => void = () => {};
 
   /* ------------------------------------------------------ 滚动高亮 */
 
@@ -427,15 +429,53 @@ export function buildToc(
   const classObserver = new MutationObserver(() => update());
   classObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
-  /*
-   * 首次高亮延后一帧再算。
+  /**
+   * 按一份正文重建目录树。
    *
-   * update() 里的 getBoundingClientRect 会强制浏览器做一次完整的样式计算与布局，
-   * 而此刻我们刚注入 60–80KB 的 CSS。实测这一步能占掉上百毫秒，
-   * 若压在「恢复可见」之前，用户就要多等这么久才能看到内容。
-   * 延后一帧的代价仅仅是高亮晚一帧出现，人眼无感。
+   * ★ nav 与 tab 条保持不动，只替换 outlinePane 的内容。
+   * 这样切换文档时文件夹 tab 不会闪一下、也不会丢掉展开状态 ——
+   * 这正是这个函数存在（而不是销毁整个 nav 重建）的原因。
+   *
+   * @returns 是否建出了内容（正文里没有标题时返回 false）
    */
-  requestAnimationFrame(() => update());
+  function rebuildOutline(newRoot: HTMLElement): boolean {
+    headings = Array.from(newRoot.querySelectorAll<HTMLElement>(HEADING_SELECTOR)).filter(
+      (h) => h.id
+    );
+
+    outlinePane.replaceChildren();
+    links = new Map();
+    nodes = [];
+    bulkRefresh = () => {};
+    currentId = '';
+
+    if (headings.length < minHeadings) return false;
+
+    const tree = buildTree(headings);
+    nodes = flattenTree(tree);
+
+    const bulk = createBulkBar(nodes);
+    bulkRefresh = bulk.refresh;
+
+    const list = document.createElement('ul');
+    list.className = 'md-reader-toc-list';
+    renderTree(tree, list, links, bulk.refresh);
+
+    if (bulk.bar) outlinePane.append(bulk.bar);
+    outlinePane.append(list);
+
+    /*
+     * 高亮延后一帧再算：update() 里的 getBoundingClientRect 会强制一次完整布局，
+     * 而此刻刚注入 60–80KB 的 CSS。实测这一步能占掉上百毫秒，
+     * 压在「恢复可见」之前会让用户多等这么久。迟一帧出现人眼无感。
+     */
+    requestAnimationFrame(() => update());
+    return true;
+  }
+
+  const hasOutline = rebuildOutline(root);
+  // 既没有标题、又没提供文件夹面板时，侧边栏没有存在意义
+  if (!hasOutline && !folderPane) return null;
 
   /*
    * 折叠 UI（caret 与批量按钮）始终生成，是否显示由这个开关控制。
@@ -447,7 +487,7 @@ export function buildToc(
     if (enabled) return;
     // 关掉折叠时把所有节点展开，否则残留的收起状态会让一部分条目彻底看不见
     for (const node of nodes) setNodeExpanded(node, true);
-    bulk.refresh();
+    bulkRefresh();
   };
 
   /** 按层数重置展开状态；-1 表示全部展开 */
@@ -457,14 +497,20 @@ export function buildToc(
       setNodeExpanded(node, level < 0 || node.depth < level);
     }
     // 展开状态变了，批量按钮的三态显示也要跟着更新
-    bulk.refresh();
+    bulkRefresh();
   };
 
   return {
     nav,
-    count: headings.length,
+    get count() {
+      return headings.length;
+    },
     setFoldEnabled,
     expandToLevel,
+    /** 换一份正文：只重建目录树的内容，nav 与文件夹面板保持不动 */
+    setRoot(newRoot: HTMLElement) {
+      rebuildOutline(newRoot);
+    },
     destroy() {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
@@ -585,9 +631,13 @@ export function mountToc(root: HTMLElement, handlers: TocHandlers): TocHandle | 
 
   return {
     nav: handle.nav,
-    count: handle.count,
+    // 转发而不是快照：切换文档后目录项数量会变
+    get count() {
+      return handle.count;
+    },
     setFoldEnabled: handle.setFoldEnabled,
     expandToLevel: handle.expandToLevel,
+    setRoot: handle.setRoot,
     destroy() {
       destroyInner();
       resizer.remove();

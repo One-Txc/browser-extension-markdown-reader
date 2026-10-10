@@ -122,17 +122,22 @@ function renderDocument(raw: string, url: string, settings: ReaderSettings): voi
   markPerf('themed');
 
   /*
-   * 目录是依据正文里的标题建出来的，换了文档必须重建。
-   * 文件夹面板挂在同一个 nav 里，所以一并销毁，由 syncToc 重新创建 ——
-   * 它的根目录也会跟着变成新文档所在的目录，这正是期望行为。
+   * 目录树依据正文标题建立，换文档必须重建 —— 但**只重建它的内容**，
+   * nav（含 tab 条与文件夹面板）保持不动。
+   *
+   * 早先是销毁整个侧边栏再重建，后果有三个：文件夹 tab 会闪一下、
+   * 它的展开状态与设置面板全部丢失、根目录还会跟着新文档跑到子目录去。
    */
   if (tocHandle) {
-    tocHandle.destroy();
-    tocHandle = null;
-    folderHandle = null;
+    tocHandle.setRoot(main);
+    // 标题数量变了，折叠策略要重新判断（策略串置空以强制应用一次）
     lastFoldPolicy = '';
+    applyFoldPolicy(settings);
+    // 原地切换后文件夹面板里的高亮要跟着走（根目录刻意保持不变）
+    folderHandle?.setCurrent(url);
+  } else {
+    syncToc(settings);
   }
-  syncToc(settings);
   markPerf('toc');
 
   // 只在文档真的含公式时才付出 KaTeX 样式的注入成本
@@ -174,12 +179,20 @@ async function openInPlace(url: string): Promise<void> {
 /** 已渲染的正文容器，目录重建时复用 */
 let mainEl: HTMLElement | null = null;
 /**
+ * 用户**最初打开**的那个文档（去掉 hash/query）。
+ *
+ * 文件夹面板的根目录永远以它为准：原地切换文档后不该跟着跑 ——
+ * 点了子目录里的文档，用户期望的仍然是「我打开文档时所在的那个目录」。
+ */
+const baseDocUrl = location.href.split('#')[0].split('?')[0];
+
+/**
  * 当前**正在显示**的文档 URL。
  *
  * 原地切换文档时它会被更新，而 location.href 保持不变 ——
  * 所有与「内容」相关的判断都要用这个，而不是读地址栏。
  */
-let currentDocUrl = location.href.split('#')[0].split('?')[0];
+let currentDocUrl = baseDocUrl;
 let tocHandle: TocHandle | null = null;
 /** 「文件夹」面板；随 toc 的 nav 一起挂载，销毁时由 nav 一并移除 */
 let folderHandle: FolderPaneHandle | null = null;
@@ -222,7 +235,8 @@ const tocHandlers: TocHandlers = {
    */
   createFolderPane: () => {
     folderHandle = mountFolderPane({
-      documentUrl: currentDocUrl,
+      // 用最初打开的文档，而不是 currentDocUrl —— 根目录不该随切换而变
+      documentUrl: baseDocUrl,
       getPrefs: () => ({
         sortField: currentSettings.folderSortField,
         sortAsc: currentSettings.folderSortAsc,
@@ -273,10 +287,18 @@ function syncToc(settings: ReaderSettings): void {
 
   document.body.classList.toggle('md-reader-has-toc', settings.showToc);
   applyTocWidth(settings.tocWidth);
+  applyFoldPolicy(settings);
+}
 
+/**
+ * 按阈值与层数应用折叠策略。
+ *
+ * 策略没变就不动展开状态 —— 否则改字号、换配色这些无关设置
+ * 也会把用户手动折叠好的目录冲掉。
+ */
+function applyFoldPolicy(settings: ReaderSettings): void {
   if (!tocHandle) return;
 
-  // 目录项不够多时不启用折叠：短文档本来一屏就能看完，多一排按钮反而是噪音
   const enabled = settings.foldThreshold <= 0 || tocHandle.count > settings.foldThreshold;
   const policy = `${enabled}|${settings.defaultExpandLevel}`;
   if (policy === lastFoldPolicy) return;
