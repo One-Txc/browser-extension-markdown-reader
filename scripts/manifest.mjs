@@ -19,8 +19,18 @@
 /**
  * 各目标的产物布局。
  *
- * Chrome：扩展根就是项目根，脚本输出到 build/，清单落在根目录
- * Firefox：扩展根是 build-firefox/，脚本直接落在其下（清单里的路径不带 build/ 前缀）
+ * 统一输出到 output/ 下、按清单版本分目录（参考 WXT 的做法）：
+ *
+ *   output/
+ *     MV3/            ← 扩展根，Chrome / Edge 加载这个目录
+ *       manifest.json
+ *       build/…
+ *     MV2/            ← 扩展根，Firefox 加载这里的 manifest.json
+ *       manifest.json
+ *       build/…
+ *
+ * 两个目标的内部结构完全一致（脚本都在 build/ 下），因此清单里的路径相同，
+ * 源码不需要按平台分支 —— background 注入 Mermaid 的路径两个平台通用。
  *
  * @type {Record<Target, {
  *   extRoot: string,
@@ -32,24 +42,18 @@
 export const LAYOUT = {
   chrome: {
     /** 扩展根目录（在浏览器里加载扩展时选的那个目录） */
-    extRoot: '.',
+    extRoot: 'output/MV3',
     /** 脚本、字体等产物的输出目录 */
-    outDir: 'build',
+    outDir: 'output/MV3/build',
     /** 清单文件的位置 */
-    manifestPath: 'manifest.json',
+    manifestPath: 'output/MV3/manifest.json',
     /** 清单里引用产物时是否需要 build/ 前缀 */
     needsPrefix: true,
   },
   firefox: {
-    extRoot: 'build-firefox',
-    /*
-     * 产物仍放在 build/ 下，让清单里的路径与 Chrome 完全一致。
-     * 否则 background 里注入 Mermaid 的路径就得按平台分支
-     * （Chrome 是 build/mermaid.js，Firefox 是 mermaid.js）——
-     * 同一份源码不该因为打包目标不同而改行为。
-     */
-    outDir: 'build-firefox/build',
-    manifestPath: 'build-firefox/manifest.json',
+    extRoot: 'output/MV2',
+    outDir: 'output/MV2/build',
+    manifestPath: 'output/MV2/manifest.json',
     needsPrefix: true,
   },
 };

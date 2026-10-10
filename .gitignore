@@ -1,14 +1,14 @@
 node_modules/
-build/
 .tmp/
 *.log
 
-# manifest.json 改由 scripts/manifest.mjs 生成：两个平台的字段差异较大，
-# 维护两份静态 JSON 迟早漂移。clone 后先跑一次 npm run build。
-manifest.json
+# 构建产物统一输出到这里，output/MV3 与 output/MV2 各自是一个扩展根
+output/
 
-# Firefox 目标的产物目录
+# 早期布局的产物路径，保留忽略以免误提交
+build/
 build-firefox/
+manifest.json
 
 # 由 npm run testdata 生成的 3.4MB 超大文件测试文档（其余测试数据体积很小，保留在仓库里）
 testMd/10-超大文件测试.md

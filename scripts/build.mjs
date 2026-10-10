@@ -108,10 +108,13 @@ const entries = [
   { in: 'src/render/mermaid-entry.ts', out: `${outDir}/mermaid.js` },
 ];
 
-// 清理范围要覆盖整个扩展根：Firefox 的产物在 build-firefox/build 下，
-// 但扩展根可能残留上一次构建（路径结构不同）留下的旧文件。
-// Chrome 的扩展根就是项目根，绝不能删，所以只清 build/。
-await rm(extRoot === '.' ? outDir : extRoot, { recursive: true, force: true });
+/*
+ * 只清理本目标的扩展根。
+ *
+ * 不能清空整个 output/ —— build:all 会连续构建两次，
+ * 第二次会把第一次刚生成的产物一起删掉。
+ */
+await rm(extRoot, { recursive: true, force: true });
 await mkdir(outDir, { recursive: true });
 
 // 清单也由脚本生成：两个平台的字段差异集中在 manifest.mjs，避免两份静态 JSON 漂移

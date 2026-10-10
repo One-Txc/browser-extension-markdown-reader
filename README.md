@@ -12,34 +12,44 @@
 npm install
 npm run build          # Chrome / Edge（MV3）
 npm run build:firefox  # Firefox（MV2）
+npm run build:all      # 两个都构建
+```
+
+产物按清单版本分开，各自是一个独立的扩展根：
+
+```
+output/
+├─ MV3/              ← Chrome / Edge 加载这个目录
+│  ├─ manifest.json
+│  └─ build/…
+└─ MV2/              ← Firefox 加载这里的 manifest.json
+   ├─ manifest.json
+   └─ build/…
 ```
 
 ### Chrome / Edge
 
-构建后扩展根就是本目录（`markdown_reader`）：
-
 1. 地址栏打开 `chrome://extensions`
 2. 右上角开启 **开发者模式**
-3. 点 **加载已解压的扩展程序**，选择本目录（`markdown_reader`）
+3. 点 **加载已解压的扩展程序**，选择 **`output/MV3`** 目录
 4. **关键一步**：找到「MD Reader」→ 点「详情」→ 打开 **「允许访问文件网址」**
 5. 打开任意 `.md` 文件（若已打开，按 `F5` 刷新）
 
 ### Firefox
 
-构建产物在 `build-firefox/`，整个目录就是扩展根：
-
 1. 地址栏打开 `about:debugging#/runtime/this-firefox`
-2. 点 **临时载入附加组件**，选择 `build-firefox/manifest.json`
+2. 点 **临时载入附加组件**，选择 **`output/MV2/manifest.json`**
 3. **关键一步**：`about:addons` → 本扩展 → 权限 → 打开 **「访问文件 URL」**
 
 > Firefox 目标最低要求 **128 版**：Mermaid 注入依赖 `scripting.executeScript` 的
 > `world: 'MAIN'`，该能力从 Firefox 128 起提供（Mozilla 把这个 MV3 API 一并回移到了 MV2）。
+> 「临时载入」的扩展在 Firefox 重启后会消失，需要重新载入——开发阶段属正常。
 
-> ⚠️ 第 4 步不做，扩展**完全不会生效**，而且页面上不会有任何提示——因为它根本不会被注入。
+> ⚠️ Chrome 侧第 4 步不做，扩展**完全不会生效**，而且页面上不会有任何提示——因为它根本不会被注入。
 > 忘了开的话，点工具栏上的扩展图标，popup 会告诉你。
 
 > 📦 从仓库克隆时 `testMd/10-超大文件测试.md`（3.4 MB）不入库，需要执行 `npm run testdata` 生成；
-> `preview/` 与 `build/` 同样不入库，分别由 `npm run preview`、`npm run build` 生成。
+> `preview/` 与 `output/` 同样不入库，分别由 `npm run preview`、`npm run build` 生成。
 
 ---
 
@@ -98,7 +108,9 @@ npm run testdata   # 重新生成 testMd/ 的图片、GBK 文件与超大文件
 
 ```
 markdown_reader/
-├─ manifest.json            # 【生成物】Chrome/Edge 清单，由 scripts/manifest.mjs 生成
+├─ output/                  # 【生成物】构建产物，两个目标各是一个扩展根
+│  ├─ MV3/                  # Chrome / Edge：加载这个目录
+│  └─ MV2/                  # Firefox：加载这里的 manifest.json
 ├─ scripts/
 │  ├─ build.mjs             # esbuild 构建（content + background + popup + mermaid）
 │  ├─ manifest.mjs          # 清单生成：两个平台的字段差异集中在这一个文件
