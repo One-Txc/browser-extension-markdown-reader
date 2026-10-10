@@ -33,6 +33,14 @@ const MAX_BULK_LEVELS = 3;
 /** 挂在 nav 上表示「不启用折叠」，由 CSS 收起 caret 与批量按钮 */
 const NO_FOLD_CLASS = 'md-reader-toc-no-fold';
 
+/**
+ * 上次激活的 pane。
+ *
+ * 放在模块级而非实例级：切换文档会销毁并重建整个侧边栏，
+ * 但用户选的是哪个 tab 不该跟着重置 —— 否则每次点文档都被弹回「目录」。
+ */
+let lastActivePane = 'outline';
+
 export interface TocHandle {
   nav: HTMLElement;
   /** 目录项总数，供调用方决定是否启用折叠功能 */
@@ -322,6 +330,7 @@ export function buildToc(
   }
 
   const switchPane = (pane: string): void => {
+    lastActivePane = pane;
     for (const tab of tabs.querySelectorAll<HTMLElement>('.md-reader-tab')) {
       tab.classList.toggle('is-active', tab.dataset.pane === pane);
     }
@@ -337,7 +346,8 @@ export function buildToc(
 
   nav.append(tabs, outlinePane);
   if (folderPane) nav.append(folderPaneWrap);
-  switchPane('outline');
+  // 恢复上次选中的 tab；若这次没有文件夹面板（未提供）则退回「目录」
+  switchPane(folderPane ? lastActivePane : 'outline');
 
   const tree = buildTree(headings);
   const nodes = flattenTree(tree);

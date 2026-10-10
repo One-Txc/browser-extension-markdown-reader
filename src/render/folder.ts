@@ -110,6 +110,14 @@ async function fetchDirectory(
 
 /* ------------------------------------------------------------ 面板实现 */
 
+/**
+ * 设置面板是否展开。
+ *
+ * 模块级：切换文档会重建文件夹面板（根目录变了），但用户手动展开的
+ * 设置面板不该被合上。
+ */
+let settingsOpen = false;
+
 export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
   const rootDir = directoryOf(options.documentUrl);
   let currentUrl = options.documentUrl;
@@ -144,8 +152,9 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
 
   const collapseBtn = mkTool(ICON_COLLAPSE, '折叠全部', () => collapseAll());
   const settingsBtn = mkTool(ICON_SETTINGS, '显示设置', () => {
-    settingsEl.classList.toggle('md-reader-hidden');
-    settingsBtn.classList.toggle('is-active');
+    settingsOpen = !settingsOpen;
+    settingsEl.classList.toggle('md-reader-hidden', !settingsOpen);
+    settingsBtn.classList.toggle('is-active', settingsOpen);
   });
 
   bar.append(barName, barCount, collapseBtn, settingsBtn);
@@ -153,7 +162,10 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
   /* ---------------- 设置面板 ---------------- */
 
   const settingsEl = document.createElement('div');
-  settingsEl.className = 'folder-settings md-reader-hidden';
+  settingsEl.className = settingsOpen
+    ? 'folder-settings'
+    : 'folder-settings md-reader-hidden';
+  settingsBtn.classList.toggle('is-active', settingsOpen);
 
   // 排序字段
   const sortRow = document.createElement('div');
