@@ -167,6 +167,8 @@ async function locateByUrl(
 function parseAddRows(
   html: string
 ): Array<{ name: string; url: string; isDir: boolean; size: number }> {
+  const out: Array<{ name: string; url: string; isDir: boolean; size: number }> = [];
+
   /*
    * 正则来自第三方插件已验证可用的版本（照搬）。
    * 我最初自己写的版本有两个错误，导致一条都匹配不上：
