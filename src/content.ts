@@ -18,7 +18,7 @@ import { renderMarkdown } from './render/markdown';
 import { applyTheme, injectKatexCss } from './render/styles';
 import { mountToc, type TocHandle, type TocHandlers } from './render/toc';
 import { setupImageZoom } from './render/lightbox';
-import { setupSourceView } from './render/source-view';
+import { setupSourceView, type SourceViewHandle } from './render/source-view';
 import {
   DEFAULT_SETTINGS,
   clampTocWidth,
@@ -111,7 +111,19 @@ function renderDocument(raw: string, url: string, settings: ReaderSettings): voi
   main.innerHTML = renderMarkdown(raw, url);
   markPerf('rendered');
 
-  document.body.replaceChildren(main);
+  /*
+   * ★ 只替换正文，绝不动 body 的其它子节点。
+   *
+   * 侧边栏（nav）、拖拽手柄、目录开关按钮都挂在 body 上 ——
+   * 早先这里用 replaceChildren(main) 清空整个 body，首次加载没问题
+   * （那时侧边栏还没建），但切换文档时会把侧边栏一起删掉。
+   */
+  if (mainEl?.parentNode) {
+    mainEl.replaceWith(main);
+  } else {
+    // 首次：清掉 Chrome 原始的 <pre> 文本视图
+    document.body.replaceChildren(main);
+  }
   document.body.classList.add('md-reader-body');
   markPerf('dom-swapped');
 
@@ -149,8 +161,14 @@ function renderDocument(raw: string, url: string, settings: ReaderSettings): voi
   document.title = titleFromUrl(url);
   enhanceCodeBlocks(main);
   setupImageZoom(main);
-  // 原文 / 渲染视图切换。句柄只在页面卸载时才有意义，这里不需要保留
-  setupSourceView(main, raw);
+
+  /*
+   * 原文 / 渲染视图切换。
+   * 它会把面板与按钮 append 到 body 上，切换文档时必须先销毁旧的，
+   * 否则每换一次文档就多留一份在页面里。
+   */
+  sourceViewHandle?.destroy();
+  sourceViewHandle = setupSourceView(main, raw);
 }
 
 /**
@@ -196,6 +214,11 @@ let currentDocUrl = baseDocUrl;
 let tocHandle: TocHandle | null = null;
 /** 「文件夹」面板；随 toc 的 nav 一起挂载，销毁时由 nav 一并移除 */
 let folderHandle: FolderPaneHandle | null = null;
+/**
+ * 原文视图的句柄。
+ * 它持有的面板与按钮挂在 body 上，切换文档时要先销毁旧的再建新的。
+ */
+let sourceViewHandle: SourceViewHandle | null = null;
 /** 设置的内存副本，避免每次交互都读一次 storage */
 let currentSettings: ReaderSettings = DEFAULT_SETTINGS;
 
