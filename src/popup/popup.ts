@@ -16,6 +16,7 @@
  */
 
 import {
+  DEFAULT_SETTINGS,
   clampExpandLevel,
   clampFoldThreshold,
   loadSettings,
@@ -39,6 +40,7 @@ const contentWidthEl = pick<HTMLSelectElement>('contentWidth');
 const showTocEl = pick<HTMLInputElement>('showToc');
 const foldThresholdEl = pick<HTMLInputElement>('foldThreshold');
 const defaultExpandLevelEl = pick<HTMLSelectElement>('defaultExpandLevel');
+const resetEl = pick<HTMLButtonElement>('reset');
 const statusEl = pick<HTMLElement>('status');
 const detailEl = pick<HTMLElement>('detail');
 const metaEl = pick<HTMLElement>('meta');
@@ -74,6 +76,58 @@ async function notifyActiveTab(): Promise<void> {
   } catch {
     /* 当前标签页没有 content script（不是 Markdown 页面），忽略 */
   }
+}
+
+/* ------------------------------------------------------------ 恢复默认 */
+
+/** 把设置回填到各控件（初始化与重置后共用，避免两处赋值逻辑漂移） */
+function applySettingsToForm(settings: ReaderSettings): void {
+  modeEl.value = settings.mode;
+  lightEl.value = settings.lightTheme;
+  darkEl.value = settings.darkTheme;
+  fontSizeEl.value = settings.fontSize;
+  contentWidthEl.value = settings.contentWidth;
+  showTocEl.checked = settings.showToc;
+  foldThresholdEl.value = String(settings.foldThreshold);
+  defaultExpandLevelEl.value = String(settings.defaultExpandLevel);
+}
+
+let resetArmed = false;
+let resetTimer: number | undefined;
+
+function disarmReset(): void {
+  resetArmed = false;
+  window.clearTimeout(resetTimer);
+  resetEl.textContent = '恢复默认设置';
+  resetEl.classList.remove('is-confirming');
+}
+
+/**
+ * 重置用「点一次进入待确认，再点一次执行，3 秒无操作自动撤销」，
+ * 而不是 window.confirm()：
+ * 原生对话框在扩展 popup 里的表现各浏览器不一致，还会打断操作流。
+ */
+async function handleResetClick(): Promise<void> {
+  if (!resetArmed) {
+    resetArmed = true;
+    resetEl.textContent = '再点一次确认恢复';
+    resetEl.classList.add('is-confirming');
+    resetTimer = window.setTimeout(disarmReset, 3000);
+    return;
+  }
+
+  disarmReset();
+
+  // 直接写默认值，不走 save()：save 的语义是「读旧值再合并」，
+  // 而重置要的是整体覆盖 —— 用合并写会把用户没改过的项也带过来，反而留下旧值。
+  await saveSettings(DEFAULT_SETTINGS);
+  applySettingsToForm(DEFAULT_SETTINGS);
+  await notifyActiveTab();
+
+  resetEl.textContent = '已恢复默认';
+  window.setTimeout(() => {
+    resetEl.textContent = '恢复默认设置';
+  }, 1500);
 }
 
 /* -------------------------------------------------------------- 权限状态 */
@@ -112,15 +166,7 @@ async function init(): Promise<void> {
   fillOptions(lightEl, 'light');
   fillOptions(darkEl, 'dark');
 
-  const settings = await loadSettings();
-  modeEl.value = settings.mode;
-  lightEl.value = settings.lightTheme;
-  darkEl.value = settings.darkTheme;
-  fontSizeEl.value = settings.fontSize;
-  contentWidthEl.value = settings.contentWidth;
-  showTocEl.checked = settings.showToc;
-  foldThresholdEl.value = String(settings.foldThreshold);
-  defaultExpandLevelEl.value = String(settings.defaultExpandLevel);
+  applySettingsToForm(await loadSettings());
 
   modeEl.addEventListener('change', () => void save({ mode: modeEl.value as ThemeMode }));
   lightEl.addEventListener('change', () => void save({ lightTheme: lightEl.value }));
@@ -139,6 +185,7 @@ async function init(): Promise<void> {
   defaultExpandLevelEl.addEventListener('change', () =>
     void save({ defaultExpandLevel: clampExpandLevel(Number(defaultExpandLevelEl.value)) })
   );
+  resetEl.addEventListener('click', () => void handleResetClick());
 
   await renderPermission();
 }
