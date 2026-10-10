@@ -361,8 +361,19 @@ function renderPanel(): void {
       log(`解析 addRow 调用：${rows.length} 项`);
 
       if (rows.length === 0) {
-        log('⚠ 一项都没解析出来 —— 需要调整正则，把原始 HTML 贴出来看看');
-        log(`前 700 字符：\n${html.slice(0, 700)}`);
+        // 定性：到底是「只有函数定义」还是「有调用但格式不同」
+        const total = (html.match(/addRow\(/g) ?? []).length;
+        const firstDef = html.indexOf('addRow(');
+        const firstCall = firstDef >= 0 ? html.indexOf('addRow(', firstDef + 1) : -1;
+
+        log(`  addRow( 共出现 ${total} 次`);
+        if (firstCall < 0) {
+          log('  ✗ 只有函数定义，没有任何调用 —— fetch 拿不到数据，此路不通');
+          log(`  HTML 尾部 900 字符：\n${html.slice(-900)}`);
+        } else {
+          log('  ✓ 有调用，但正则没匹配上。实际格式如下：');
+          log(`${html.slice(Math.max(0, firstCall - 40), firstCall + 460)}`);
+        }
         return;
       }
 
