@@ -1,0 +1,30 @@
+{
+  "extName": {
+    "message": "MD Reader",
+    "description": "扩展名称，不翻译"
+  },
+  "extDescription": {
+    "message": "直接在浏览器中优雅地阅读本地 .md 文件，无需任何本地服务。"
+  },
+
+  "folder_collapseAll": { "message": "折叠全部" },
+  "folder_settings": { "message": "显示设置" },
+  "folder_sort": { "message": "排序" },
+  "folder_sortName": { "message": "名称" },
+  "folder_sortSize": { "message": "大小" },
+  "folder_sortModified": { "message": "修改日期" },
+  "folder_foldersFirst": { "message": "文件夹置顶" },
+  "folder_showHidden": { "message": "显示隐藏项" },
+  "folder_sortAsc": { "message": "↑ 升序" },
+  "folder_sortDesc": { "message": "↓ 降序" },
+  "folder_sortAscHint": { "message": "当前升序，点击改为降序" },
+  "folder_sortDescHint": { "message": "当前降序，点击改为升序" },
+  "folder_toggle": { "message": "展开 / 收起" },
+  "folder_openDirInNewTab": { "message": "在新标签页打开该目录" },
+  "folder_openFileInNewTab": { "message": "在新标签页打开该文件" },
+  "folder_readFailed": { "message": "读取失败：$1" },
+  "folder_listFailed": { "message": "无法读取目录：$1" },
+  "folder_count": { "message": "$1 项" },
+  "folder_noResponse": { "message": "无响应" },
+  "folder_unknownError": { "message": "未知错误" }
+}

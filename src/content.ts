@@ -35,6 +35,7 @@ import {
   titleFromUrl,
 } from './shared/const';
 import { mountFolderPane, type FolderPaneHandle } from './render/folder';
+import { setLocale } from './shared/i18n';
 
 /** 超过此长度不做渲染，避免超大文件卡死标签页 */
 const MAX_RENDER_LENGTH = 3 * 1024 * 1024;
@@ -84,6 +85,8 @@ async function main(): Promise<void> {
     }
 
     const settings = await settingsPromise;
+    // 语言要在渲染之前定好：渲染过程中就会通过 t() 取文案
+    setLocale(settings.locale);
     renderDocument(raw, currentDocUrl, settings);
     // hash 只在首次加载时处理；原地切换文档后地址栏已不代表正文，跳了反而错
     applyInitialHash();
@@ -336,6 +339,7 @@ function applyFoldPolicy(settings: ReaderSettings): void {
 async function refreshFromSettings(): Promise<void> {
   const settings = await loadSettings();
   currentSettings = settings;
+  setLocale(settings.locale);
   applyTheme(document, settings);
   syncToc(settings);
 }

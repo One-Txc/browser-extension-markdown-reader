@@ -1,0 +1,30 @@
+{
+  "extName": {
+    "message": "MD Reader",
+    "description": "Extension name, not translated"
+  },
+  "extDescription": {
+    "message": "Read local .md files elegantly in your browser. No local server required."
+  },
+
+  "folder_collapseAll": { "message": "Collapse all" },
+  "folder_settings": { "message": "Settings" },
+  "folder_sort": { "message": "Sort" },
+  "folder_sortName": { "message": "Name" },
+  "folder_sortSize": { "message": "Size" },
+  "folder_sortModified": { "message": "Date modified" },
+  "folder_foldersFirst": { "message": "Folders first" },
+  "folder_showHidden": { "message": "Show hidden items" },
+  "folder_sortAsc": { "message": "↑ Asc" },
+  "folder_sortDesc": { "message": "↓ Desc" },
+  "folder_sortAscHint": { "message": "Ascending — click for descending" },
+  "folder_sortDescHint": { "message": "Descending — click for ascending" },
+  "folder_toggle": { "message": "Expand / collapse" },
+  "folder_openDirInNewTab": { "message": "Open folder in new tab" },
+  "folder_openFileInNewTab": { "message": "Open file in new tab" },
+  "folder_readFailed": { "message": "Read failed: $1" },
+  "folder_listFailed": { "message": "Cannot read folder: $1" },
+  "folder_count": { "message": "$1 items" },
+  "folder_noResponse": { "message": "No response" },
+  "folder_unknownError": { "message": "Unknown error" }
+}

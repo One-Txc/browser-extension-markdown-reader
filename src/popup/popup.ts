@@ -27,6 +27,7 @@ import {
   type ThemeMode,
 } from '../shared/settings';
 import { themesFor, type Appearance } from '../render/theme-catalog';
+import type { Locale } from '../shared/i18n';
 
 function pick<T extends HTMLElement>(id: string): T {
   return document.getElementById(id) as T;
@@ -41,6 +42,7 @@ const showTocEl = pick<HTMLInputElement>('showToc');
 const foldThresholdEl = pick<HTMLInputElement>('foldThreshold');
 const defaultExpandLevelEl = pick<HTMLSelectElement>('defaultExpandLevel');
 const resetEl = pick<HTMLButtonElement>('reset');
+const localeEl = pick<HTMLSelectElement>('locale');
 const statusEl = pick<HTMLElement>('status');
 const detailEl = pick<HTMLElement>('detail');
 const metaEl = pick<HTMLElement>('meta');
@@ -99,6 +101,7 @@ function applySettingsToForm(settings: ReaderSettings): void {
   showTocEl.checked = settings.showToc;
   foldThresholdEl.value = String(settings.foldThreshold);
   defaultExpandLevelEl.value = String(settings.defaultExpandLevel);
+  localeEl.value = settings.locale;
 }
 
 let resetArmed = false;
@@ -195,6 +198,7 @@ async function init(): Promise<void> {
     void save({ defaultExpandLevel: clampExpandLevel(Number(defaultExpandLevelEl.value)) })
   );
   resetEl.addEventListener('click', () => void handleResetClick());
+  localeEl.addEventListener('change', () => void save({ locale: localeEl.value as Locale }));
 
   await renderPermission();
 }

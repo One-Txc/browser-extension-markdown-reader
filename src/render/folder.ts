@@ -26,6 +26,7 @@ import {
   type DirEntry,
   type SortField,
 } from '../shared/directory';
+import { t } from '../shared/i18n';
 
 /* ------------------------------------------------------------------ 图标 */
 
@@ -111,7 +112,7 @@ async function fetchDirectory(
     return (
       (res as { ok: boolean; entries?: DirEntry[]; error?: string }) ?? {
         ok: false,
-        error: '无响应',
+        error: t('folder_noResponse'),
       }
     );
   } catch (err) {
@@ -153,8 +154,8 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
     return b;
   };
 
-  const collapseBtn = mkTool(ICON_COLLAPSE, '折叠全部', () => collapseAll());
-  const settingsBtn = mkTool(ICON_SETTINGS, '显示设置', () => {
+  const collapseBtn = mkTool(ICON_COLLAPSE, t('folder_collapseAll'), () => collapseAll());
+  const settingsBtn = mkTool(ICON_SETTINGS, t('folder_settings'), () => {
     // 依据当前 DOM 状态翻转，避免与实际显示不一致；并把这个选择持久化
     const open = settingsEl.classList.contains('md-reader-hidden');
     settingsEl.classList.toggle('md-reader-hidden', !open);
@@ -180,14 +181,14 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
   sortRow.className = 'folder-setting-row';
   const sortLabel = document.createElement('span');
   sortLabel.className = 'folder-setting-label';
-  sortLabel.textContent = '排序';
+  sortLabel.textContent = t('folder_sort');
 
   const sortSelect = document.createElement('select');
   sortSelect.className = 'folder-select';
   for (const [value, label] of [
-    ['name', '名称'],
-    ['size', '大小'],
-    ['modified', '修改日期'],
+    ['name', t('folder_sortName')],
+    ['size', t('folder_sortSize')],
+    ['modified', t('folder_sortModified')],
   ] as const) {
     const opt = document.createElement('option');
     opt.value = value;
@@ -228,12 +229,12 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
   };
 
   const foldersFirstCheck = mkCheck(
-    '文件夹置顶',
+    t('folder_foldersFirst'),
     () => options.getPrefs().foldersFirst,
     (v) => options.setPrefs({ foldersFirst: v })
   );
   const showHiddenCheck = mkCheck(
-    '显示隐藏项',
+    t('folder_showHidden'),
     () => options.getPrefs().showHidden,
     (v) => options.setPrefs({ showHidden: v })
   );
@@ -244,8 +245,8 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
   function syncSettingsUi(): void {
     const p = options.getPrefs();
     sortSelect.value = p.sortField;
-    ascBtn.textContent = p.sortAsc ? '↑ 升序' : '↓ 降序';
-    ascBtn.title = p.sortAsc ? '当前升序，点击改为降序' : '当前降序，点击改为升序';
+    ascBtn.textContent = p.sortAsc ? t('folder_sortAsc') : t('folder_sortDesc');
+    ascBtn.title = p.sortAsc ? t('folder_sortAscHint') : t('folder_sortDescHint');
     const a = foldersFirstCheck.querySelector('input');
     if (a) a.checked = p.foldersFirst;
     const b = showHiddenCheck.querySelector('input');
@@ -314,8 +315,8 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
       caret = document.createElement('button');
       caret.type = 'button';
       caret.className = 'folder-caret is-collapsed';
-      caret.title = '展开 / 收起';
-      caret.setAttribute('aria-label', '展开 / 收起');
+      caret.title = t('folder_toggle');
+      caret.setAttribute('aria-label', t('folder_toggle'));
       caret.innerHTML = ICON_CARET;
       row.append(caret);
     } else {
@@ -346,7 +347,7 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
     const jump = document.createElement('button');
     jump.type = 'button';
     jump.className = 'folder-jump';
-    jump.title = entry.isDir ? '在新标签页打开该目录' : '在新标签页打开该文件';
+    jump.title = entry.isDir ? t('folder_openDirInNewTab') : t('folder_openFileInNewTab');
     jump.setAttribute('aria-label', jump.title);
     jump.innerHTML = ICON_JUMP;
     jump.addEventListener('click', (ev) => {
@@ -407,7 +408,7 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
       if (!res.ok) {
         const err = document.createElement('li');
         err.className = 'folder-error';
-        err.textContent = `读取失败：${res.error ?? '未知错误'}`;
+        err.textContent = t('folder_readFailed', [res.error ?? t('folder_unknownError')]);
         node.childrenEl.append(err);
       } else if (entries.length === 0) {
         /*
@@ -440,13 +441,13 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
     if (!res.ok) {
       const err = document.createElement('li');
       err.className = 'folder-error';
-      err.textContent = `无法读取目录：${res.error ?? '未知错误'}`;
+      err.textContent = t('folder_listFailed', [res.error ?? t('folder_unknownError')]);
       list.append(err);
       return;
     }
 
     const entries = ordered(res.entries ?? []);
-    barCount.textContent = `${entries.length} 项`;
+    barCount.textContent = t('folder_count', [String(entries.length)]);
 
     // 空了就留白，不做任何提示
     for (const entry of entries) list.append(renderRow(entry, rootDir));

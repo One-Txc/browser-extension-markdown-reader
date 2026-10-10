@@ -13,7 +13,9 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    /* 语言包以 JSON 形式 import（见 src/shared/i18n.ts） */
+    "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "_locales/**/*.json"]
 }
