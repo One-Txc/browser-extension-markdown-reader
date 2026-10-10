@@ -740,6 +740,18 @@ body.md-reader-lightbox-open {
 
 /* ---------- 目录树 ---------- */
 
+/*
+ * 大纲条目的字号比侧边栏其他控件略大。
+ *
+ * 只覆盖列表本身，不改 nav 的 12.5px —— 否则批量按钮、文件夹面板这些
+ * 已经各自定好字号的控件也会跟着变。
+ * 大纲是用户要反复扫读的内容，值得比按钮文字大一号。
+ * 嵌套的 .toc-children 会继承这个值。
+ */
+.md-reader-toc-list {
+  font-size: 13.5px;
+}
+
 .md-reader-toc-list,
 .toc-children {
   list-style: none;

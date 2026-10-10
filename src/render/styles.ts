@@ -54,7 +54,12 @@ const PALETTE: Record<Appearance, AppearancePalette> = {
     // 与 github-markdown-css 浅色主题的正文色保持一致
     fg: '#1f2328',
     muted: '#656d76',
-    toc: { border: 'rgba(0, 0, 0, 0.08)', text: '#656d76', active: '#0969da' },
+    /*
+     * 大纲是主要导航，不是「次要文字」，所以不用 muted 那个灰。
+     * 也不能直接用 fg 的 #1f2328 —— 那会让大纲与正文一样重、抢走视觉重心，
+     * 所以取一个明显更深、但仍与正文有区分的等级。
+     */
+    toc: { border: 'rgba(0, 0, 0, 0.08)', text: '#424a53', active: '#0969da' },
   },
   dark: {
     pageBg: '#0d1117',
