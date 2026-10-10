@@ -58,7 +58,7 @@ export function clampTocWidth(width: number): number {
 
 /** 折叠阈值的取值范围。0 = 始终启用；上限留得足够大，便于用户实质上关掉折叠 */
 export const FOLD_THRESHOLD = {
-  default: 10,
+  default: 25,
   min: 0,
   max: 9999,
 } as const;
