@@ -38,11 +38,33 @@
       min-width: 0;
       margin-bottom: 0;
     }
+
+    /* ---------- 可折叠的「高级设置」分组标题 ---------- */
+
+    .adv-toggle {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 0; border: 0; background: transparent;
+      font: inherit; font-size: 12px; font-weight: 600;
+      color: #424a53; cursor: pointer;
+    }
+    .adv-toggle:hover { color: #0969da; }
+    .adv-caret {
+      display: block; width: 9px; height: 9px;
+      transition: transform 0.15s ease;
+    }
+    .adv-toggle[aria-expanded="true"] .adv-caret { transform: rotate(90deg); }
+
+    /* 收起时不占位，也不参与 Tab 焦点顺序 */
+    .adv-body.is-collapsed { display: none; }
     .row { display: flex; gap: 10px; }
     .row > div { flex: 1; min-width: 0; }
+    /*
+     * 上下都留白：它相邻的是并排控件行，而那类行的底部间距已被归零
+     * （见 .row select / .row input），所以间距得由这里自己出。
+     */
     label.check {
       display: flex; align-items: center; gap: 7px;
-      margin-top: 2px; font-size: 12px; color: #424a53; cursor: pointer;
+      margin: 10px 0; font-size: 12px; color: #424a53; cursor: pointer;
     }
     label.check input { margin: 0; }
     fieldset > *:last-child { margin-bottom: 0; }
@@ -73,75 +95,97 @@
   <h1>MD Reader</h1>
 
   <fieldset>
-    <legend>配色</legend>
+    <legend data-i18n="popupBasic">基本设置</legend>
 
-    <label class="field" for="mode">颜色模式</label>
+    <label class="field" for="mode" data-i18n="popupMode">颜色模式</label>
     <select id="mode">
-      <option value="auto">跟随系统</option>
-      <option value="light">始终浅色</option>
-      <option value="dark">始终深色</option>
+      <option value="auto" data-i18n="popupModeAuto">跟随系统</option>
+      <option value="light" data-i18n="popupModeLight">始终浅色</option>
+      <option value="dark" data-i18n="popupModeDark">始终深色</option>
     </select>
 
-    <label class="field" for="lightTheme">浅色代码配色</label>
+    <label class="field" for="lightTheme" data-i18n="popupLightTheme">浅色代码配色</label>
     <select id="lightTheme"></select>
 
-    <label class="field" for="darkTheme">深色代码配色</label>
+    <label class="field" for="darkTheme" data-i18n="popupDarkTheme">深色代码配色</label>
     <select id="darkTheme"></select>
-  </fieldset>
 
-  <fieldset>
-    <legend>排版</legend>
-
-    <div class="row">
-      <div>
-        <label class="field" for="fontSize">字号</label>
-        <select id="fontSize">
-          <option value="small">小</option>
-          <option value="medium">中</option>
-          <option value="large">大</option>
-        </select>
-      </div>
-      <div>
-        <label class="field" for="contentWidth">正文宽度</label>
-        <select id="contentWidth">
-          <option value="narrow">窄</option>
-          <option value="medium">中</option>
-          <option value="wide">宽</option>
-          <option value="full">全宽</option>
-        </select>
-      </div>
-    </div>
+    <label class="field" for="locale" data-i18n="popupLocale">界面语言</label>
+    <select id="locale">
+      <option value="auto" data-i18n="popupLocaleAuto">跟随浏览器</option>
+      <!-- 语言名用各自的写法，不进语言包 -->
+      <option value="zh_CN">简体中文</option>
+      <option value="en">English</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+    </select>
 
     <label class="check">
       <input type="checkbox" id="showToc">
-      显示侧边栏
+      <span data-i18n="popupShowSidebar">显示侧边栏</span>
     </label>
+  </fieldset>
 
-    <div class="row">
-      <div>
-        <label class="field" for="foldThreshold">折叠阈值</label>
-        <input type="number" id="foldThreshold" min="0" max="9999" step="5">
+  <fieldset>
+    <!--
+      legend 里可以放按钮（button 属于 phrasing content）。
+      这样不必为了一个「可折叠的标题」放弃 fieldset 的默认样式。
+    -->
+    <legend>
+      <button type="button" id="advancedToggle" class="adv-toggle" aria-expanded="false"
+              aria-controls="advancedBody">
+        <svg class="adv-caret" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2 7 5 3.5 8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span data-i18n="popupAdvanced">高级设置</span>
+      </button>
+    </legend>
+
+    <div id="advancedBody" class="adv-body">
+      <div class="row">
+        <div>
+          <label class="field" for="fontSize" data-i18n="popupFontSize">字号</label>
+          <select id="fontSize">
+            <option value="small" data-i18n="popupSizeSmall">小</option>
+            <option value="medium" data-i18n="popupSizeMedium">中</option>
+            <option value="large" data-i18n="popupSizeLarge">大</option>
+          </select>
+        </div>
+        <div>
+          <label class="field" for="contentWidth" data-i18n="popupContentWidth">正文宽度</label>
+          <select id="contentWidth">
+            <option value="narrow" data-i18n="popupWidthNarrow">窄</option>
+            <option value="medium" data-i18n="popupWidthMedium">中</option>
+            <option value="wide" data-i18n="popupWidthWide">宽</option>
+            <option value="full" data-i18n="popupWidthFull">全宽</option>
+          </select>
+        </div>
       </div>
-      <div>
-        <label class="field" for="defaultExpandLevel">默认展开层数</label>
-        <select id="defaultExpandLevel">
-          <option value="-1">全部展开</option>
-          <option value="0">只显示第一层</option>
-          <option value="1">展开第一层</option>
-          <option value="2">展开前两层</option>
-          <option value="3">展开前三层</option>
-          <option value="4">展开前四层</option>
-        </select>
+
+      <div class="row">
+        <div>
+          <label class="field" for="foldThreshold" data-i18n="popupFoldThreshold">折叠阈值</label>
+          <input type="number" id="foldThreshold" min="0" max="9999" step="5">
+        </div>
+        <div>
+          <label class="field" for="defaultExpandLevel" data-i18n="popupExpandLevel">默认展开层数</label>
+          <select id="defaultExpandLevel">
+            <option value="-1" data-i18n="popupExpandAll">全部展开</option>
+            <option value="0" data-i18n="popupExpand0">只显示第一层</option>
+            <option value="1" data-i18n="popupExpand1">展开第一层</option>
+            <option value="2" data-i18n="popupExpand2">展开前两层</option>
+            <option value="3" data-i18n="popupExpand3">展开前三层</option>
+            <option value="4" data-i18n="popupExpand4">展开前四层</option>
+          </select>
+        </div>
       </div>
-    </div>
-    <div class="hint">
-      目录项超过阈值时显示折叠按钮（填 0 表示始终显示）；默认展开层数决定打开文档时展开到第几层。
+      <div class="hint" data-i18n="popupFoldHint">
+        目录项超过阈值时显示折叠按钮（填 0 表示始终显示）；默认展开层数决定打开文档时展开到第几层。
+      </div>
     </div>
   </fieldset>
 
-  <button type="button" id="reset" class="reset-btn">恢复默认设置</button>
+  <button type="button" id="reset" class="reset-btn" data-i18n="popupReset">恢复默认设置</button>
 
-  <div id="status" class="status">正在检测…</div>
+  <div id="status" class="status" data-i18n="popupChecking">正在检测…</div>
   <div id="detail"></div>
   <div class="meta" id="version"></div>
   <div class="meta" id="meta"></div>

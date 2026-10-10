@@ -11,6 +11,22 @@
  */
 
 import { filterEntries, parseDirectoryIndex, type DirEntry } from './shared/directory';
+import { setLocale, t } from './shared/i18n';
+import { loadSettings } from './shared/settings';
+import type { Locale } from './shared/i18n';
+
+/*
+ * Service Worker 也要知道当前语言 —— 它产生的错误文案会直接显示给用户。
+ *
+ * SW 会被随时回收，模块顶层重新执行时自然重读一次设置；
+ * 用户改语言时靠 storage 监听同步过来。
+ */
+void loadSettings().then((s) => setLocale(s.locale));
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'sync' || !changes.locale) return;
+  setLocale((changes.locale.newValue as Locale) ?? 'auto');
+});
 
 /** 记录最近一次收到注入上报的时间，供 popup 判断权限状态 */
 chrome.runtime.onMessage.addListener(
@@ -54,7 +70,7 @@ async function listDirectory(
   dirUrl: string
 ): Promise<{ ok: boolean; entries?: DirEntry[]; error?: string }> {
   if (!dirUrl.startsWith('file://')) {
-    return { ok: false, error: '仅支持 file:// 目录' };
+    return { ok: false, error: t('dirOnly') };
   }
 
   try {
@@ -62,7 +78,7 @@ async function listDirectory(
     const html = await res.text();
 
     // ★ 不能用 res.ok 判断：file:// 的 Response 是 ok:false / status:0，但 body 完整
-    if (!html) return { ok: false, error: '目录返回为空' };
+    if (!html) return { ok: false, error: t('dirEmpty') };
 
     const entries = filterEntries(parseDirectoryIndex(html));
     return { ok: true, entries };
@@ -82,7 +98,7 @@ async function listDirectory(
  * 影响可控。
  */
 async function injectMermaid(tabId?: number): Promise<{ ok: boolean; error?: string }> {
-  if (tabId == null) return { ok: false, error: '拿不到标签页 id' };
+  if (tabId == null) return { ok: false, error: t('noTabId') };
 
   try {
     await chrome.scripting.executeScript({
@@ -104,7 +120,7 @@ async function readLocalFile(url: string): Promise<{
   error?: string;
 }> {
   if (!url.startsWith('file://')) {
-    return { ok: false, error: '仅允许读取 file:// 路径' };
+    return { ok: false, error: t('fileOnly') };
   }
 
   try {

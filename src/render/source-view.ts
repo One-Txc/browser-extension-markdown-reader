@@ -14,6 +14,7 @@
  */
 
 import { SOURCE_MODE_CLASS } from '../shared/const';
+import { t } from '../shared/i18n';
 
 const PANEL_CLASS = 'md-reader-source';
 const HIDDEN_CLASS = 'md-reader-hidden';
@@ -54,7 +55,7 @@ export function setupSourceView(root: HTMLElement, raw: string): SourceViewHandl
 
     // 图标表达「点击后会看到的视图」
     button.innerHTML = showingSource ? ICON_TO_RENDERED : ICON_TO_SOURCE;
-    button.title = showingSource ? '返回渲染视图' : '查看原始 Markdown';
+    button.title = showingSource ? t('viewRendered') : t('viewSource');
     button.setAttribute('aria-label', button.title);
     button.setAttribute('aria-pressed', String(showingSource));
     button.classList.toggle('is-active', showingSource);

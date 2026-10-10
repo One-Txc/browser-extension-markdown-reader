@@ -58,9 +58,10 @@ export const LAYOUT = {
   },
 };
 
-const NAME = 'MD Reader';
+const NAME = '__MSG_extName__';
 const VERSION = '0.1.0';
-const DESCRIPTION = '直接在浏览器中优雅地阅读本地 .md 文件，无需任何本地服务。';
+/** 由浏览器按 __MSG_extDescription__ 从 _locales 解析 */
+const DESCRIPTION = '__MSG_extDescription__';
 
 /**
  * Firefox 要求显式扩展 ID。
@@ -87,6 +88,12 @@ export function buildManifest(target) {
     name: NAME,
     version: VERSION,
     description: DESCRIPTION,
+    /*
+     * 语言包目录 _locales 必须位于扩展根目录，浏览器据此解析上面的 __MSG_ 占位。
+     * Chrome 的扩展根就是项目根，_locales 本来就在那儿；
+     * Firefox 的扩展根是 output/MV2，构建时会复制一份过去（见 build.mjs）。
+     */
+    default_locale: 'zh_CN',
     permissions: ['storage', 'scripting'],
     content_scripts: [
       {

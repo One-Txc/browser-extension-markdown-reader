@@ -35,6 +35,7 @@ import {
   titleFromUrl,
 } from './shared/const';
 import { mountFolderPane, type FolderPaneHandle } from './render/folder';
+import { setLocale, t } from './shared/i18n';
 
 /** 超过此长度不做渲染，避免超大文件卡死标签页 */
 const MAX_RENDER_LENGTH = 3 * 1024 * 1024;
@@ -84,6 +85,8 @@ async function main(): Promise<void> {
     }
 
     const settings = await settingsPromise;
+    // 语言要在渲染之前定好：渲染过程中就会通过 t() 取文案
+    setLocale(settings.locale);
     renderDocument(raw, currentDocUrl, settings);
     // hash 只在首次加载时处理；原地切换文档后地址栏已不代表正文，跳了反而错
     applyInitialHash();
@@ -130,6 +133,8 @@ function renderDocument(raw: string, url: string, settings: ReaderSettings): voi
   // 先记录容器，目录与主题都依赖它
   mainEl = main;
   currentSettings = settings;
+  // 留一份原文：切换语言时要靠它把整份内容重建一遍
+  currentRaw = raw;
   applyTheme(document, settings);
   markPerf('themed');
 
@@ -222,6 +227,14 @@ let sourceViewHandle: SourceViewHandle | null = null;
 /** 设置的内存副本，避免每次交互都读一次 storage */
 let currentSettings: ReaderSettings = DEFAULT_SETTINGS;
 
+/**
+ * 当前正文的 Markdown 原文。
+ *
+ * 切换语言时要重建整份内容才能让文案换过来（原因见 refreshFromSettings），
+ * 而重建需要原文，所以留一份。
+ */
+let currentRaw = '';
+
 /** 合并写入设置并同步内存副本 */
 async function persistSettings(partial: Partial<ReaderSettings>): Promise<void> {
   currentSettings = { ...currentSettings, ...partial };
@@ -246,8 +259,14 @@ const tocHandlers: TocHandlers = {
     if (commit) void persistSettings({ tocWidth: clampTocWidth(width) });
   },
   setVisible: (visible) => {
+    /*
+     * ★ 只切换当前页面的显示状态，**不写入设置**。
+     *
+     * 左上角那个按钮是「临时让开视线」用的开关；持久化的入口在设置弹窗里。
+     * 早先这里会落盘，结果是用户随手点一下隐藏，下次打开所有文档都不见了侧边栏，
+     * 而他又不知道是哪里改的 —— 临时操作不该产生永久副作用。
+     */
     document.body.classList.toggle('md-reader-has-toc', visible);
-    void persistSettings({ showToc: visible });
   },
   /*
    * 「文件夹」面板。懒创建 —— 只有真正渲染侧边栏时才会调到这里，
@@ -335,8 +354,33 @@ function applyFoldPolicy(settings: ReaderSettings): void {
 
 async function refreshFromSettings(): Promise<void> {
   const settings = await loadSettings();
+  const localeChanged = settings.locale !== currentSettings.locale;
   currentSettings = settings;
+  setLocale(settings.locale);
   applyTheme(document, settings);
+
+  if (localeChanged && mainEl && currentRaw) {
+    /*
+     * 语言变了 → 重建整份内容。
+     *
+     * 文案是在**创建 DOM 的那一刻**一次性 t() 出来的，已有的文本节点不会
+     * 重新求值（样式能「活」是因为它走 CSS 变量与 class，文本不行）。
+     * 所以要覆盖新文案就只能重建：侧边栏 tab 名、文件夹面板、各处 tooltip、
+     * 以及代码块上那排复制按钮。
+     *
+     * 顺序要紧：先销毁侧边栏句柄 —— renderDocument 对已存在的 tocHandle
+     * 只调 setRoot（不重建 nav），不先销毁的话 tab 名之类的文案留在原处。
+     * tab 选择由 toc.ts 的模块级 lastActivePane 自动恢复，
+     * 但文件夹面板的展开状态与目录折叠状态会重置，语言切换是低频操作，可以接受。
+     */
+    tocHandle?.destroy();
+    tocHandle = null;
+    folderHandle = null;
+    lastFoldPolicy = '';
+    renderDocument(currentRaw, currentDocUrl, settings);
+    return;
+  }
+
   syncToc(settings);
 }
 
@@ -508,19 +552,19 @@ function enhanceCodeBlocks(root: HTMLElement): void {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'md-reader-copy';
-    btn.textContent = '复制';
+    btn.textContent = t('copy');
 
     btn.addEventListener('click', async () => {
       const code = pre.querySelector('code')?.textContent ?? '';
       try {
         await navigator.clipboard.writeText(code);
-        btn.textContent = '已复制';
+        btn.textContent = t('copied');
       } catch {
-        btn.textContent = '复制失败';
+        btn.textContent = t('copyFailed');
       }
       btn.classList.add('done');
       setTimeout(() => {
-        btn.textContent = '复制';
+        btn.textContent = t('copy');
         btn.classList.remove('done');
       }, 1500);
     });
@@ -538,7 +582,7 @@ function renderTooLargeNotice(size: number): void {
     'padding:8px 14px', 'background:#fff8c5', 'border-bottom:1px solid #d4a72c',
     'font:13px/1.5 system-ui,"Segoe UI","Microsoft YaHei",sans-serif', 'color:#4d2d00',
   ].join(';');
-  bar.textContent = `MD Reader：文件过大（${mb} MB），已跳过渲染，显示原始文本。`;
+  bar.textContent = `MD Reader: ${t('tooLarge', [mb])}`;
   document.documentElement.appendChild(bar);
 }
 

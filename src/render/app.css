@@ -447,6 +447,12 @@ body.md-reader-lightbox-open {
 .md-reader-folder-bar .name {
   font-weight: 600;
   color: var(--md-fg, #424a53);
+  /*
+   * min-width: 0 不能省：flex 子项默认 min-width: auto，不会收缩到小于内容宽度，
+   * 于是超长目录名会把整行顶宽、把右侧两个按钮挤出可视区。
+   * 有了它，下面的 overflow + ellipsis 才真正生效。
+   */
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -594,6 +600,8 @@ body.md-reader-lightbox-open {
 
 .folder-name {
   flex: 1 1 auto;
+  /* 同上：flex 子项要显式 min-width: 0 才会收缩，省略号才生效 */
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }

@@ -27,6 +27,8 @@ import {
   type ThemeMode,
 } from '../shared/settings';
 import { themesFor, type Appearance } from '../render/theme-catalog';
+import type { Locale } from '../shared/i18n';
+import { setLocale, t } from '../shared/i18n';
 
 function pick<T extends HTMLElement>(id: string): T {
   return document.getElementById(id) as T;
@@ -41,6 +43,9 @@ const showTocEl = pick<HTMLInputElement>('showToc');
 const foldThresholdEl = pick<HTMLInputElement>('foldThreshold');
 const defaultExpandLevelEl = pick<HTMLSelectElement>('defaultExpandLevel');
 const resetEl = pick<HTMLButtonElement>('reset');
+const localeEl = pick<HTMLSelectElement>('locale');
+const advancedToggle = pick<HTMLButtonElement>('advancedToggle');
+const advancedBody = pick<HTMLElement>('advancedBody');
 const statusEl = pick<HTMLElement>('status');
 const detailEl = pick<HTMLElement>('detail');
 const metaEl = pick<HTMLElement>('meta');
@@ -51,10 +56,35 @@ const versionEl = pick<HTMLElement>('version');
  *
  * 版本号在开发期几乎不变，光看它无法判断「浏览器里跑的是不是刚构建的那份」；
  * 构建时间每次构建都不同，刷新 popup 即可确认。
+ * 这里不用 t()：它依赖语言设置，而语言要等 init 读出来才知道，见下面的 renderVersion。
  */
-versionEl.textContent = `v${chrome.runtime.getManifest().version} · 构建于 ${__BUILD_TIME__}`;
+function renderVersion(): void {
+  versionEl.textContent = t('popupVersion', [
+    chrome.runtime.getManifest().version,
+    __BUILD_TIME__,
+  ]);
+}
 
 const SETTINGS_URL = 'chrome://extensions/?id=' + chrome.runtime.id;
+
+/* ---------------------------------------------------------- 静态文案填充 */
+
+/**
+ * 填充 HTML 里所有带 data-i18n 标记的元素。
+ *
+ * HTML 的文本节点没法调用 JS 函数，所以给元素打标记、启动时统一填一遍。
+ * 之后新增文案只要在 HTML 上挂属性，这个函数不用改。
+ */
+function applyI18n(root: ParentNode = document): void {
+  root.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
+    const key = el.dataset.i18n;
+    if (key) el.textContent = t(key);
+  });
+  root.querySelectorAll<HTMLElement>('[data-i18n-title]').forEach((el) => {
+    const key = el.dataset.i18nTitle;
+    if (key) el.title = t(key);
+  });
+}
 
 /* -------------------------------------------------------------- 设置读写 */
 
@@ -63,7 +93,8 @@ function fillOptions(select: HTMLSelectElement, appearance: Appearance): void {
     ...themesFor(appearance).map((theme) => {
       const option = document.createElement('option');
       option.value = theme.id;
-      option.textContent = theme.name;
+      // 主题名是品牌名不翻译；需要本地化的补充说明走 noteKey
+      option.textContent = theme.noteKey ? `${theme.name} · ${t(theme.noteKey)}` : theme.name;
       return option;
     })
   );
@@ -99,6 +130,7 @@ function applySettingsToForm(settings: ReaderSettings): void {
   showTocEl.checked = settings.showToc;
   foldThresholdEl.value = String(settings.foldThreshold);
   defaultExpandLevelEl.value = String(settings.defaultExpandLevel);
+  localeEl.value = settings.locale;
 }
 
 let resetArmed = false;
@@ -107,7 +139,7 @@ let resetTimer: number | undefined;
 function disarmReset(): void {
   resetArmed = false;
   window.clearTimeout(resetTimer);
-  resetEl.textContent = '恢复默认设置';
+  resetEl.textContent = t('popupReset');
   resetEl.classList.remove('is-confirming');
 }
 
@@ -119,7 +151,7 @@ function disarmReset(): void {
 async function handleResetClick(): Promise<void> {
   if (!resetArmed) {
     resetArmed = true;
-    resetEl.textContent = '再点一次确认恢复';
+    resetEl.textContent = t('popupResetConfirm');
     resetEl.classList.add('is-confirming');
     resetTimer = window.setTimeout(disarmReset, 3000);
     return;
@@ -131,11 +163,13 @@ async function handleResetClick(): Promise<void> {
   // 而重置要的是整体覆盖 —— 用合并写会把用户没改过的项也带过来，反而留下旧值。
   await saveSettings(DEFAULT_SETTINGS);
   applySettingsToForm(DEFAULT_SETTINGS);
+  // 折叠状态不在表单里，要单独复位（默认是收起）
+  applyAdvancedState(DEFAULT_SETTINGS.advancedOpen);
   await notifyActiveTab();
 
-  resetEl.textContent = '已恢复默认';
+  resetEl.textContent = t('popupResetDone');
   window.setTimeout(() => {
-    resetEl.textContent = '恢复默认设置';
+    resetEl.textContent = t('popupReset');
   }, 1500);
 }
 
@@ -149,34 +183,68 @@ async function renderPermission(): Promise<void> {
 
   if (data.fileAccessProven) {
     statusEl.className = 'status ok';
-    statusEl.innerHTML = '<b>✓ 已在本地 Markdown 页面上生效</b>';
-    detailEl.innerHTML = '<div class="hint">改动设置后，当前页面会立即更新，无需刷新。</div>';
+    statusEl.innerHTML = `<b>✓ ${t('popupActive')}</b>`;
+    detailEl.innerHTML = `<div class="hint">${t('popupActiveHint')}</div>`;
   } else {
     statusEl.className = 'status bad';
-    statusEl.innerHTML = '<b>尚未在本地 Markdown 页面生效</b><br>常见原因是缺少文件访问权限。';
+    statusEl.innerHTML = `<b>${t('popupInactive')}</b><br>${t('popupInactiveReason')}`;
     detailEl.innerHTML = [
       '<ol>',
-      `<li>在地址栏打开：<br><code>${SETTINGS_URL}</code></li>`,
-      '<li>找到「MD Reader」，打开「<b>允许访问文件网址</b>」</li>',
-      '<li>回到 <code>.md</code> 页面按 <b>F5</b> 刷新</li>',
+      `<li>${t('popupStep1')}<br><code>${SETTINGS_URL}</code></li>`,
+      `<li>${t('popupStep2')}</li>`,
+      `<li>${t('popupStep3')}</li>`,
       '</ol>',
     ].join('');
   }
 
   const last = data.fileAccessLastSeen
     ? new Date(data.fileAccessLastSeen as number).toLocaleString()
-    : '从未';
-  metaEl.textContent = '最近一次生效：' + last;
+    : t('popupNever');
+  metaEl.textContent = t('popupLastActive') + last;
+}
+
+/**
+ * 应用「高级设置」分组的展开状态。
+ *
+ * 收起时用 display: none 而非仅隐藏视觉 —— 这样内部的控件也不会进入
+ * Tab 焦点顺序，键盘用户不会 Tab 到看不见的下拉框上。
+ */
+function applyAdvancedState(open: boolean): void {
+  advancedBody.classList.toggle('is-collapsed', !open);
+  advancedToggle.setAttribute('aria-expanded', String(open));
 }
 
 /* ------------------------------------------------------------------ 启动 */
 
-async function init(): Promise<void> {
+/**
+ * 把「当前语言 + 当前设置」渲染到界面上。
+ *
+ * 单独抽出来是因为**切换语言后要再跑一次**：文案是在创建 DOM 时一次性
+ * t() 出来的，不重跑的话 popup 得关掉重开才会换语言。
+ */
+async function render(settings: ReaderSettings): Promise<void> {
+  /*
+   * 语言要在最前面定好：下面的 applyI18n、fillOptions 都依赖 t()，
+   * 而 t() 读的就是这里设进去的语言。
+   */
+  setLocale(settings.locale);
+  applyI18n();
+  renderVersion();
+
+  // 主题下拉的选项名里带 noteKey，也要跟着语言走；
+  // 它会重建 <option>，所以必须排在 applySettingsToForm 之前，否则选中值会丢
   fillOptions(lightEl, 'light');
   fillOptions(darkEl, 'dark');
 
-  applySettingsToForm(await loadSettings());
+  applySettingsToForm(settings);
+  applyAdvancedState(settings.advancedOpen);
+  await renderPermission();
+}
 
+async function init(): Promise<void> {
+  await render(await loadSettings());
+
+  // 事件只绑一次，与 render 分开
   modeEl.addEventListener('change', () => void save({ mode: modeEl.value as ThemeMode }));
   lightEl.addEventListener('change', () => void save({ lightTheme: lightEl.value }));
   darkEl.addEventListener('change', () => void save({ darkTheme: darkEl.value }));
@@ -195,8 +263,17 @@ async function init(): Promise<void> {
     void save({ defaultExpandLevel: clampExpandLevel(Number(defaultExpandLevelEl.value)) })
   );
   resetEl.addEventListener('click', () => void handleResetClick());
-
-  await renderPermission();
+  advancedToggle.addEventListener('click', () => {
+    // 依据 DOM 当前状态翻转，避免与实际显示不一致
+    const open = advancedToggle.getAttribute('aria-expanded') !== 'true';
+    applyAdvancedState(open);
+    void save({ advancedOpen: open });
+  });
+  localeEl.addEventListener('change', async () => {
+    await save({ locale: localeEl.value as Locale });
+    // 语言变了，popup 自己这一屏的文案也要立刻换过来
+    await render(await loadSettings());
+  });
 }
 
 void init();

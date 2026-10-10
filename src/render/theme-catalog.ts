@@ -10,8 +10,15 @@ export type Appearance = 'light' | 'dark';
 
 export interface ThemeInfo {
   id: string;
-  /** 设置界面显示名 */
+  /**
+   * 设置界面显示名。
+   *
+   * 都是主题的品牌名（Monokai、Nord…），**有意不翻译** —— 译了反而难找。
+   * 需要本地化的补充说明放 noteKey。
+   */
   name: string;
+  /** 补充说明的文案 key；显示为「名称 · 说明」。品牌名本身不进语言包 */
+  noteKey?: string;
   appearance: Appearance;
   /** 代码块容器背景色 */
   codeBg: string;
@@ -29,7 +36,13 @@ export const THEME_CATALOG: ThemeInfo[] = [
   { id: 'atom-one-light', name: 'Atom One Light', appearance: 'light', codeBg: LIGHT_CODE_BG },
   { id: 'stackoverflow-light', name: 'Stack Overflow Light', appearance: 'light', codeBg: LIGHT_CODE_BG },
   { id: 'xcode', name: 'Xcode', appearance: 'light', codeBg: LIGHT_CODE_BG },
-  { id: 'github', name: 'GitHub Light（原配，配色偏淡）', appearance: 'light', codeBg: LIGHT_CODE_BG },
+  {
+    id: 'github',
+    name: 'GitHub Light',
+    noteKey: 'themeNoteGithubLight',
+    appearance: 'light',
+    codeBg: LIGHT_CODE_BG,
+  },
 
   { id: 'atom-one-dark', name: 'Atom One Dark', appearance: 'dark', codeBg: '#282c34' },
   { id: 'github-dark', name: 'GitHub Dark', appearance: 'dark', codeBg: '#161b22' },

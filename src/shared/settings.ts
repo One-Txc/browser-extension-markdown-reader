@@ -5,6 +5,8 @@
  */
 
 import { DEFAULT_DARK_THEME, DEFAULT_LIGHT_THEME } from '../render/theme-catalog';
+import type { Locale } from './i18n';
+import { LOCALES } from './i18n';
 
 export type ThemeMode = 'auto' | 'light' | 'dark';
 export type FontSize = 'small' | 'medium' | 'large';
@@ -54,6 +56,12 @@ export interface ReaderSettings {
   folderShowHidden: boolean;
   /** 设置面板是否展开（默认展开，收起后刷新仍保留收起状态） */
   folderSettingsOpen: boolean;
+
+  /** 界面语言；auto 表示跟随浏览器 */
+  locale: Locale;
+
+  /** 设置弹窗里「高级设置」分组是否展开（默认收起，大部分人不改它） */
+  advancedOpen: boolean;
 }
 
 /** 目录宽度的取值范围 */
@@ -111,6 +119,10 @@ export const DEFAULT_SETTINGS: ReaderSettings = {
   folderFoldersFirst: true,
   folderShowHidden: true,
   folderSettingsOpen: true,
+
+  locale: 'auto',
+
+  advancedOpen: false,
 };
 
 /** 实际像素值，供 buildThemeCss 注入 CSS 变量 */
@@ -161,6 +173,13 @@ export async function loadSettings(): Promise<ReaderSettings> {
       folderFoldersFirst: s.folderFoldersFirst ?? DEFAULT_SETTINGS.folderFoldersFirst,
       folderShowHidden: s.folderShowHidden ?? DEFAULT_SETTINGS.folderShowHidden,
       folderSettingsOpen: s.folderSettingsOpen ?? DEFAULT_SETTINGS.folderSettingsOpen,
+
+      // 用 LOCALES 校验，加语言时只需改 i18n.ts 一处
+      locale: LOCALES.includes(s.locale as Locale)
+        ? (s.locale as Locale)
+        : DEFAULT_SETTINGS.locale,
+
+      advancedOpen: s.advancedOpen ?? DEFAULT_SETTINGS.advancedOpen,
     };
   } catch {
     return DEFAULT_SETTINGS;
