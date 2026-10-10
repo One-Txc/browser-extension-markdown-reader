@@ -6,6 +6,7 @@
 
 import { DEFAULT_DARK_THEME, DEFAULT_LIGHT_THEME } from '../render/theme-catalog';
 import type { Locale } from './i18n';
+import { LOCALES } from './i18n';
 
 export type ThemeMode = 'auto' | 'light' | 'dark';
 export type FontSize = 'small' | 'medium' | 'large';
@@ -168,8 +169,10 @@ export async function loadSettings(): Promise<ReaderSettings> {
       folderShowHidden: s.folderShowHidden ?? DEFAULT_SETTINGS.folderShowHidden,
       folderSettingsOpen: s.folderSettingsOpen ?? DEFAULT_SETTINGS.folderSettingsOpen,
 
-      locale:
-        s.locale === 'zh_CN' || s.locale === 'en' ? s.locale : DEFAULT_SETTINGS.locale,
+      // 用 LOCALES 校验，加语言时只需改 i18n.ts 一处
+      locale: LOCALES.includes(s.locale as Locale)
+        ? (s.locale as Locale)
+        : DEFAULT_SETTINGS.locale,
     };
   } catch {
     return DEFAULT_SETTINGS;

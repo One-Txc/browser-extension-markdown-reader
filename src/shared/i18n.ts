@@ -15,12 +15,15 @@
  */
 
 import enMessages from '../../_locales/en/messages.json';
+import jaMessages from '../../_locales/ja/messages.json';
+import koMessages from '../../_locales/ko/messages.json';
 import zhMessages from '../../_locales/zh_CN/messages.json';
 
 /** auto = 跟随浏览器 */
-export type Locale = 'auto' | 'zh_CN' | 'en';
+export type Locale = 'auto' | 'zh_CN' | 'en' | 'ja' | 'ko';
 
-export const LOCALES: Locale[] = ['auto', 'zh_CN', 'en'];
+/** 可选语言。'auto' 必须排第一，popup 的下拉按这个顺序生成 */
+export const LOCALES: Locale[] = ['auto', 'zh_CN', 'en', 'ja', 'ko'];
 
 interface MessageEntry {
   message: string;
@@ -36,6 +39,8 @@ type MessageTable = Record<string, MessageEntry>;
 const TABLES: Record<string, MessageTable> = {
   zh_CN: zhMessages as MessageTable,
   en: enMessages as MessageTable,
+  ja: jaMessages as MessageTable,
+  ko: koMessages as MessageTable,
 };
 
 let current: Locale = 'auto';
