@@ -85,6 +85,34 @@ async function openSettingsPopup(): Promise<{ ok: boolean; error?: string }> {
 }
 
 /**
+ * 带重试的 fetch，专供读取文档与目录。
+ *
+ * ★ MV3 的 Service Worker 会被随时终止（空闲约 30 秒），消息到来时再冷启动。
+ * 冷启动后头一次 fetch 偶发抛 "TypeError: Failed to fetch" ——
+ * 用户看到的就是「偶尔」读取失败。
+ *
+ * 这两个操作都是幂等的只读请求，重试一次几乎总能成功，所以不值得把错误
+ * 直接抛给用户。退避间隔取 120/240ms：足够跨过冷启动那一瞬，又不会让
+ * 点击明显变卡。
+ */
+async function fetchWithRetry(url: string, attempts = 3): Promise<Response> {
+  let lastErr: unknown;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await fetch(url, { cache: 'no-store' });
+    } catch (err) {
+      lastErr = err;
+      if (attempt < attempts) {
+        await new Promise((r) => setTimeout(r, attempt * 120));
+      }
+    }
+  }
+
+  throw lastErr;
+}
+
+/**
  * 列举目录内容。
  *
  * ★ 原理：Chrome 会为 file:// 的目录 URL 生成一份索引 HTML，
@@ -99,7 +127,7 @@ async function listDirectory(
   }
 
   try {
-    const res = await fetch(dirUrl, { cache: 'no-store' });
+    const res = await fetchWithRetry(dirUrl);
     const html = await res.text();
 
     // ★ 不能用 res.ok 判断：file:// 的 Response 是 ok:false / status:0，但 body 完整
@@ -158,7 +186,7 @@ async function readLocalFile(url: string): Promise<{
   }
 
   try {
-    const res = await fetch(url, { cache: 'no-store' });
+    const res = await fetchWithRetry(url);
 
     /*
      * ★ 不能用 res.ok 判断成败：file:// 的响应 ok 为 false、status 为 0，
