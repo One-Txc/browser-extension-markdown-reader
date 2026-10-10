@@ -1,9 +1,13 @@
 """生成扩展图标。
 
 图形取自 folder.ts 里表示 Markdown 文件的 ICON_MD：
-一个圆角卡片，里面一个 M 折线。这里加了蓝色底 ——
-工具栏图标的原始形状是「描边、透明底」，直接拿来当应用图标会在
-浅色工具栏上发灰、在深色工具栏上发白，加一层实底才稳定。
+一个圆角卡片，里面一个 M 折线。
+
+★ 透明底、不铺色块。
+初版铺了一个蓝色圆角方块，看着笨重；现在是描边式图标。
+描边用固定的品牌蓝而不是 currentColor —— manifest 里的位图没有
+「当前文字色」这个概念，浏览器工具栏也不会传色，用黑色在白底、深色底
+各有一半看不清，蓝色则在两种主题下都有足够对比。
 
 小尺寸（16 / 32）只画 M 折线：卡片轮廓在 16px 下只有约 1px 宽，
 和折线挤在一起会糊成一团，反而认不出是什么。
@@ -22,7 +26,6 @@ OUT_DIR = Path('icons')
 
 # 与扩展内的强调色（--md-toc-active）保持一致
 BRAND = (9, 105, 218, 255)
-WHITE = (255, 255, 255, 255)
 
 # 超采样倍数：先按大画布画，再缩回去，得到平滑边缘
 SS = 8
@@ -42,41 +45,40 @@ def draw_icon(size: int, with_card: bool) -> Image.Image:
     img = Image.new('RGBA', (s, s), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
 
-    # 底色：圆角方块，四周留一点边距让圆角完整
-    pad = s * 0.055
-    d.rounded_rectangle(
-        [pad, pad, s - pad, s - pad],
-        radius=s * 0.235,
-        fill=BRAND,
-    )
-
-    # 卡片轮廓：略微内缩的圆角矩形，白色描边
+    # 卡片轮廓：圆角矩形描边
     if with_card:
-        stroke = s * 1.45 / VB
+        x0, y0 = _pt(1.9, 2.3, s)
+        x1, y1 = _pt(14.1, 13.7, s)
         d.rounded_rectangle(
-            [_pt(3.4, 3.7, s)[0], _pt(3.4, 3.7, s)[1], _pt(12.6, 12.3, s)[0], _pt(12.6, 12.3, s)[1]],
-            radius=s * 1.5 / VB,
-            outline=WHITE,
-            width=max(1, round(stroke)),
+            [x0, y0, x1, y1],
+            radius=s * 1.9 / VB,
+            outline=BRAND,
+            width=max(1, round(s * 1.35 / VB)),
         )
 
     # M 折线：与 ICON_MD 同一条路径
     #   M5.3 10.9 V6.1 l2.7 3.3 2.7 -3.3 V10.9
-    points = [
-        _pt(5.3, 10.9, s),
-        _pt(5.3, 6.1, s),
-        _pt(8.0, 9.4, s),
-        _pt(10.7, 6.1, s),
-        _pt(10.7, 10.9, s),
-    ]
-    # 小尺寸下把 M 画粗一点，否则在工具栏里几乎看不见
-    width = max(2, round(s * (2.2 if not with_card else 1.7) / VB))
+    # 没有卡片轮廓时把 M 放大一些，否则四周留白太多显得小
+    k = 1.0 if with_card else 1.18
+    cx = cy = VB / 2
 
-    d.line(points, fill=WHITE, width=width, joint='curve')
+    def scaled(x: float, y: float) -> tuple[float, float]:
+        return _pt(cx + (x - cx) * k, cy + (y - cy) * k, s)
+
+    points = [
+        scaled(5.3, 10.9),
+        scaled(5.3, 6.1),
+        scaled(8.0, 9.4),
+        scaled(10.7, 6.1),
+        scaled(10.7, 10.9),
+    ]
+    width = max(2, round(s * (2.0 if with_card else 2.3) / VB))
+
+    d.line(points, fill=BRAND, width=width, joint='curve')
     # line() 的端点是方的，两端各补一个圆点，视觉上与 stroke-linecap: round 一致
     r = width / 2
-    for cx, cy in (points[0], points[-1]):
-        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=WHITE)
+    for px, py in (points[0], points[-1]):
+        d.ellipse([px - r, py - r, px + r, py + r], fill=BRAND)
 
     return img.resize((size, size), Image.LANCZOS)
 
