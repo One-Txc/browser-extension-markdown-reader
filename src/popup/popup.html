@@ -102,6 +102,14 @@
       <option value="auto" data-i18n="popupModeAuto">跟随系统</option>
       <option value="light" data-i18n="popupModeLight">始终浅色</option>
       <option value="dark" data-i18n="popupModeDark">始终深色</option>
+      <!-- 护眼配色：都是浅色/深色的变体，与上面三项互斥，所以放在同一个下拉里分组 -->
+      <optgroup data-i18n-label="popupModeEyeCareGroup" label="护眼配色">
+        <option value="parchment" data-i18n="popupModeParchment">羊皮纸</option>
+        <option value="eyecare" data-i18n="popupModeEyecare">护眼模式</option>
+        <option value="warmwhite" data-i18n="popupModeWarmWhite">暖白</option>
+        <option value="softgray" data-i18n="popupModeSoftGray">柔灰</option>
+        <option value="darkwarm" data-i18n="popupModeDarkWarm">暗夜暖调</option>
+      </optgroup>
     </select>
 
     <label class="field" for="lightTheme" data-i18n="popupLightTheme">浅色代码配色</label>

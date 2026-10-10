@@ -1016,3 +1016,83 @@ body.md-reader-source-mode .md-reader-toc-list a {
     padding-left: 0;
   }
 }
+
+/* ==================== 护眼配色对正文的覆盖 ==================== */
+
+/*
+ * github-markdown-css 把正文颜色**硬编码**在 .markdown-body 上
+ * （color: #1f2328、background-color: #ffffff，另有二十来个色值散布在各元素上），
+ * 它不读我们的 --md-* 变量。所以只改变量的话，侧边栏会跟着变、正文不会。
+ *
+ * 这段覆盖影响面积最大的那些元素。代价是选择器要跟着它的类名走，
+ * 升级 github-markdown-css 时值得回来看一眼。
+ *
+ * 选择器带 [data-md-reader-eye-care]，只对护眼配色生效 ——
+ * 基础明暗下变量值本就和 DOC_CSS 一致，多覆盖一层没有收益，反而多一份出错风险。
+ * 该属性由 styles.ts 的 applyTheme 维护。
+ */
+
+[data-md-reader-eye-care] .markdown-body {
+  color: var(--md-fg);
+  background-color: var(--md-page-bg);
+}
+
+[data-md-reader-eye-care] .markdown-body :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--md-fg);
+}
+
+[data-md-reader-eye-care] .markdown-body :is(h1, h2) {
+  border-bottom-color: var(--md-code-border);
+}
+
+[data-md-reader-eye-care] .markdown-body a {
+  color: var(--md-toc-active);
+}
+
+[data-md-reader-eye-care] .markdown-body blockquote {
+  color: var(--md-muted);
+  border-left-color: var(--md-code-border);
+}
+
+[data-md-reader-eye-care] .markdown-body hr {
+  background-color: var(--md-code-border);
+}
+
+/* 行内代码与围栏代码块 */
+[data-md-reader-eye-care] .markdown-body :is(code, tt, kbd, samp) {
+  background-color: var(--md-code-bg);
+}
+
+[data-md-reader-eye-care] .markdown-body :is(table, th, td) {
+  border-color: var(--md-code-border);
+}
+
+[data-md-reader-eye-care] .markdown-body table tr {
+  background-color: var(--md-page-bg);
+  border-top-color: var(--md-code-border);
+}
+
+[data-md-reader-eye-care] .markdown-body table tr:nth-child(2n) {
+  background-color: var(--md-code-bg);
+}
+
+[data-md-reader-eye-care] .markdown-body table th {
+  background-color: var(--md-code-bg);
+}
+
+/* GitHub 的提示块（> [!NOTE] 等）自带底色与左侧色条 */
+[data-md-reader-eye-care] .markdown-body .markdown-alert {
+  color: var(--md-muted);
+  border-left-color: var(--md-code-border);
+}
+
+/* 脚注、任务列表等零碎元素 */
+[data-md-reader-eye-care] .markdown-body .footnotes {
+  color: var(--md-muted);
+  border-top-color: var(--md-code-border);
+}
+
+[data-md-reader-eye-care] .markdown-body .footnotes li:target::before,
+[data-md-reader-eye-care] .markdown-body .task-list-item + .task-list-item {
+  border-color: var(--md-code-border);
+}

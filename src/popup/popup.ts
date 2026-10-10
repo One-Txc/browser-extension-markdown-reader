@@ -84,6 +84,14 @@ function applyI18n(root: ParentNode = document): void {
     const key = el.dataset.i18nTitle;
     if (key) el.title = t(key);
   });
+  /*
+   * optgroup 的显示文字在 label 属性上，textContent 对它无效 ——
+   * 往 textContent 里写反而会在下拉里多出一行无意义的文本。
+   */
+  root.querySelectorAll<HTMLElement>('[data-i18n-label]').forEach((el) => {
+    const key = el.dataset.i18nLabel;
+    if (key) el.setAttribute('label', t(key));
+  });
 }
 
 /* -------------------------------------------------------------- 设置读写 */

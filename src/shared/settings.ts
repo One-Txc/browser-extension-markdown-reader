@@ -8,7 +8,59 @@ import { DEFAULT_DARK_THEME, DEFAULT_LIGHT_THEME } from '../render/theme-catalog
 import type { Locale } from './i18n';
 import { LOCALES } from './i18n';
 
-export type ThemeMode = 'auto' | 'light' | 'dark';
+/**
+ * 外观模式。
+ *
+ * 前三个是基础明暗；后面五个是护眼配色 —— 它们本质上都是「浅色/深色的变体」，
+ * 差别只在页面底色与文字色，所以归在同一个下拉里，而不是另做一个开关
+ * （那样会出现「深色 + 羊皮纸」这种自相矛盾的组合）。
+ */
+export type ThemeMode =
+  | 'auto'
+  | 'light'
+  | 'dark'
+  /** 羊皮纸：最接近纸质书，暖度明显 */
+  | 'parchment'
+  /** 护眼模式：豆沙绿，国内用户熟悉 */
+  | 'eyecare'
+  /** 暖白：只是觉得纯白刺眼，变化最轻 */
+  | 'warmwhite'
+  /** 柔灰：只降对比、不改变色相 */
+  | 'softgray'
+  /** 暗夜暖调：夜间用，比纯深色柔和、无冷蓝感 */
+  | 'darkwarm';
+
+/** 可选外观，顺序即设置界面的排列顺序 */
+export const THEME_MODES: ThemeMode[] = [
+  'auto',
+  'light',
+  'dark',
+  'parchment',
+  'eyecare',
+  'warmwhite',
+  'softgray',
+  'darkwarm',
+];
+
+/**
+ * 护眼配色（相对于基础明暗）。
+ *
+ * 单独列出是因为 github-markdown-css 把正文颜色硬编码在 .markdown-body 上，
+ * 不吃我们的 CSS 变量 —— 这几套配色需要额外覆盖正文的关键颜色才能生效，
+ * 而基础明暗下不能覆盖（它们的变量值本就与 DOC_CSS 一致，多此一举反而有风险）。
+ */
+export const EYE_CARE_MODES: ThemeMode[] = [
+  'parchment',
+  'eyecare',
+  'warmwhite',
+  'softgray',
+  'darkwarm',
+];
+
+export function isEyeCareMode(mode: ThemeMode): boolean {
+  return EYE_CARE_MODES.includes(mode);
+}
+
 export type FontSize = 'small' | 'medium' | 'large';
 export type ContentWidth = 'narrow' | 'medium' | 'wide' | 'full';
 
@@ -153,7 +205,10 @@ export async function loadSettings(): Promise<ReaderSettings> {
     );
     const s = stored as Partial<ReaderSettings>;
     return {
-      mode: s.mode ?? DEFAULT_SETTINGS.mode,
+      // 白名单校验：storage 里可能是旧版本留下的、或用户手改过的值
+      mode: THEME_MODES.includes(s.mode as ThemeMode)
+        ? (s.mode as ThemeMode)
+        : DEFAULT_SETTINGS.mode,
       lightTheme: s.lightTheme ?? DEFAULT_SETTINGS.lightTheme,
       darkTheme: s.darkTheme ?? DEFAULT_SETTINGS.darkTheme,
       fontSize: s.fontSize ?? DEFAULT_SETTINGS.fontSize,
