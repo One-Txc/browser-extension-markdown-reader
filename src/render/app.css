@@ -324,10 +324,16 @@ body.md-reader-lightbox-open {
   opacity: 0.8;
 }
 
-/* ---------- 批量展开 / 收起 ---------- */
+/* ---------- 批量显示层级 ---------- */
 
 .md-reader-toc-bulk {
   display: flex;
+  /*
+   * 一行放不下时，让**按钮整体折到下一行**，而不是把按钮压窄、
+   * 把里面的文字挤成两行或截断。配合下面按钮的 min-width: max-content 生效。
+   */
+  flex-wrap: wrap;
+  /* 折行后行与行之间也保持这个间距 */
   gap: 5px;
   margin: 0 0 10px;
   padding: 0 0 10px;
@@ -335,8 +341,18 @@ body.md-reader-lightbox-open {
 }
 
 .toc-bulk-btn {
-  flex: 1;
-  padding: 3px 0;
+  /*
+   * flex: 1 1 auto（basis 为 auto）+ min-width: max-content：
+   *   空间富余时几个按钮均分整行，视觉整齐；
+   *   空间不足时**不收缩到小于文字宽度**，于是容器把放不下的挪到下一行。
+   * 若写成 flex: 1（basis 0）或允许收缩，按钮会被压窄，
+   * 文字要么换行要么溢出 —— 这正是要避免的。
+   */
+  flex: 1 1 auto;
+  min-width: max-content;
+  white-space: nowrap;
+  /* 左右留一点内边距，换行后按钮不至于顶到边框 */
+  padding: 3px 6px;
   font: 11px/1.5 ui-monospace, Consolas, Menlo, monospace;
   color: var(--md-toc-text, #656d76);
   background: transparent;
@@ -351,16 +367,11 @@ body.md-reader-lightbox-open {
   opacity: 1;
 }
 
-/* 全部展开时实心高亮；部分展开用虚线边框表示中间态 */
+/* 当前生效的那一档高亮 */
 .toc-bulk-btn.is-expanded {
   opacity: 1;
   color: var(--md-toc-active, #0969da);
   border-color: var(--md-toc-active, #0969da);
-}
-
-.toc-bulk-btn.is-mixed {
-  opacity: 1;
-  border-style: dashed;
 }
 
 /* 目录项不够多时不显示折叠 UI（阈值可在 popup 里调） */
