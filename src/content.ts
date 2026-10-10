@@ -34,6 +34,7 @@ import {
   isMarkdownPage,
   titleFromPath,
 } from './shared/const';
+import { mountFolderPane, type FolderPaneHandle } from './render/folder';
 
 /** 超过此长度不做渲染，避免超大文件卡死标签页 */
 const MAX_RENDER_LENGTH = 3 * 1024 * 1024;
@@ -129,6 +130,8 @@ async function main(): Promise<void> {
 /** 已渲染的正文容器，目录重建时复用 */
 let mainEl: HTMLElement | null = null;
 let tocHandle: TocHandle | null = null;
+/** 「文件夹」面板；随 toc 的 nav 一起挂载，销毁时由 nav 一并移除 */
+let folderHandle: FolderPaneHandle | null = null;
 /** 设置的内存副本，避免每次交互都读一次 storage */
 let currentSettings: ReaderSettings = DEFAULT_SETTINGS;
 
@@ -158,6 +161,16 @@ const tocHandlers: TocHandlers = {
   setVisible: (visible) => {
     document.body.classList.toggle('md-reader-has-toc', visible);
     void persistSettings({ showToc: visible });
+  },
+  /*
+   * 「文件夹」面板。懒创建 —— 只有真正渲染侧边栏时才会调到这里，
+   * 而且面板内部的数据请求本身也是懒的（展开子目录才取）。
+   */
+  createFolderPane: () => {
+    // 去掉 hash 与 query，否则会被当成文件名的一部分
+    const cleanUrl = location.href.split('#')[0].split('?')[0];
+    folderHandle = mountFolderPane({ documentUrl: cleanUrl });
+    return folderHandle.element;
   },
 };
 

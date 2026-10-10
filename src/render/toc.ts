@@ -273,7 +273,11 @@ function createBulkBar(nodes: TocNode[]): { bar: HTMLElement | null; refresh: ()
   return { bar: buttons.size > 0 ? bar : null, refresh: refreshAll };
 }
 
-export function buildToc(root: HTMLElement, minHeadings = MIN_HEADINGS): TocHandle | null {
+export function buildToc(
+  root: HTMLElement,
+  minHeadings = MIN_HEADINGS,
+  handlers?: TocHandlers
+): TocHandle | null {
   const headings = Array.from(root.querySelectorAll<HTMLElement>(HEADING_SELECTOR)).filter(
     (h) => h.id
   );
@@ -281,24 +285,71 @@ export function buildToc(root: HTMLElement, minHeadings = MIN_HEADINGS): TocHand
 
   const nav = document.createElement('nav');
   nav.className = 'md-reader-toc';
-  nav.setAttribute('aria-label', '目录');
+  nav.setAttribute('aria-label', '侧边栏');
 
-  const title = document.createElement('div');
-  title.className = 'md-reader-toc-title';
-  title.textContent = '目录';
-  nav.appendChild(title);
+  /*
+   * 顶部是 tab 条：目录 / 文件夹。
+   * 「文件夹」面板由外部通过 handlers 提供 —— 目录树与文件夹是两个独立功能，
+   * 不该让 toc.ts 反过来依赖 folder.ts。
+   */
+  const folderPane = handlers?.createFolderPane?.() ?? null;
+
+  const tabs = document.createElement('div');
+  tabs.className = 'md-reader-tabs';
+
+  const outlinePane = document.createElement('div');
+  outlinePane.className = 'md-reader-pane';
+  outlinePane.dataset.pane = 'outline';
+
+  const folderPaneWrap = document.createElement('div');
+  folderPaneWrap.className = 'md-reader-pane md-reader-hidden';
+  folderPaneWrap.dataset.pane = 'folder';
+
+  const makeTab = (pane: string, label: string): HTMLButtonElement => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'md-reader-tab';
+    btn.dataset.pane = pane;
+    btn.textContent = label;
+    return btn;
+  };
+
+  const outlineTab = makeTab('outline', '目录');
+  tabs.append(outlineTab);
+  if (folderPane) {
+    tabs.append(makeTab('folder', '文件夹'));
+    folderPaneWrap.append(folderPane);
+  }
+
+  const switchPane = (pane: string): void => {
+    for (const tab of tabs.querySelectorAll<HTMLElement>('.md-reader-tab')) {
+      tab.classList.toggle('is-active', tab.dataset.pane === pane);
+    }
+    for (const p of nav.querySelectorAll<HTMLElement>('.md-reader-pane')) {
+      p.classList.toggle('md-reader-hidden', p.dataset.pane !== pane);
+    }
+  };
+
+  tabs.addEventListener('click', (ev) => {
+    const btn = (ev.target as HTMLElement).closest<HTMLElement>('.md-reader-tab');
+    if (btn?.dataset.pane) switchPane(btn.dataset.pane);
+  });
+
+  nav.append(tabs, outlinePane);
+  if (folderPane) nav.append(folderPaneWrap);
+  switchPane('outline');
 
   const tree = buildTree(headings);
   const nodes = flattenTree(tree);
   const links = new Map<string, HTMLAnchorElement>();
 
   const bulk = createBulkBar(nodes);
-  if (bulk.bar) nav.appendChild(bulk.bar);
+  if (bulk.bar) outlinePane.appendChild(bulk.bar);
 
   const list = document.createElement('ul');
   list.className = 'md-reader-toc-list';
   renderTree(tree, list, links, bulk.refresh);
-  nav.appendChild(list);
+  outlinePane.appendChild(list);
 
   /* ------------------------------------------------------ 滚动高亮 */
 
@@ -419,6 +470,14 @@ export interface TocHandlers {
   setWidth(width: number, commit: boolean): void;
   /** 显示 / 隐藏目录 */
   setVisible(visible: boolean): void;
+  /**
+   * 创建「文件夹」面板的内容。
+   * 返回 null 或不实现时，只显示「目录」一个 tab（保持原样）。
+   *
+   * 之所以从这里回调而不是由 toc.ts 直接依赖 folder.ts：
+   * 目录树与文件夹是两个独立功能，不该互相 import。
+   */
+  createFolderPane?(): HTMLElement | null;
 }
 
 /** 窄屏阈值，必须与 app.css 里的媒体查询保持一致 */
@@ -504,7 +563,7 @@ function createTocButton(handlers: TocHandlers): HTMLButtonElement {
  * 返回 null 表示文档没有标题、不生成目录（此时也不会有按钮）。
  */
 export function mountToc(root: HTMLElement, handlers: TocHandlers): TocHandle | null {
-  const handle = buildToc(root);
+  const handle = buildToc(root, MIN_HEADINGS, handlers);
   if (!handle) return null;
 
   const resizer = createResizer(handlers);
