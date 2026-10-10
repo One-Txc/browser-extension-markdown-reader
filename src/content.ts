@@ -34,11 +34,16 @@ import {
   isMarkdownPage,
   titleFromPath,
 } from './shared/const';
+// 【临时】File System Access 能力探针，验证完删除
+import { maybeRunProbe } from './probe';
 
 /** 超过此长度不做渲染，避免超大文件卡死标签页 */
 const MAX_RENDER_LENGTH = 3 * 1024 * 1024;
 
 async function main(): Promise<void> {
+  // 【临时】URL 带 #mdreader-probe 时挂出探针面板，不影响正常渲染
+  maybeRunProbe();
+
   if (!isMarkdownPage()) return;
 
   const html = await ensureDocumentElement();
