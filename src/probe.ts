@@ -344,12 +344,18 @@ function renderPanel(): void {
       }
       log(`✓ HTTP ${res.status}，拿到 ${res.len} 字符`);
 
-      const rows = parseAddRows(res.text);
+      const html = res.text ?? '';
+      if (!html.trim()) {
+        log('⚠ 返回内容为空 —— 这条路走不通');
+        return;
+      }
+
+      const rows = parseAddRows(html);
       log(`解析 addRow 调用：${rows.length} 项`);
 
       if (rows.length === 0) {
         log('⚠ 一项都没解析出来 —— 需要调整正则，把原始 HTML 贴出来看看');
-        log(`前 700 字符：\n${res.text.slice(0, 700)}`);
+        log(`前 700 字符：\n${html.slice(0, 700)}`);
         return;
       }
 
