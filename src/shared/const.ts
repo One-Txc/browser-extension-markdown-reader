@@ -38,13 +38,18 @@ export function isMarkdownPage(): boolean {
   return ct === 'text/markdown' || ct === 'text/plain';
 }
 
-/** 从 file:// URL 取出文件名（已解码）作为标题 */
-export function titleFromPath(): string {
-  const seg = location.pathname.split('/').pop() ?? '';
+/**
+ * 从 file:// URL 取出文件名（已解码）作为标题。
+ *
+ * 接受 URL 参数而不是直接读 location：原地切换文档时页面地址不变，
+ * 标题必须跟着「正在显示的文档」走。
+ */
+export function titleFromUrl(url: string): string {
   try {
+    const seg = new URL(url).pathname.split('/').pop() ?? '';
     return decodeURIComponent(seg);
   } catch {
-    return seg;
+    return '';
   }
 }
 

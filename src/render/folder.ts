@@ -3,11 +3,18 @@
  *
  * 数据来自 background 的 list-directory（原理见 shared/directory.ts）。
  *
- * 设计要点：
- *   - 只显示目录与 Markdown 文件，其余类型过滤掉
- *   - 默认全部收起；文件夹图标随展开状态在「合上 / 打开」之间切换
- *   - **子目录按需加载** —— 展开时才请求，避免一上来就递归整棵树
- *   - 当前文档所在的那一项高亮（选中态）
+ * 交互设计（与主流 Markdown 阅读器一致）：
+ *   - 点文件夹   → 就地展开 / 收起，子目录按需加载
+ *   - 点文档     → **原地替换正文，不改变 URL**，由 onOpen 回调实现
+ *   - 右侧跳转图标 → 真正打开该 URL（新标签页），由 onNavigate 回调实现
+ *
+ * 「原地打开」是刻意的：切文档时侧边栏状态、滚动习惯都不该丢。
+ * 但 URL 不变意味着它不再代表正文内容，所以必须给用户一个「真跳转」的出口，
+ * 这就是那个跳转图标存在的理由。
+ *
+ * 其他要点：
+ *   - 只显示目录与 Markdown 文件
+ *   - 默认全部收起；文件夹图标随展开状态切换
  *   - 图标一律用 currentColor，深浅主题自动跟随
  */
 
@@ -24,32 +31,44 @@ const ICON_FOLDER_OPEN = `<svg viewBox="0 0 24 24" fill="none" stroke="currentCo
 /** Markdown 文件：圆角卡片 + M */
 const ICON_MD = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linejoin="round"><rect x="2.2" y="2.6" width="11.6" height="10.8" rx="1.8" stroke-width="1.35"/><path d="M5.3 10.9V6.1l2.7 3.3 2.7-3.3v4.8" stroke-width="1.6" stroke-linecap="round"/></svg>`;
 
-/** 展开 / 收起箭头，与目录 tab 用的是同一套 */
+/** 展开 / 收起箭头，与目录 tab 用同一套 */
 const ICON_CARET = `<svg viewBox="0 0 10 10"><path d="M2 3.4 L5 6.6 L8 3.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+/** 「在新标签页打开真实 URL」 */
+const ICON_JUMP = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5H3.6a1.1 1.1 0 0 0-1.1 1.1v7.8a1.1 1.1 0 0 0 1.1 1.1h7.8a1.1 1.1 0 0 0 1.1-1.1V9.5"/><path d="M9.6 2.4h4v4"/><path d="M13.3 2.7 7.6 8.4"/></svg>`;
 
 /* ------------------------------------------------------------------ 类型 */
 
 export interface FolderPaneOptions {
-  /** 当前文档的绝对 URL */
+  /** 当前文档的绝对 URL（首次挂载时的真实地址） */
   documentUrl: string;
-  /** 点击 md 文件时的回调；不传则直接导航过去 */
+  /**
+   * 点击文档项时的回调 —— 由调用方决定如何展示（本项目的做法是原地替换正文）。
+   * 不传则退化为直接导航。
+   */
   onOpen?: (url: string) => void;
+  /**
+   * 点击行尾跳转图标时的回调 —— 真正打开该 URL。
+   * 不传则默认新标签页打开。
+   */
+  onNavigate?: (url: string) => void;
 }
 
 export interface FolderPaneHandle {
   element: HTMLElement;
-  /** 重新加载根目录（用于手动刷新） */
+  /** 重新加载根目录 */
   reload(): void;
+  /** 原地切换后更新选中项（传入当前正在显示的文档 URL） */
+  setCurrent(url: string): void;
   destroy(): void;
 }
 
-/** 一个已渲染的目录节点 */
 interface DirNode {
   url: string;
   childrenEl: HTMLElement;
   caret: HTMLButtonElement;
   iconEl: HTMLElement;
-  /** null = 尚未加载 */
+  rowEl: HTMLElement;
   loaded: boolean;
   expanded: boolean;
 }
@@ -61,7 +80,12 @@ async function fetchDirectory(
 ): Promise<{ ok: boolean; entries?: DirEntry[]; error?: string }> {
   try {
     const res = await chrome.runtime.sendMessage({ type: 'list-directory', url: dirUrl });
-    return (res as { ok: boolean; entries?: DirEntry[]; error?: string }) ?? { ok: false, error: '无响应' };
+    return (
+      (res as { ok: boolean; entries?: DirEntry[]; error?: string }) ?? {
+        ok: false,
+        error: '无响应',
+      }
+    );
   } catch (err) {
     return { ok: false, error: String(err) };
   }
@@ -71,7 +95,9 @@ async function fetchDirectory(
 
 export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
   const rootDir = directoryOf(options.documentUrl);
-  const currentName = decodeURIComponent(options.documentUrl.split('/').pop() ?? '');
+
+  /** 当前「正在显示」的文档 URL —— 原地切换后由 setCurrent 更新 */
+  let currentUrl = options.documentUrl;
 
   const nodes: DirNode[] = [];
 
@@ -80,7 +106,6 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
 
   const barName = document.createElement('span');
   barName.className = 'name';
-  // 根目录名：URL 去掉结尾斜杠后取最后一段
   const segs = rootDir.replace(/\/$/, '').split('/');
   barName.textContent = decodeURIComponent(segs[segs.length - 1] ?? '') || '/';
 
@@ -100,14 +125,26 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
   element.className = 'md-reader-folder';
   element.append(bar, scroll);
 
+  /** 高亮当前正在显示的文档 */
+  function applyCurrent(): void {
+    const target = decodeURIComponent(currentUrl);
+    for (const row of list.querySelectorAll<HTMLElement>('.folder-row')) {
+      row.classList.toggle('is-current', row.dataset.url === target);
+    }
+    const active = list.querySelector('.is-current');
+    if (active) requestAnimationFrame(() => active.scrollIntoView({ block: 'nearest' }));
+  }
+
   /** 渲染一行 */
   function renderRow(entry: DirEntry, parentUrl: string): HTMLElement {
     const li = document.createElement('li');
     const row = document.createElement('div');
     row.className = 'folder-row';
+    const url = resolveEntryUrl(parentUrl, entry);
+    row.dataset.url = decodeURIComponent(url);
     if (entry.isDir) row.classList.add('is-dir');
 
-    // 1. 折叠箭头（仅目录有，文件用等宽占位保证图标列对齐）
+    // 1. 折叠箭头（仅目录；文件用等宽占位保证图标列对齐）
     let caret: HTMLButtonElement | null = null;
     if (entry.isDir) {
       caret = document.createElement('button');
@@ -140,35 +177,43 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
     label.textContent = entry.name;
     row.append(label);
 
+    // 4. 跳转图标：真正打开这个 URL（原地打开时 URL 不再代表正文，需要这个出口）
+    const jump = document.createElement('button');
+    jump.type = 'button';
+    jump.className = 'folder-jump';
+    jump.title = entry.isDir ? '在新标签页打开该目录' : '在新标签页打开该文件';
+    jump.setAttribute('aria-label', jump.title);
+    jump.innerHTML = ICON_JUMP;
+    jump.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      if (options.onNavigate) options.onNavigate(url);
+      else window.open(url, '_blank');
+    });
+    row.append(jump);
+
     li.append(row);
 
-    /* ---- 目录：准备子容器与懒加载 ---- */
+    /* ---- 目录：子容器 + 懒加载 ---- */
     if (entry.isDir && caret) {
       const childList = document.createElement('ul');
       childList.className = 'md-reader-folder-list folder-children md-reader-hidden';
       li.append(childList);
 
-      const url = resolveEntryUrl(parentUrl, entry);
       const node: DirNode = {
         url,
         childrenEl: childList,
         caret,
         iconEl: icon,
+        rowEl: row,
         loaded: false,
         expanded: false,
       };
       nodes.push(node);
 
-      caret.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        void toggleDir(node);
-      });
-      // 点击整行也能展开，比只能点小箭头顺手
       row.addEventListener('click', () => void toggleDir(node));
     } else {
-      // 文件：点击打开
+      // 文件：原地打开
       row.addEventListener('click', () => {
-        const url = resolveEntryUrl(parentUrl, entry);
         if (options.onOpen) options.onOpen(url);
         else location.href = url;
       });
@@ -177,7 +222,7 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
     return li;
   }
 
-  /** 展开 / 收起一个目录，首次展开时才去取数据 */
+  /** 展开 / 收起目录，首次展开时才取数据 */
   async function toggleDir(node: DirNode): Promise<void> {
     if (node.expanded) {
       node.expanded = false;
@@ -242,20 +287,8 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
       return;
     }
 
-    for (const entry of entries) {
-      const li = renderRow(entry, rootDir);
-      // 当前文档高亮
-      if (!entry.isDir && entry.name === currentName) {
-        li.querySelector('.folder-row')?.classList.add('is-current');
-      }
-      list.append(li);
-    }
-
-    // 如果有高亮项，把它滚进视野
-    const current = list.querySelector('.is-current');
-    if (current) {
-      requestAnimationFrame(() => current.scrollIntoView({ block: 'center' }));
-    }
+    for (const entry of entries) list.append(renderRow(entry, rootDir));
+    applyCurrent();
   }
 
   void reload();
@@ -263,6 +296,10 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
   return {
     element,
     reload: () => void reload(),
+    setCurrent(url: string) {
+      currentUrl = url;
+      applyCurrent();
+    },
     destroy() {
       nodes.length = 0;
       element.remove();

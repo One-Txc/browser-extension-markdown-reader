@@ -505,6 +505,47 @@ body.md-reader-lightbox-open {
   text-overflow: ellipsis;
 }
 
+/*
+ * 行尾的跳转图标：真正打开该 URL。
+ *
+ * 原地打开文档时地址栏不再代表正文内容，需要这样一个出口来做
+ * 分享 / 收藏 / 刷新。默认隐藏但**保留占位**（visibility 而非 display），
+ * 否则鼠标划过时行宽会抖动。
+ */
+.folder-jump {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--md-muted, #656d76);
+  cursor: pointer;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+
+.folder-row:hover .folder-jump {
+  visibility: visible;
+  opacity: 0.85;
+}
+
+.folder-jump:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.folder-jump svg {
+  display: block;
+  width: 13px;
+  height: 13px;
+}
+
 .folder-caret {
   flex: 0 0 auto;
   display: flex;

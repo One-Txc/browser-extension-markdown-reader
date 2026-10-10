@@ -32,7 +32,7 @@ import {
   ROOT_CLASS,
   ensureDocumentElement,
   isMarkdownPage,
-  titleFromPath,
+  titleFromUrl,
 } from './shared/const';
 import { mountFolderPane, type FolderPaneHandle } from './render/folder';
 
@@ -74,7 +74,7 @@ async function main(): Promise<void> {
   });
 
   try {
-    const raw = await readSource();
+    const raw = await readSource(currentDocUrl);
     markPerf('source-read');
     if (!raw || !raw.trim()) return; // 读不到就原样保留，什么都不做
 
@@ -83,36 +83,9 @@ async function main(): Promise<void> {
       return;
     }
 
-    const main = document.createElement('main');
-    main.className = `markdown-body ${ROOT_CLASS}`;
-    main.innerHTML = renderMarkdown(raw, location.href);
-    markPerf('rendered');
-
-    document.body.replaceChildren(main);
-    document.body.classList.add('md-reader-body');
-    markPerf('dom-swapped');
-
-    // 先记录容器，目录与主题都依赖它
-    mainEl = main;
-
-    currentSettings = await settingsPromise;
-    applyTheme(document, currentSettings);
-    markPerf('themed');
-
-    syncToc(currentSettings);
-    markPerf('toc');
-
-    // 只在文档真的含公式时才付出 KaTeX 样式的注入成本
-    if (main.querySelector('.katex')) injectKatexCss(document);
-
-    // Mermaid 体积很大，只在真的出现 ```mermaid 时才请求注入
-    if (main.querySelector('.md-reader-mermaid')) void requestMermaid();
-
-    document.title = titleFromPath();
-    enhanceCodeBlocks(main);
-    setupImageZoom(main);
-    // 原文 / 渲染视图切换。句柄只在页面卸载时才有意义，这里不需要保留
-    setupSourceView(main, raw);
+    const settings = await settingsPromise;
+    renderDocument(raw, currentDocUrl, settings);
+    // hash 只在首次加载时处理；原地切换文档后地址栏已不代表正文，跳了反而错
     applyInitialHash();
   } catch (err) {
     // 渲染失败时保留 Chrome 原始纯文本视图，绝不留下白屏
@@ -125,10 +98,88 @@ async function main(): Promise<void> {
   }
 }
 
+/**
+ * 把一份 Markdown 渲染进页面。
+ *
+ * ★ 首次加载与「原地切换文档」都走这里。后者要求**不改变 URL**，
+ * 所以整个渲染必须由参数驱动，不能再去读 location。
+ */
+function renderDocument(raw: string, url: string, settings: ReaderSettings): void {
+  const main = document.createElement('main');
+  main.className = `markdown-body ${ROOT_CLASS}`;
+  // base 用目标文档的 URL：相对图片路径必须按它的位置解析，而不是页面地址
+  main.innerHTML = renderMarkdown(raw, url);
+  markPerf('rendered');
+
+  document.body.replaceChildren(main);
+  document.body.classList.add('md-reader-body');
+  markPerf('dom-swapped');
+
+  // 先记录容器，目录与主题都依赖它
+  mainEl = main;
+  currentSettings = settings;
+  applyTheme(document, settings);
+  markPerf('themed');
+
+  /*
+   * 目录是依据正文里的标题建出来的，换了文档必须重建。
+   * 文件夹面板挂在同一个 nav 里，所以一并销毁，由 syncToc 重新创建 ——
+   * 它的根目录也会跟着变成新文档所在的目录，这正是期望行为。
+   */
+  if (tocHandle) {
+    tocHandle.destroy();
+    tocHandle = null;
+    folderHandle = null;
+    lastFoldPolicy = '';
+  }
+  syncToc(settings);
+  markPerf('toc');
+
+  // 只在文档真的含公式时才付出 KaTeX 样式的注入成本
+  if (main.querySelector('.katex')) void injectKatexCss(document);
+
+  // Mermaid 体积很大，只在真的出现 ```mermaid 时才请求注入
+  if (main.querySelector('.md-reader-mermaid')) void requestMermaid();
+
+  document.title = titleFromUrl(url);
+  enhanceCodeBlocks(main);
+  setupImageZoom(main);
+  // 原文 / 渲染视图切换。句柄只在页面卸载时才有意义，这里不需要保留
+  setupSourceView(main, raw);
+}
+
+/**
+ * 原地打开另一个文档：读内容 → 重新渲染，**不改变 URL**。
+ *
+ * 这样做的好处是切换文档时侧边栏状态、展开的目录、滚动习惯都不会丢，
+ * 也不产生历史记录。
+ *
+ * 代价是地址栏不再代表正在显示的内容 —— 所以文件夹面板给每一项都配了
+ * 「跳转」图标，需要真实 URL（分享、收藏、刷新）时走那个出口。
+ */
+async function openInPlace(url: string): Promise<void> {
+  if (url === currentDocUrl) return;
+
+  const raw = await readSource(url);
+  if (!raw || !raw.trim()) return;
+
+  currentDocUrl = url;
+  renderDocument(raw, url, currentSettings);
+  folderHandle?.setCurrent(url);
+  window.scrollTo({ top: 0 });
+}
+
 /* -------------------------------------------------------------- 主题与目录 */
 
 /** 已渲染的正文容器，目录重建时复用 */
 let mainEl: HTMLElement | null = null;
+/**
+ * 当前**正在显示**的文档 URL。
+ *
+ * 原地切换文档时它会被更新，而 location.href 保持不变 ——
+ * 所有与「内容」相关的判断都要用这个，而不是读地址栏。
+ */
+let currentDocUrl = location.href.split('#')[0].split('?')[0];
 let tocHandle: TocHandle | null = null;
 /** 「文件夹」面板；随 toc 的 nav 一起挂载，销毁时由 nav 一并移除 */
 let folderHandle: FolderPaneHandle | null = null;
@@ -165,11 +216,15 @@ const tocHandlers: TocHandlers = {
   /*
    * 「文件夹」面板。懒创建 —— 只有真正渲染侧边栏时才会调到这里，
    * 而且面板内部的数据请求本身也是懒的（展开子目录才取）。
+   *
+   * onOpen 走「原地打开」：点文档不跳 URL，只换正文。
+   * 需要真实跳转时用每行右侧的跳转图标（默认新标签页打开）。
    */
   createFolderPane: () => {
-    // 去掉 hash 与 query，否则会被当成文件名的一部分
-    const cleanUrl = location.href.split('#')[0].split('?')[0];
-    folderHandle = mountFolderPane({ documentUrl: cleanUrl });
+    folderHandle = mountFolderPane({
+      documentUrl: currentDocUrl,
+      onOpen: (url) => void openInPlace(url),
+    });
     return folderHandle.element;
   },
 };
@@ -263,8 +318,13 @@ function registerSettingsListeners(): void {
  * 首选从 DOM 直接读（零延迟、零权限依赖）；失败才回退到 SW fetch
  * （该路径还能顺带处理 GBK 等非 UTF-8 编码）。
  */
-async function readSource(): Promise<string | null> {
-  const fromDom = await waitForSourceText();
+async function readSource(url: string): Promise<string | null> {
+  /*
+   * 只有当页面地址确实就是这份文档时才从 DOM 读 ——
+   * 原地切换文档后地址栏没变、DOM 里已经是另一份内容，此时必须走 SW。
+   */
+  const isCurrentPage = url === location.href.split('#')[0].split('?')[0];
+  const fromDom = isCurrentPage ? await waitForSourceText() : null;
 
   // DOM 文本干净就直接用；若出现大量替换字符，说明 Chrome 用错了编码
   // （典型场景：GBK 编码的 .md 被按 UTF-8 解码），改由 SW 按原始字节重新嗅探。
@@ -274,7 +334,7 @@ async function readSource(): Promise<string | null> {
   try {
     const res = (await chrome.runtime.sendMessage({
       type: 'read-file',
-      url: location.href,
+      url,
     })) as { ok: boolean; text?: string; error?: string } | undefined;
 
     if (res?.ok && res.text) return res.text;
