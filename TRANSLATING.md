@@ -21,7 +21,11 @@ _locales/
 └── zh_CN/messages.json   简体中文（default_locale，也是文案的原始出处）
 ```
 
-每个文件 86 条，**四份的 key 完全一致**。
+每个文件 86 条，当前四份的 key 完全一致。
+
+> **按项目约定，新增文案只加 `zh_CN` 一份**，其他语言按需同步。
+> 所以某个时间点上，其他语言可能暂时少几条 —— 不必担心：
+> `t()` 找不到时会回退到中文，`scripts/check-locales.py` 也只把它列为警告而非错误。
 
 ## 每个字段的含义
 
@@ -73,11 +77,14 @@ _locales/
 用 Chrome 的写法，例如 `de`（德语）、`fr`（法语）、`pt_BR`（巴西葡语）、`zh_TW`（繁体中文）。
 完整列表见 [Chrome 官方文档](https://developer.chrome.com/docs/extensions/reference/api/i18n#supported-locales)。
 
-**2. 复制 `_locales/en/messages.json`，改名为你的语言代码**
+**2. 复制 `_locales/zh_CN/messages.json`，改名为你的语言代码**
 
 ```
 _locales/de/messages.json
 ```
+
+复制 `zh_CN` 而不是 `en`，是因为**它带 `description`**（每条文案的位置与作用说明），
+你可以在了解上下文的前提下逐条改写 `message`。
 
 **3. 只翻译 `message`，`description` 保留原样**（它只是给你的说明）
 

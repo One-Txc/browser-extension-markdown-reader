@@ -85,8 +85,25 @@ export function t(key: string, subs?: string[]): string {
     const entry = TABLES[current]?.[key];
     if (entry) return applySubs(entry.message, subs);
   }
-  // 回退：chrome.i18n 已按浏览器语言选好表，也自带占位符替换
-  return nativeGet(key, subs) || key;
+
+  // 回退一：chrome.i18n 已按浏览器语言选好表，也自带占位符替换
+  const native = nativeGet(key, subs);
+  if (native) return native;
+
+  /*
+   * 回退二：zh_CN —— 它是文案的原始出处。
+   *
+   * 按项目约定，新增文案只加中文这一份，其他语言按需同步；这里兜住就能让
+   * 那些语言显示中文，而不是在界面上露出 folder_collapseAll 这样的裸 key。
+   *
+   * （current === 'auto' 时 chrome.i18n 本身就会退到 default_locale，
+   *   所以这一步主要对手动选定语言的场景有用。）
+   */
+  const fallback = TABLES.zh_CN?.[key];
+  if (fallback) return applySubs(fallback.message, subs);
+
+  // 都没有：返回 key，便于一眼看出漏配
+  return key;
 }
 
 /** 当前实际生效的语言（用于在 UI 上标注「跟随浏览器」到底跟到了哪个） */

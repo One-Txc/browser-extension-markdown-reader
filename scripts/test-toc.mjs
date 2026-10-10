@@ -80,10 +80,12 @@ check(
 check('链接指向标题 id', handle.nav.querySelector('a').getAttribute('href') === '#ch1');
 /*
  * 侧边栏顶部是 tab 条（大纲 / 文件夹），取代了原来的纯文本标题。
- * 文案已接入 i18n：测试环境（jsdom）没有 chrome.i18n，t() 查不到就返回 key 本身，
- * 所以这里断言的是 key —— 顺带验证了「查不到时回退到 key」这个约定。
+ * 文案走 i18n：测试环境（jsdom）没有 chrome.i18n，t() 会逐级回退
+ *   手动选定语言 → chrome.i18n → zh_CN 基准 → key 本身
+ * 所以这里取到的是中文基准文案。这个断言顺带固定了「回退到 zh_CN」这条链路 ——
+ * 若回退被去掉，它会退化成 key 'tabOutline' 而失败。
  */
-check('侧边栏有「大纲」tab', handle.nav.querySelector('.md-reader-tab')?.textContent === 'tabOutline');
+check('侧边栏有「大纲」tab', handle.nav.querySelector('.md-reader-tab')?.textContent === '大纲');
 check(
   '目录树放在 outline pane 内',
   handle.nav.querySelector('.md-reader-pane')?.dataset.pane === 'outline'
