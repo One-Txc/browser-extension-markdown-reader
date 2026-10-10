@@ -56,8 +56,33 @@ chrome.runtime.onMessage.addListener(
       listDirectory(msg.url ?? '').then(sendResponse);
       return true;
     }
+
+    if (msg.type === 'open-settings') {
+      openSettingsPopup().then(sendResponse);
+      return true;
+    }
   }
 );
+
+/**
+ * 打开扩展的设置弹窗（页面右上角那个齿轮按钮请求的）。
+ *
+ * ★ 这是唯一可行的途径：popup 无法由页面直接打开，只能靠
+ * `chrome.action.openPopup()`。它有两个约束 ——
+ *   1. Chrome 127+ 才有，Firefox 完全没有这个 API
+ *   2. **必须由用户手势触发**，而这里的手势是从 content script 跨进程传来的，
+ *      能否被认作有效手势并不确定
+ * 所以失败是正常路径而非异常，把原因返回给调用方，由它给出可操作的提示。
+ * 这里不做版本号判断：用特性检测，旧版浏览器会直接抛 TypeError 被 catch 住。
+ */
+async function openSettingsPopup(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await chrome.action.openPopup();
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
 
 /**
  * 列举目录内容。

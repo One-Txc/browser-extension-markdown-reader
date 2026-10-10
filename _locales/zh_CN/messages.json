@@ -62,6 +62,14 @@
     "message": "查看原始 Markdown",
     "description": "页面右上角浮动按钮的悬停提示。当前显示渲染后的文档，点击后切换到未渲染的原始 Markdown 文本。"
   },
+  "openSettings": {
+    "message": "设置",
+    "description": "页面右上角齿轮按钮的悬停提示与无障碍标签。点击后打开扩展的设置面板。请用短词，它是按钮的提示文字。"
+  },
+  "openSettingsHint": {
+    "message": "没能打开设置面板。请点击浏览器工具栏上的 MD Reader 图标。",
+    "description": "打开设置失败时，页面右上角出现的提示气泡。只在 chrome.action.openPopup() 不可用时出现（例如 Firefox）。请给出可操作的指引，而不是只报告失败。"
+  },
   "viewRendered": {
     "message": "返回渲染视图",
     "description": "页面右上角浮动按钮的悬停提示。当前显示原始 Markdown 文本，点击后回到渲染后的文档。"

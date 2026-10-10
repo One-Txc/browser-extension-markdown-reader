@@ -35,6 +35,7 @@ import {
   titleFromUrl,
 } from './shared/const';
 import { mountFolderPane, type FolderPaneHandle } from './render/folder';
+import { mountSettingsButton } from './render/settings-button';
 import { setLocale, t } from './shared/i18n';
 
 /** 超过此长度不做渲染，避免超大文件卡死标签页 */
@@ -51,6 +52,12 @@ async function main(): Promise<void> {
   html.setAttribute(DONE_ATTR, '1');
 
   registerSettingsListeners();
+
+  /*
+   * 右上角的设置按钮。它不依赖文档内容，所以尽早挂上 ——
+   * 万一渲染失败（页面停在纯文本），用户至少还能从这里改设置。
+   */
+  mountSettingsButton();
 
   // content script 能跑起来 = 文件访问权限已开。上报给 SW 供 popup 显示状态。
   // M0 证实 chrome.extension.isAllowedFileSchemeAccess 在 content script 中不可用。

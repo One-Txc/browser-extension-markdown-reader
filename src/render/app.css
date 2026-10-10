@@ -933,6 +933,49 @@ html.md-reader-resizing * {
   right: 12px;
 }
 
+/*
+ * 右上角：设置。排在源视图按钮左侧。
+ * 12（右距）+ 34（按钮宽）+ 8（间距）= 54
+ */
+.md-reader-btn-settings {
+  right: 54px;
+}
+
+/* ---------- 打开设置失败时的提示 ---------- */
+
+/*
+ * 只在 chrome.action.openPopup() 不可用时出现 —— 例如 Firefox，
+ * 或手势没能跨进程传到 background。此时告诉用户手动点工具栏图标，
+ * 而不是让按钮看起来坏掉。
+ */
+.md-reader-toast {
+  position: fixed;
+  /* top / right 由 JS 按按钮位置设置 */
+  right: 12px;
+  z-index: 45;
+  max-width: 290px;
+  padding: 9px 13px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--md-fg, #1f2328);
+  background: var(--md-page-bg, #ffffff);
+  border: 1px solid var(--md-toc-border, rgba(0, 0, 0, 0.1));
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  animation: md-reader-toast-in 0.18s ease;
+}
+
+@keyframes md-reader-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ---------- 通用显隐 ---------- */
 
 /*
