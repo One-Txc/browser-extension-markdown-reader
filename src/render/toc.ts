@@ -214,101 +214,77 @@ function renderTree(
 }
 
 /**
- * 把某一层级整体展开或收起。
+ * 批量显示层级按钮条：「展开所有」加上若干「显示前 N 层」。
  *
- * 展开时顺带把更浅的层级也展开 —— 否则目标层级藏在收起的父节点里，
- * 点了「展开 H2」却什么都看不到。
- */
-function applyLevel(nodes: TocNode[], level: number, expanded: boolean): void {
-  for (const node of nodes) {
-    if (node.level === level) {
-      setNodeExpanded(node, expanded);
-    } else if (expanded && node.level < level) {
-      setNodeExpanded(node, true);
-    }
-  }
-}
-
-/**
- * 批量展开 / 收起按钮条。
+ * ★ 按钮是**互斥**的 —— 点哪个，大纲就整体设成那一档，而不是各自切换。
+ * 这样文案与行为才对得上：写着「显示前两层」，点下去就是显示前两层；
+ * 原来的切换语义下，同一句话点下去可能是展开也可能是收起。
+ * 当前生效的那一档会高亮，其余为普通态。
  *
  * 层级取自「文档中实际出现过的层级」并按数字升序取前三个 ——
  * 不是写死的 H1/H2/H3。若文档只有 H2 和 H3，这两个就分别是第 1、2 级。
- * 某一层级若没有任何带子标题的节点，则不生成按钮（点了也没有效果）。
+ *
+ * 档位与 expandToLevel() 的参数同源（值 = 展开的层数，比「显示前 N 层」少 1）：
+ *   展开所有 → -1，显示第一层 → 0，显示前两层 → 1 …
  */
 function createBulkBar(nodes: TocNode[]): { bar: HTMLElement | null; refresh: () => void } {
+  /*
+   * 只保留「有子标题」的层级：某层标题若一个子标题都没有，
+   * 为它生成的档位与上一档效果完全相同（都是显示到那一层），白白多占一格。
+   */
   const levels = [...new Set(nodes.map((n) => n.level))]
+    .filter((level) => nodes.some((n) => n.level === level && n.children.length > 0))
     .sort((a, b) => a - b)
     .slice(0, MAX_BULK_LEVELS);
 
-  const targets = (level: number): TocNode[] =>
-    nodes.filter((n) => n.level === level && n.children.length > 0);
-
-  const bar = document.createElement('div');
-  bar.className = 'md-reader-toc-bulk';
-  const buttons = new Map<number, HTMLButtonElement>();
-
-  const refresh = (level: number): void => {
-    const button = buttons.get(level);
-    const list = targets(level);
-    if (!button || list.length === 0) return;
-
-    const allExpanded = list.every((n) => n.expanded);
-    const allCollapsed = list.every((n) => !n.expanded);
-
-    button.classList.toggle('is-expanded', allExpanded);
-    button.classList.toggle('is-mixed', !allExpanded && !allCollapsed);
-
-    /*
-     * tooltip 也用层数说法，与按钮文字保持一致 ——
-     * 这里原先说的是「收起所有 H2 标题」，用绝对 H 级别描述影响范围，
-     * 与按钮上的「显示前两层」不是一套语言，容易让人以为是两回事。
-     *
-     * 第 N 个按钮（从 1 起算）控制第 N 层标题的展开：
-     * 收起它显示到第 N 层，展开它显示到第 N+1 层。
-     */
-    const depth = levels.indexOf(level) + 1;
-    button.title = allExpanded
-      ? t('tocBulkCollapse', [String(depth)])
-      : t('tocBulkExpand', [String(depth + 1)]);
-  };
-
-  const refreshAll = (): void => {
-    for (const level of levels) refresh(level);
-  };
-
   /*
-   * 按钮文案按「显示前 N 层」表述，而不是 H1/H2/H3。
-   * H 级别要求用户自己在脑子里换算一次「H2 展开后能看到几层」，
-   * 层数说法则直接对应他看到的结果。
-   *
-   * ★ 用相对序号（index+1）而不是标题的绝对级别：
-   * 文档若从 H2 起头，第一个按钮控制的是最外那层，
-   * 按绝对级别写成 H2 就与「第一层」对不上了。
+   * 文案按「显示前 N 层」表述，而不是 H1/H2/H3：
+   * H 级别要用户自己换算「H2 展开后能看到几层」，层数说法直接对应结果。
+   * 层数取相对序号而非标题的绝对级别 —— 文档若从 H2 起头，
+   * 第一个按钮控制的是最外那层，写成 H2 就与「第一层」对不上了。
    */
   const LABEL_KEYS = ['tocBulkLevel1', 'tocBulkLevel2', 'tocBulkLevel3'];
 
-  for (const [index, level] of levels.entries()) {
-    if (targets(level).length === 0) continue;
+  const options: { depth: number; key: string }[] = [
+    { depth: -1, key: 'tocBulkAll' },
+    ...levels.map((_, index) => ({ depth: index, key: LABEL_KEYS[index] ?? 'tocBulkLevel3' })),
+  ];
 
+  const bar = document.createElement('div');
+  bar.className = 'md-reader-toc-bulk';
+
+  /** 某一档是否正是大纲当前的状态 */
+  const matches = (depth: number): boolean =>
+    nodes.every((n) => n.expanded === (depth < 0 || n.depth < depth));
+
+  const buttons: { button: HTMLButtonElement; depth: number }[] = [];
+
+  const refresh = (): void => {
+    for (const { button, depth } of buttons) {
+      button.classList.toggle('is-expanded', matches(depth));
+    }
+  };
+
+  for (const { depth, key } of options) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'toc-bulk-btn';
-    button.textContent = t(LABEL_KEYS[index] ?? 'tocBulkLevel3');
+    button.textContent = t(key);
+    /*
+     * 不加 title：按钮文字已经说清了点下去的结果，再挂一条 tooltip 只是重复，
+     * 还容易出现两处用词不一致（这个坑刚踩过）。
+     */
     button.addEventListener('click', () => {
-      const list = targets(level);
-      const allExpanded = list.every((n) => n.expanded);
-      applyLevel(nodes, level, !allExpanded);
-      refreshAll();
+      for (const node of nodes) setNodeExpanded(node, depth < 0 || node.depth < depth);
+      refresh();
     });
-
-    buttons.set(level, button);
+    buttons.push({ button, depth });
     bar.appendChild(button);
   }
 
-  refreshAll();
+  refresh();
   // 即使一个按钮都没生成，也返回一个 no-op 的 refresh，调用方不必判空
-  return { bar: buttons.size > 0 ? bar : null, refresh: refreshAll };
+  return { bar: buttons.length > 0 ? bar : null, refresh };
 }
 
 export function buildToc(

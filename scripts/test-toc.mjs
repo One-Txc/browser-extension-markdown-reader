@@ -106,14 +106,17 @@ check('无子标题的节点用占位符对齐', handle.nav.querySelectorAll('.t
 
 const bulkButtons = [...handle.nav.querySelectorAll('.toc-bulk-btn')];
 /*
- * 按钮文案是「显示前 N 层」而不是 H1/H2 —— H 级别要用户自己换算，
- * 层数说法直接对应他看到的结果。层数取相对序号，所以这里断言的是
- * 「第一层 / 前两层」，而不是标题的绝对级别。
+ * 按钮条 =「展开所有」+ 若干「显示前 N 层」，是**互斥**的：
+ * 点哪个，大纲整体设成那一档，当前生效的那个高亮。
+ *
+ * 文案用层数说法而不是 H1/H2 —— H 级别要用户自己换算，
+ * 层数直接对应他看到的结果；层数取相对序号，所以文档从 H2 起头时
+ * 第一个层级按钮仍是「显示第一层」。
  * jsdom 里没有 chrome.i18n，t() 会逐级回退到 zh_CN 基准文案。
  */
 check(
-  '批量按钮取文档中实际出现的前三个层级（H3 无子标题故只有两个）',
-  bulkButtons.map((b) => b.textContent).join(',') === '显示第一层,显示前两层'
+  '批量按钮为「展开所有 + 显示前 N 层」，层级取自文档实际出现的前三个',
+  bulkButtons.map((b) => b.textContent).join(',') === '展开所有,显示第一层,显示前两层'
 );
 
 const h1Li = handle.nav.querySelector('.toc-level-h1');
@@ -129,27 +132,40 @@ check('折叠后 aria-expanded 变为 false', firstCaret.getAttribute('aria-expa
 firstCaret.click();
 check('再次点击展开子树', !h1Li.classList.contains('is-collapsed'));
 
-const h1Button = bulkButtons[0];
-const h2Button = bulkButtons[1];
+const [allButton, level1Button, level2Button] = bulkButtons;
 
-h2Button.click();
-check('批量收起 H2', h2Li.classList.contains('is-collapsed'));
-check('批量按钮随之变为未展开态', !h2Button.classList.contains('is-expanded'));
+/*
+ * buildTree 把节点初始设为展开（expanded: true），所以初始档位是「展开所有」。
+ * 打开文档时的实际展开状态由调用方随后调 expandToLevel 设定，见第 6 节。
+ */
+check('初始：当前档位高亮在「展开所有」', allButton.classList.contains('is-expanded'));
+check('初始：其余档位未高亮', !level1Button.classList.contains('is-expanded') && !level2Button.classList.contains('is-expanded'));
 
-h1Button.click();
-check('批量收起 H1', h1Li.classList.contains('is-collapsed'));
+level1Button.click();
+check('点「显示第一层」→ 最外层收起', h1Li.classList.contains('is-collapsed'));
+check('点「显示第一层」→ 该档位高亮', level1Button.classList.contains('is-expanded'));
+// 互斥：原来高亮的那档必须让位，否则会同时亮两个
+check('点「显示第一层」→「显示前两层」不再高亮', !level2Button.classList.contains('is-expanded'));
 
-h2Button.click();
-// 目标层级藏在收起的父节点里时，展开必须连带展开祖先，否则点了等于没点
-check('展开下层时连带展开祖先', !h1Li.classList.contains('is-collapsed'));
-check('H2 已重新展开', !h2Li.classList.contains('is-collapsed'));
-check('批量按钮恢复已展开态', h2Button.classList.contains('is-expanded'));
+allButton.click();
+check('点「展开所有」→ 全部展开', !h1Li.classList.contains('is-collapsed') && !h2Li.classList.contains('is-collapsed'));
+check('点「展开所有」→ 该档位高亮', allButton.classList.contains('is-expanded'));
+check('点「展开所有」→ 层级档位都不高亮', !level1Button.classList.contains('is-expanded') && !level2Button.classList.contains('is-expanded'));
 
-// 手动折叠也要让批量按钮状态同步，否则按钮会显示成过期的状态
+level2Button.click();
+check('点「显示前两层」→ 第一层展开、第二层收起', !h1Li.classList.contains('is-collapsed') && h2Li.classList.contains('is-collapsed'));
+check('点「显示前两层」→ 该档位高亮', level2Button.classList.contains('is-expanded'));
+
+/*
+ * 手动折叠也要让档位高亮同步，否则会显示成过期状态。
+ * 收起 H1 后所有节点都收起，恰好等于「显示第一层」这一档。
+ */
 firstCaret.click();
-check('手动折叠后批量按钮同步为未展开态', !h1Button.classList.contains('is-expanded'));
+check('手动折叠后档位同步到「显示第一层」', level1Button.classList.contains('is-expanded'));
+check('手动折叠后其余档位不高亮',
+  !allButton.classList.contains('is-expanded') && !level2Button.classList.contains('is-expanded'));
 firstCaret.click();
-check('手动展开后批量按钮同步为已展开态', h1Button.classList.contains('is-expanded'));
+check('手动展开后档位回到「显示前两层」', level2Button.classList.contains('is-expanded'));
 
 /* ------------------------------------------------ 5. 折叠开关 */
 
