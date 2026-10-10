@@ -477,11 +477,19 @@ function registerSettingsListeners(): void {
  */
 async function readSource(url: string): Promise<string | null> {
   /*
-   * 只有当页面地址确实就是这份文档时才从 DOM 读 ——
-   * 原地切换文档后地址栏没变、DOM 里已经是另一份内容，此时必须走 SW。
+   * 只有「页面地址就是这份文档」**并且**「页面还没被我们渲染过」时才从 DOM 读。
+   *
+   * ★ 两个条件缺一不可。早先只看了 URL，于是出现这个 bug：
+   * 打开 A → 点 B（正常）→ 再点回 A 时，A 与地址栏相同，
+   * 于是又去等 body > pre；可此时 DOM 里早就是渲染后的 main 了，
+   * 那个 <pre> 永远不会出现，只能干等到 3 秒超时才回退到 SW ——
+   * 用户看到的就是「点了没反应」。
+   *
+   * mainEl 非空即表示渲染已完成，此时 DOM 里的内容不再是原文，
+   * 直接走 SW 才既正确又快。
    */
   const isCurrentPage = url === location.href.split('#')[0].split('?')[0];
-  const fromDom = isCurrentPage ? await waitForSourceText() : null;
+  const fromDom = isCurrentPage && !mainEl ? await waitForSourceText() : null;
 
   // DOM 文本干净就直接用；若出现大量替换字符，说明 Chrome 用错了编码
   // （典型场景：GBK 编码的 .md 被按 UTF-8 解码），改由 SW 按原始字节重新嗅探。
