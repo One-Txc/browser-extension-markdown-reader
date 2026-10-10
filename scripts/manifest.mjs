@@ -63,6 +63,19 @@ const VERSION = '0.1.0';
 /** 由浏览器按 __MSG_extDescription__ 从 _locales 解析 */
 const DESCRIPTION = '__MSG_extDescription__';
 
+/*
+ * content script 的注入范围：本地文档 + 在线文档。
+ *
+ * ★ 在线这一档只能写「http 与 https 的全部路径」，无法在清单里限定只匹配 .md ——
+ * 服务器给的 Content-Type 不一定是 text/markdown，URL 也未必以 .md 结尾。
+ * 所以脚本会注入到每个 http(s) 页面，真正的筛选在运行时做：
+ * isMarkdownPage() 先看 document.contentType，text/plain 时再看路径后缀，
+ * 不匹配就立刻 return，不做任何 DOM 改动（尤其是不会隐藏页面）。
+ *
+ * 代价是安装时会出现「读取您在所有网站上的数据」这类权限提示。
+ */
+const MATCHES = ['file:///*', 'http://*/*', 'https://*/*'];
+
 /**
  * Firefox 要求显式扩展 ID。
  * strict_min_version 定在 128：scripting.executeScript 的 world:'MAIN'
@@ -97,7 +110,7 @@ export function buildManifest(target) {
     permissions: ['storage', 'scripting'],
     content_scripts: [
       {
-        matches: ['file:///*'],
+        matches: MATCHES,
         js: [p('content.js')],
         run_at: 'document_start',
         all_frames: false,
@@ -114,7 +127,7 @@ export function buildManifest(target) {
       ...common,
       manifest_version: 2,
       // MV2 没有 host_permissions，主机权限直接列进 permissions
-      permissions: [...common.permissions, 'file:///*'],
+      permissions: [...common.permissions, ...MATCHES],
       background: {
         scripts: [p('background.js')],
         persistent: false,
@@ -132,8 +145,9 @@ export function buildManifest(target) {
     manifest_version: 3,
     // scripting.executeScript 的 world 参数需要 Chrome 111+
     minimum_chrome_version: '111',
-    host_permissions: ['file:///*'],
+    host_permissions: MATCHES,
     background: { service_worker: p('background.js') },
-    web_accessible_resources: [{ resources: [p('fonts/*')], matches: ['file:///*'] }],
+    // 字体要让 http(s) 页面也能取到，否则在线文档里的公式会退化成回退字体
+    web_accessible_resources: [{ resources: [p('fonts/*')], matches: MATCHES }],
   };
 }

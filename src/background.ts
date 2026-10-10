@@ -144,13 +144,24 @@ async function readLocalFile(url: string): Promise<{
   encoding?: string;
   error?: string;
 }> {
-  if (!url.startsWith('file://')) {
+  /*
+   * 同时支持本地与在线：http(s) 走的是同一个 fetch，
+   * 只要清单里有对应的 host_permissions。
+   */
+  const isHttp = url.startsWith('http://') || url.startsWith('https://');
+  if (!url.startsWith('file://') && !isHttp) {
     return { ok: false, error: t('fileOnly') };
   }
 
   try {
     const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) return { ok: false, error: `HTTP ${res.status}` };
+
+    /*
+     * ★ 不能用 res.ok 判断成败：file:// 的响应 ok 为 false、status 为 0，
+     * 但 body 是完整的（这条踩过坑，别改回去）。
+     * 只有 http(s) 才值得看状态码。
+     */
+    if (isHttp && !res.ok) return { ok: false, error: `HTTP ${res.status}` };
 
     const buf = await res.arrayBuffer();
     const { text, encoding } = decodeSmart(buf);

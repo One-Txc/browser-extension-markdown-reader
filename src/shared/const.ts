@@ -25,17 +25,46 @@ export const ROOT_CLASS = 'md-reader-root';
 export const SOURCE_MODE_CLASS = 'md-reader-source-mode';
 
 /**
+ * 浏览器明确标为 Markdown 的 MIME。
+ *
+ * 服务器正确配置时会给出这些值（GitHub、GitLab 的 raw 链接就是 text/plain，
+ * 而自建站点常配 text/markdown）。可以放心地「只看 MIME 就接管」。
+ */
+const MARKDOWN_MIME = new Set([
+  'text/markdown',
+  'text/x-markdown',
+  'text/md',
+  'text/mkd',
+  'text/mdx',
+]);
+
+/**
  * 判断当前页面是否应该由本扩展接管。
  *
- * contentType 实测为 text/markdown；同时兼容 text/plain
- * （Chrome 在部分平台/版本上会把 .md 当纯文本处理）。
+ * 支持本地（file://）与在线（http/https）两类文档，判断依据分两级：
+ *
+ *   1. MIME 明确是 Markdown（text/markdown 等）→ 直接接管。
+ *      在线文档若服务器没配好，拿不到这个值，所以还需要第二条。
+ *   2. MIME 是 text/plain → **必须再看路径后缀**。
+ *      text/plain 太宽泛了：任何 .txt、任何无后缀的纯文本接口都是它，
+ *      只凭它就接管会在无关页面上瞎渲染。第三方插件在白名单里直接放了
+ *      text/plain，没有这层后缀校验，那是它的疏漏。
+ *
+ * 内容本身能不能读到由 readSource 兜底（读不到就不渲染），
+ * 所以这里不必再检查 body > pre。
  */
 export function isMarkdownPage(): boolean {
-  if (location.protocol !== 'file:') return false;
-  if (!MD_RE.test(location.pathname)) return false;
+  const protocol = location.protocol;
+  const isLocal = protocol === 'file:';
+  const isRemote = protocol === 'http:' || protocol === 'https:';
+  if (!isLocal && !isRemote) return false;
 
   const ct = document.contentType;
-  return ct === 'text/markdown' || ct === 'text/plain';
+  if (MARKDOWN_MIME.has(ct)) return true;
+  if (ct !== 'text/plain') return false;
+
+  // 到这一步只可能是 text/plain，用路径后缀作为决定性依据
+  return MD_RE.test(location.pathname);
 }
 
 /**
