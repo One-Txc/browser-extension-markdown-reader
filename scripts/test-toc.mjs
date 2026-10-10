@@ -116,7 +116,7 @@ const bulkButtons = [...handle.nav.querySelectorAll('.toc-bulk-btn')];
  */
 check(
   '批量按钮为「展开所有 + 显示前 N 层」，层级取自文档实际出现的前三个',
-  bulkButtons.map((b) => b.textContent).join(',') === '展开所有,显示第一层,显示前两层'
+  bulkButtons.map((b) => b.textContent).join(',') === '全部,第一层,前两层'
 );
 
 const h1Li = handle.nav.querySelector('.toc-level-h1');
