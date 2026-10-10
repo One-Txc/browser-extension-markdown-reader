@@ -286,6 +286,15 @@ const tocHandlers: TocHandlers = {
    * 需要真实跳转时用每行右侧的跳转图标（默认新标签页打开）。
    */
   createFolderPane: () => {
+    /*
+     * 在线文档不提供「文件夹」面板。
+     *
+     * 目录列表靠的是 Chrome 为 file:// 目录 URL 生成的索引页（见 shared/directory.ts），
+     * 这个机制在 http(s) 上不存在；硬做只能靠网页抓取猜目录结构，不可靠。
+     * 返回 null，toc.ts 就只渲染「大纲」一个标签页 —— 按钮条不会出现第二个空标签。
+     */
+    if (!baseDocUrl.startsWith('file:')) return null;
+
     folderHandle = mountFolderPane({
       // 用最初打开的文档，而不是 currentDocUrl —— 根目录不该随切换而变
       documentUrl: baseDocUrl,

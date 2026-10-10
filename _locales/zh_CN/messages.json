@@ -110,8 +110,8 @@
     "description": "错误提示：无法获取当前标签页标识时出现。通常用户看不到。"
   },
   "fileOnly": {
-    "message": "仅允许读取 file:// 路径",
-    "description": "错误提示：试图读取非本地文件时出现，属于安全限制。通常用户看不到。"
+    "message": "仅允许读取 file:// 或 http(s) 路径",
+    "description": "错误提示：试图用不受支持的协议读取文档时出现，属于安全限制。通常用户看不到。"
   },
 
   "folder_collapseAll": {
