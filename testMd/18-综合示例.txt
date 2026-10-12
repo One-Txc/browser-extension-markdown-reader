@@ -1,0 +1,189 @@
+# VoC 评论数据模型（综合示例）
+
+**作者：** 张三 · **日期：** 2026-08-19 · **负责人：** 李四
+
+本文件模拟一份真实的数据仓库项目文档，用于检验扩展在长文档下的整体观感。
+
+---
+
+## 背景
+
+评论数据（Voice of Customer）分散在四个来源系统中，字段口径不一致、
+编码格式不统一、存在跨系统重复。本模型的目标是产出一份**统一的评论粒度视图**，
+供下游报表与模型训练使用。
+
+### 两个产出物
+
+1. `platinum_bi.mv_voc` —— **评论粒度**（1 行 / 评论），四个来源系统调和后的结果，全量刷新。
+2. `platinum_foundation.fact_voc_topic` —— **主题粒度**（1 行 / key_sentence），
+   来自 DS 标注结果，增量写入。
+
+> 两个产出物的粒度不同，**不能直接 JOIN**，需要先按 `review_id` 聚合到评论粒度。
+
+---
+
+## 数据流
+
+```
+四个来源系统
+  ├── 来源 A（电商评论）
+  ├── 来源 B（客服工单）
+  ├── 来源 C（问卷反馈）
+  └── 来源 D（社媒监听）
+        │
+        ▼
+  贴源层 ods_voc_*            （原样落地，保留原始编码）
+        │
+        ▼
+  明细层 dwd_voc_review        （去重、转码、字段标准化）
+        │
+        ├──────────────┐
+        ▼              ▼
+  汇总层 mv_voc    主题事实表 fact_voc_topic
+   （评论粒度）      （主题粒度）
+        │              │
+        └──────┬───────┘
+               ▼
+        应用层报表 / 模型
+```
+
+---
+
+## 字段定义
+
+### mv_voc（评论粒度）
+
+| 字段名 | 类型 | 可空 | 主键 | 说明 |
+| --- | --- | :---: | :---: | --- |
+| `review_id` | bigint | 否 | 是 | 评论唯一标识，跨系统统一编码 |
+| `source_system` | varchar(32) | 否 | 否 | 来源系统标识 |
+| `rating` | decimal(3,1) | 是 | 否 | 归一化到 1–5 分的评分 |
+| `review_text` | text | 是 | 否 | 评论文本，统一 UTF-8 |
+| `created_at` | timestamp | 否 | 否 | 评论创建时间 |
+| `moderation_status` | varchar(16) | 否 | 否 | 审核状态 |
+| `dt` | date | 否 | 否 | 分区字段 |
+
+### moderation_status 取值
+
+| 取值 | 含义 | 是否计入指标 |
+| --- | --- | :---: |
+| `approved` | 审核通过 | ✅ |
+| `pending` | 待审核 | ❌ |
+| `rejected` | 审核拒绝 | ❌ |
+| `deleted` | 已删除 | ❌ |
+
+> ⚠️ 四个来源系统对 `moderation_status` 的定义存在差异，
+> 来源 B 的 `closed` 需要映射为 `approved`，来源 D 的 `hidden` 需要映射为 `rejected`。
+
+---
+
+## 关键处理逻辑
+
+### 1. 去重
+
+同一评论可能在多个来源系统中出现。去重业务键为
+`(source_system, external_id)`，冲突时按以下优先级保留：
+
+1. 审核状态为 `approved` 的优先
+2. 文本长度更长的优先
+3. `created_at` 更早的优先
+
+### 2. 编码转码
+
+来源 A 与来源 C 的原始文本为 GBK 编码，需要在明细层统一转为 UTF-8：
+
+```sql
+SELECT
+    review_id,
+    CONVERT(CAST(review_text AS BINARY) USING utf8mb4) AS review_text
+FROM ods_voc_source_a
+WHERE dt = '${bizdate}'
+```
+
+### 3. 评分归一化
+
+```python
+def normalize_rating(raw: float, source: str) -> float:
+    """把各来源的评分统一到 1-5 分区间"""
+    scale = {"A": 5.0, "B": 10.0, "C": 5.0, "D": 100.0}[source]
+    return round(raw / scale * 5.0, 1)
+```
+
+---
+
+## 建表语句
+
+```sql
+CREATE TABLE IF NOT EXISTS platinum_bi.mv_voc (
+    review_id          BIGINT       COMMENT '评论主键',
+    source_system      STRING       COMMENT '来源系统',
+    rating             DECIMAL(3,1) COMMENT '归一化评分',
+    review_text        STRING       COMMENT '评论文本',
+    created_at         TIMESTAMP    COMMENT '创建时间',
+    moderation_status  STRING       COMMENT '审核状态',
+    dt                 DATE         COMMENT '分区字段'
+)
+COMMENT '评论粒度统一视图'
+PARTITIONED BY (dt)
+STORED AS ORC;
+```
+
+---
+
+## 调度配置
+
+```yaml
+job:
+  name: mv_voc_daily
+  schedule: "0 3 * * *"
+  depends_on:
+    - dwd_voc_review
+  retry:
+    times: 3
+    interval_minutes: 10
+  alert:
+    channels: [email, wecom]
+```
+
+---
+
+## 验收清单
+
+- [x] 四个来源系统全部接入
+- [x] 字段映射表确认
+- [x] 去重规则实现并验证
+- [ ] GBK 转码在全部来源上验证
+- [ ] 与旧表做数据一致性比对
+- [ ] 下游报表切换
+- [ ] 历史数据回刷
+
+---
+
+## 常见问题
+
+### Q：为什么不用 `review_id` 直接 JOIN 主题表？
+
+因为主题表是 `key_sentence` 粒度，一条评论可能被拆成多个句子，
+每句话可能有不同的主题。直接 JOIN 会导致评论被放大。
+
+### Q：增量同步的延迟是多少？
+
+目标延迟为 2 小时。当前实测 P95 延迟约 85 分钟。
+
+### Q：历史数据需要回刷多久？
+
+建议回刷最近 12 个月。更早的数据质量较差，回刷收益有限。
+
+---
+
+## 变更记录
+
+| 日期 | 版本 | 变更内容 | 负责人 |
+| --- | --- | --- | --- |
+| 2026-08-19 | v1.2 | 新增来源 D 接入 | 李四 |
+| 2026-07-02 | v1.1 | 修正评分归一化逻辑 | 张三 |
+| 2026-05-15 | v1.0 | 首次上线 | 张三 |
+
+---
+
+*本文档由 MD Reader 测试用例生成，内容为虚构示例。*

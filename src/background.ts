@@ -10,7 +10,7 @@
  *      —— 同样是 CORS 的原因，必须由 SW 发起
  */
 
-import { filterEntries, parseDirectoryIndex, type DirEntry } from './shared/directory';
+import { parseDirectoryIndex, type DirEntry } from './shared/directory';
 import { setLocale, t } from './shared/i18n';
 import { loadSettings } from './shared/settings';
 import type { Locale } from './shared/i18n';
@@ -133,8 +133,18 @@ async function listDirectory(
     // ★ 不能用 res.ok 判断：file:// 的 Response 是 ok:false / status:0，但 body 完整
     if (!html) return { ok: false, error: t('dirEmpty') };
 
-    const entries = filterEntries(parseDirectoryIndex(html));
-    return { ok: true, entries };
+    /*
+     * ★ 这里**只解析，不过滤**。
+     *
+     * 过滤依赖「用户配置了哪些扩展名」，而那份设置只有 content script 手上有
+     * （它已经为渲染读过一次，且要随设置变化即时生效）。
+     * 早前这里顺手调了 filterEntries（走的是不含自定义项的默认列表），
+     * 于是用户把 txt 加进支持列表后，.txt 在到达 content script 之前就被丢掉了 ——
+     * content 侧无论怎么改都看不到它，看起来就像设置没生效。
+     *
+     * 过滤交给 content 侧（见 render/folder.ts 的 ordered）。
+     */
+    return { ok: true, entries: parseDirectoryIndex(html) };
   } catch (err) {
     return { ok: false, error: String(err) };
   }

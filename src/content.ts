@@ -421,6 +421,14 @@ function applyFoldPolicy(settings: ReaderSettings): void {
 async function refreshFromSettings(): Promise<void> {
   const settings = await loadSettings();
   const localeChanged = settings.locale !== currentSettings.locale;
+  /*
+   * 扩展名列表变了要重取目录内容。
+   *
+   * 文件夹面板里的条目是上次 pull 回来的，列表本身不会自己更新 ——
+   * 用户在设置里把 txt 加进支持列表后，若不重新拉取，那些 .txt 依旧不显示，
+   * 看起来就像设置没生效。
+   */
+  const extensionsChanged = settings.extraExtensions !== currentSettings.extraExtensions;
   currentSettings = settings;
   setLocale(settings.locale);
   applyTheme(document, settings);
@@ -446,6 +454,8 @@ async function refreshFromSettings(): Promise<void> {
     renderDocument(currentRaw, currentDocUrl, settings);
     return;
   }
+
+  if (extensionsChanged) folderHandle?.reload();
 
   syncToc(settings);
 }
