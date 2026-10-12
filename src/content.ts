@@ -28,6 +28,7 @@ import {
 } from './shared/settings';
 import { markPerf, publishPerf } from './shared/perf';
 import {
+  DEFAULT_MARKDOWN_EXT,
   DONE_ATTR,
   ROOT_CLASS,
   effectiveExtensions,
@@ -78,9 +79,26 @@ async function main(): Promise<void> {
     /* 忽略：上报失败不影响渲染 */
   }
 
+  /*
+   * 分两种情况，区别只在「要不要先隐藏页面」：
+   *
+   *   A. MIME 明确是 Markdown，或扩展名在**默认列表**里 —— 已经能确定接管，
+   *      立刻隐藏，避免纯文本先闪一下。
+   *   B. 只有**用户自定义**的扩展名才可能命中 —— 此刻还判断不了（设置是
+   *      异步读的，storage 没有同步 API），得先读设置；匹配了再隐藏并渲染，
+   *      不匹配就直接退出，整个过程页面从未被隐藏过，也就不会闪。
+   *
+   * 这比早前「text/plain + 任意扩展名都先放行」的做法好：那种写法会让
+   * 每个未被接管的纯文本文件（例如没配置过的 .log）都闪一下。
+   */
+  const sureToTakeOver =
+    isMarkdownMime() || hasExtension(location.pathname, DEFAULT_MARKDOWN_EXT);
+
   const prevVisibility = html.style.visibility;
-  html.style.visibility = 'hidden';
-  markPerf('hidden');
+  if (sureToTakeOver) {
+    html.style.visibility = 'hidden';
+    markPerf('hidden');
+  }
 
   /*
    * 设置读取与内容读取互不依赖，一开始就并行发起。
@@ -93,18 +111,18 @@ async function main(): Promise<void> {
   });
 
   /*
-   * 二次确认：初判是宽容的（text/plain 只要带扩展名就先放行，因为那时
-   * 还不知道用户自定义了哪些后缀），现在拿到设置了才做最终判定。
+   * 拿到设置，做最终判定。
    *
-   * 不匹配就把页面恢复可见并退出 —— 我们只是隐藏了一下、没动过任何内容，
-   * 所以不会留下痕迹。代价是这个页面会闪一下，但只有用户主动访问
-   * 未被接管的纯文本文件时才会遇到，普通网页是 text/html，走不到这里。
+   * 情况 B（只可能命中自定义扩展名）走到这里才第一次隐藏 ——
+   * 匹配就隐藏并继续渲染；不匹配直接返回，页面全程未被隐藏过。
    */
   const settingsNow = await settingsPromise;
   const extensions = effectiveExtensions(settingsNow.extraExtensions);
-  if (!isMarkdownMime() && !hasExtension(location.pathname, extensions)) {
-    html.style.visibility = prevVisibility;
-    return;
+
+  if (!sureToTakeOver) {
+    if (!hasExtension(location.pathname, extensions)) return;
+    html.style.visibility = 'hidden';
+    markPerf('hidden');
   }
 
   try {
