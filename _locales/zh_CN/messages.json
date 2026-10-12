@@ -327,6 +327,18 @@
     "message": "大纲条目超过阈值时显示折叠按钮（填 0 表示始终显示）；显示层数决定打开文档时列出几层。",
     "description": "并排的「大纲折叠阈值」与「大纲显示层数」两个控件下方的一行小字说明，同时解释这两个控件。较长的句子。"
   },
+  "popupExtraExt": {
+    "message": "额外支持的扩展名",
+    "description": "文本框的标签：让用户指定除默认那些之外，还有哪些扩展名也要按 Markdown 渲染。"
+  },
+  "popupExtraExtPlaceholder": {
+    "message": "txt, log",
+    "description": "上面那个文本框的占位示例。用两个常见扩展名示意输入格式。若本语言的习惯分隔符不同（例如日语多用「、」），可以照习惯写，输入解析同时接受逗号、空格与顿号。"
+  },
+  "popupExtraExtHint": {
+    "message": "用逗号或空格分隔。例如填 txt 后，.txt 文件也会被当作 Markdown 渲染。默认的 .md 等始终生效，这里只是追加。",
+    "description": "扩展名输入框下方的说明。需要讲清三点：输入格式、效果、以及它是追加而非替换。"
+  },
   "popupLocale": {
     "message": "界面语言",
     "description": "下拉框标签：选择扩展界面的显示语言。"

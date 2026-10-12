@@ -39,6 +39,15 @@
       margin-bottom: 0;
     }
 
+    /* 文本框单独占一行，允许输入较长的扩展名列表 */
+    input[type="text"] {
+      width: 100%; padding: 5px 7px; margin-bottom: 0;
+      font: inherit; font-size: 12px;
+      font-family: ui-monospace, Consolas, Menlo, monospace;
+      border: 1px solid #d0d7de; border-radius: 6px; background: #fff;
+    }
+    input[type="text"]:focus { outline: 2px solid #0969da33; border-color: #0969da; }
+
     /* ---------- 可折叠的「高级设置」分组标题 ---------- */
 
     .adv-toggle {
@@ -191,7 +200,15 @@
         </div>
       </div>
       <div class="hint" data-i18n="popupFoldHint">
-        目录项超过阈值时显示折叠按钮（填 0 表示始终显示）；默认展开层数决定打开文档时展开到第几层。
+        目录项超过阈值时显示折叠按钮（填 0 表示始终显示）；显示层数决定打开文档时列出几层。
+      </div>
+
+      <label class="field" for="extraExtensions" data-i18n="popupExtraExt">额外支持的扩展名</label>
+      <input type="text" id="extraExtensions" placeholder="txt, log" spellcheck="false"
+             autocomplete="off" data-i18n-placeholder="popupExtraExtPlaceholder">
+      <div class="hint" data-i18n="popupExtraExtHint">
+        用逗号或空格分隔，例如填 txt 后 .txt 文件也会被当作 Markdown 渲染。
+        默认的 .md 等始终生效，这里的只是追加。
       </div>
     </div>
   </fieldset>

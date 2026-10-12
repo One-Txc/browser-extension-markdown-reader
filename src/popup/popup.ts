@@ -44,6 +44,7 @@ const foldThresholdEl = pick<HTMLInputElement>('foldThreshold');
 const defaultExpandLevelEl = pick<HTMLSelectElement>('defaultExpandLevel');
 const resetEl = pick<HTMLButtonElement>('reset');
 const localeEl = pick<HTMLSelectElement>('locale');
+const extraExtensionsEl = pick<HTMLInputElement>('extraExtensions');
 const advancedToggle = pick<HTMLButtonElement>('advancedToggle');
 const advancedBody = pick<HTMLElement>('advancedBody');
 const statusEl = pick<HTMLElement>('status');
@@ -92,6 +93,11 @@ function applyI18n(root: ParentNode = document): void {
     const key = el.dataset.i18nLabel;
     if (key) el.setAttribute('label', t(key));
   });
+  // 输入框的提示文字在 placeholder 属性上，同样是 textContent 覆盖不到的
+  root.querySelectorAll<HTMLElement>('[data-i18n-placeholder]').forEach((el) => {
+    const key = el.dataset.i18nPlaceholder;
+    if (key) el.setAttribute('placeholder', t(key));
+  });
 }
 
 /* -------------------------------------------------------------- 设置读写 */
@@ -139,6 +145,7 @@ function applySettingsToForm(settings: ReaderSettings): void {
   foldThresholdEl.value = String(settings.foldThreshold);
   defaultExpandLevelEl.value = String(settings.defaultExpandLevel);
   localeEl.value = settings.locale;
+  extraExtensionsEl.value = settings.extraExtensions;
 }
 
 let resetArmed = false;
@@ -282,6 +289,15 @@ async function init(): Promise<void> {
     // 语言变了，popup 自己这一屏的文案也要立刻换过来
     await render(await loadSettings());
   });
+  /*
+   * 扩展名输入框用 change 而不是 input：
+   * 每敲一个字母就落盘并通知页面重建太浪费，而且中途的「t」「tx」会被
+   * 当成扩展名短暂生效。change 在失焦或回车时触发，正合适。
+   * 输入本身不校验格式 —— parseExtensions 会宽容地忽略无效项。
+   */
+  extraExtensionsEl.addEventListener('change', () =>
+    void save({ extraExtensions: extraExtensionsEl.value })
+  );
 }
 
 void init();
