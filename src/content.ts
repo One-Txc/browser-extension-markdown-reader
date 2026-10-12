@@ -28,7 +28,6 @@ import {
 } from './shared/settings';
 import { markPerf, publishPerf } from './shared/perf';
 import {
-  DEFAULT_MARKDOWN_EXT,
   DONE_ATTR,
   ROOT_CLASS,
   effectiveExtensions,
@@ -80,52 +79,31 @@ async function main(): Promise<void> {
   }
 
   /*
-   * 分两种情况，区别只在「要不要先隐藏页面」：
+   * 无条件先隐藏，防纯文本闪烁。
    *
-   *   A. MIME 明确是 Markdown，或扩展名在**默认列表**里 —— 已经能确定接管，
-   *      立刻隐藏，避免纯文本先闪一下。
-   *   B. 只有**用户自定义**的扩展名才可能命中 —— 此刻还判断不了（设置是
-   *      异步读的，storage 没有同步 API），得先读设置；匹配了再隐藏并渲染，
-   *      不匹配就直接退出，整个过程页面从未被隐藏过，也就不会闪。
-   *
-   * 这比早前「text/plain + 任意扩展名都先放行」的做法好：那种写法会让
-   * 每个未被接管的纯文本文件（例如没配置过的 .log）都闪一下。
+   * ★ 隐藏之后、进入 try 之前**不能有任何可能抛异常的代码** ——
+   * 否则 finally 不会执行，页面会永久停在 hidden（白屏）。
+   * 曾经把 `await settingsPromise` 放在这个位置，就是这样翻车的。
+   * 所有需要 await 与判断的逻辑都放进下面的 try 里。
    */
-  const sureToTakeOver =
-    isMarkdownMime() || hasExtension(location.pathname, DEFAULT_MARKDOWN_EXT);
-
   const prevVisibility = html.style.visibility;
-  if (sureToTakeOver) {
-    html.style.visibility = 'hidden';
-    markPerf('hidden');
-  }
+  html.style.visibility = 'hidden';
+  markPerf('hidden');
 
-  /*
-   * 设置读取与内容读取互不依赖，一开始就并行发起。
-   * chrome.storage.sync 的冷读实测可达上百毫秒（表现为 themed 阶段的剧烈波动），
-   * 串行等待等于把这笔开销直接加在首屏上。
-   */
   const settingsPromise = loadSettings().then((value) => {
     markPerf('settings-loaded');
     return value;
   });
 
-  /*
-   * 拿到设置，做最终判定。
-   *
-   * 情况 B（只可能命中自定义扩展名）走到这里才第一次隐藏 ——
-   * 匹配就隐藏并继续渲染；不匹配直接返回，页面全程未被隐藏过。
-   */
-  const settingsNow = await settingsPromise;
-  const extensions = effectiveExtensions(settingsNow.extraExtensions);
-
-  if (!sureToTakeOver) {
-    if (!hasExtension(location.pathname, extensions)) return;
-    html.style.visibility = 'hidden';
-    markPerf('hidden');
-  }
-
   try {
+    /*
+     * 扩展名判定。自定义后缀只能等设置读完才知道，所以这里必然有一次 await；
+     * 不匹配就 return —— 它落在 try 内，finally 会把可见性还原回去。
+     */
+    const settingsNow = await settingsPromise;
+    const extensions = effectiveExtensions(settingsNow.extraExtensions);
+    if (!isMarkdownMime() && !hasExtension(location.pathname, extensions)) return;
+
     const raw = await readSource(currentDocUrl);
     markPerf('source-read');
     if (!raw || !raw.trim()) return; // 读不到就原样保留，什么都不做
@@ -135,10 +113,9 @@ async function main(): Promise<void> {
       return;
     }
 
-    const settings = await settingsPromise;
     // 语言要在渲染之前定好：渲染过程中就会通过 t() 取文案
-    setLocale(settings.locale);
-    renderDocument(raw, currentDocUrl, settings);
+    setLocale(settingsNow.locale);
+    renderDocument(raw, currentDocUrl, settingsNow);
     // hash 只在首次加载时处理；原地切换文档后地址栏已不代表正文，跳了反而错
     applyInitialHash();
   } catch (err) {
