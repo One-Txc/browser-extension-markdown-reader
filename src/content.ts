@@ -152,8 +152,16 @@ function renderDocument(raw: string, url: string, settings: ReaderSettings): voi
   if (mainEl?.parentNode) {
     mainEl.replaceWith(main);
   } else {
-    // 首次：清掉 Chrome 原始的 <pre> 文本视图
-    document.body.replaceChildren(main);
+    /*
+     * 首次加载：只移除 Chrome 原始的 <pre> 文本视图。
+     *
+     * ★ 不要用 document.body.replaceChildren(main) —— 那会清空 body 上
+     * 所有其它元素，包括右上角的设置按钮。而挂按钮是异步的
+     * （要等 ensureBody、要等模块加载），与这里存在竞态：
+     * 按钮先挂上就被删掉、后挂上才留下，表现为「刷新后按钮有时消失」。
+     */
+    document.querySelectorAll('body > pre').forEach((el) => el.remove());
+    document.body.append(main);
   }
   document.body.classList.add('md-reader-body');
   markPerf('dom-swapped');
