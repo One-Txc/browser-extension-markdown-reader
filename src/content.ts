@@ -30,8 +30,11 @@ import { markPerf, publishPerf } from './shared/perf';
 import {
   DONE_ATTR,
   ROOT_CLASS,
+  effectiveExtensions,
   ensureDocumentElement,
-  isMarkdownPage,
+  hasExtension,
+  isMarkdownMime,
+  mayBeMarkdownPage,
   titleFromUrl,
 } from './shared/const';
 import { mountFolderPane, type FolderPaneHandle } from './render/folder';
@@ -42,7 +45,12 @@ import { setLocale, t } from './shared/i18n';
 const MAX_RENDER_LENGTH = 3 * 1024 * 1024;
 
 async function main(): Promise<void> {
-  if (!isMarkdownPage()) return;
+  /*
+   * 同步初判。必须是同步的 —— 后面要据此决定是否先隐藏页面防闪烁，
+   * 而设置是异步读的，此刻还拿不到用户自定义的扩展名。
+   * 所以这一步只排除明显无关的页面（普通网页、无扩展名的纯文本接口）。
+   */
+  if (!mayBeMarkdownPage()) return;
 
   const html = await ensureDocumentElement();
   markPerf('dom-ready');
@@ -83,6 +91,21 @@ async function main(): Promise<void> {
     markPerf('settings-loaded');
     return value;
   });
+
+  /*
+   * 二次确认：初判是宽容的（text/plain 只要带扩展名就先放行，因为那时
+   * 还不知道用户自定义了哪些后缀），现在拿到设置了才做最终判定。
+   *
+   * 不匹配就把页面恢复可见并退出 —— 我们只是隐藏了一下、没动过任何内容，
+   * 所以不会留下痕迹。代价是这个页面会闪一下，但只有用户主动访问
+   * 未被接管的纯文本文件时才会遇到，普通网页是 text/html，走不到这里。
+   */
+  const settingsNow = await settingsPromise;
+  const extensions = effectiveExtensions(settingsNow.extraExtensions);
+  if (!isMarkdownMime() && !hasExtension(location.pathname, extensions)) {
+    html.style.visibility = prevVisibility;
+    return;
+  }
 
   try {
     const raw = await readSource(currentDocUrl);
@@ -331,6 +354,8 @@ const tocHandlers: TocHandlers = {
         foldersFirst: currentSettings.folderFoldersFirst,
         showHidden: currentSettings.folderShowHidden,
         settingsOpen: currentSettings.folderSettingsOpen,
+        // 用户在设置里追加的后缀，要在文件夹列表里一并生效
+        extensions: effectiveExtensions(currentSettings.extraExtensions),
       }),
       /*
        * 面板偏好的键名与设置里的键名不同（前者面向面板，后者面向存储），

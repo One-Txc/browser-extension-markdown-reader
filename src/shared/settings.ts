@@ -114,6 +114,15 @@ export interface ReaderSettings {
 
   /** 设置弹窗里「高级设置」分组是否展开（默认收起，大部分人不改它） */
   advancedOpen: boolean;
+
+  /**
+   * 额外接管的扩展名，用户自己填，例如 `txt` 或 `txt, log`。
+   *
+   * 只做**追加** —— 默认那批（md / markdown / mkd / mdown…）始终生效，
+   * 用户不能把它们去掉：那会让 .md 突然打不开，而「取消支持」这个需求本身很罕见。
+   * 解析规则见 shared/const.ts 的 parseExtensions。
+   */
+  extraExtensions: string;
 }
 
 /** 目录宽度的取值范围 */
@@ -175,6 +184,8 @@ export const DEFAULT_SETTINGS: ReaderSettings = {
   locale: 'auto',
 
   advancedOpen: false,
+
+  extraExtensions: '',
 };
 
 /** 实际像素值，供 buildThemeCss 注入 CSS 变量 */
@@ -235,6 +246,10 @@ export async function loadSettings(): Promise<ReaderSettings> {
         : DEFAULT_SETTINGS.locale,
 
       advancedOpen: s.advancedOpen ?? DEFAULT_SETTINGS.advancedOpen,
+      extraExtensions:
+        typeof s.extraExtensions === 'string'
+          ? s.extraExtensions
+          : DEFAULT_SETTINGS.extraExtensions,
     };
   } catch {
     return DEFAULT_SETTINGS;

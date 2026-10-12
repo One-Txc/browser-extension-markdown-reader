@@ -30,8 +30,14 @@ export interface DirEntry {
   modified: number;
 }
 
-/** 会被「文件夹」面板展示的文件类型 —— 只有 Markdown */
-const MARKDOWN_EXT = ['.md', '.markdown', '.mkd'];
+/**
+ * 「文件夹」面板默认展示的文件类型。
+ *
+ * ★ 这只是**兜底默认值**：调用方通常会传入 effectiveExtensions(settings.extraExtensions)
+ * 的结果，好让用户在设置里追加的后缀（例如 txt）在这里也生效。
+ * 两处列表若各写各的，就会出现「正文能渲染但文件夹里看不到」这种不一致。
+ */
+const FALLBACK_EXT = ['md', 'markdown', 'mkd', 'mdown', 'mkdn', 'mdwn', 'mdtxt', 'mdtext', 'markdn', 'mdx'];
 
 /**
  * 解析 Chrome 目录索引页里的 addRow(...) 调用。
@@ -65,16 +71,26 @@ export function parseDirectoryIndex(html: string): DirEntry[] {
 }
 
 /**
- * 过滤出需要展示的条目：目录 + Markdown 文件。
+ * 过滤出需要展示的条目：目录 + 受支持的文档类型。
  *
  * 只做过滤不做排序 —— 排序取决于用户在「文件夹」面板里的设置。
  *
  * @param showHidden 是否保留以 . 开头的隐藏项
+ * @param extensions 受支持的扩展名（不含点号，小写）。
+ *                   传 effectiveExtensions(settings.extraExtensions) 即可让
+ *                   用户自定义的后缀也在这里生效；不传则用默认那批。
  */
-export function filterEntries(entries: DirEntry[], showHidden = true): DirEntry[] {
+export function filterEntries(
+  entries: DirEntry[],
+  showHidden = true,
+  extensions: readonly string[] = FALLBACK_EXT
+): DirEntry[] {
+  const wanted = extensions.map((e) => `.${e.toLowerCase()}`);
   return entries.filter((e) => {
     if (!showHidden && e.name.startsWith('.')) return false;
-    return e.isDir || MARKDOWN_EXT.some((ext) => e.name.toLowerCase().endsWith(ext));
+    if (e.isDir) return true;
+    const lower = e.name.toLowerCase();
+    return wanted.some((ext) => lower.endsWith(ext));
   });
 }
 

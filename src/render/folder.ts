@@ -71,6 +71,14 @@ export interface FolderPrefs {
   showHidden: boolean;
   /** 设置面板是否展开 */
   settingsOpen: boolean;
+  /**
+   * 受支持的扩展名（不含点号，小写）。
+   *
+   * 由调用方算好传进来（effectiveExtensions(settings.extraExtensions)），
+   * 这样用户在设置里追加的后缀在文件夹列表里同样生效 ——
+   * 否则会出现「正文能渲染、但文件夹面板里看不到它」的割裂。
+   */
+  extensions: readonly string[];
 }
 
 export interface FolderPaneOptions {
@@ -294,7 +302,7 @@ export function mountFolderPane(options: FolderPaneOptions): FolderPaneHandle {
   /** 按当前偏好过滤 + 排序 */
   function ordered(entries: DirEntry[]): DirEntry[] {
     const p = options.getPrefs();
-    return sortEntries(filterEntries(entries, p.showHidden), {
+    return sortEntries(filterEntries(entries, p.showHidden, p.extensions), {
       field: p.sortField,
       ascending: p.sortAsc,
       foldersFirst: p.foldersFirst,
