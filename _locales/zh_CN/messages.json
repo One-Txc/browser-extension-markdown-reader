@@ -89,7 +89,19 @@
   },
   "imagePreviewHint": {
     "message": "滚轮缩放 · 拖动平移 · Esc 关闭",
-    "description": "图片放大层底部的一行操作提示，用间隔号分隔三个操作。"
+    "description": "图片放大层底部的一行操作提示。文档里只有一张图时显示这条（没有切换操作可提示），用间隔号分隔三个操作。"
+  },
+  "imagePreviewHintNav": {
+    "message": "滚轮缩放 · 拖动平移 · ← → 切换 · Esc 关闭",
+    "description": "图片放大层底部的操作提示，用于文档里有多张图时 —— 比单图版多一项切换操作。箭头键符号请保留原样。"
+  },
+  "imagePrev": {
+    "message": "上一张",
+    "description": "图片放大层左侧圆形按钮的悬停提示与无障碍标签。按钮上显示的是「‹」符号，不需要翻译那句话，只翻译这里的文字。"
+  },
+  "imageNext": {
+    "message": "下一张",
+    "description": "图片放大层右侧圆形按钮的悬停提示与无障碍标签，对应「›」符号。"
   },
 
   "themeNoteGithubLight": {
