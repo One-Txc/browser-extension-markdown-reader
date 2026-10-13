@@ -1,19 +1,19 @@
 """把浏览器截图处理成应用商店要求的尺寸。
 
-应用商店（Chrome Web Store / Firefox Add-ons）要求截图是 1280x800 或 640x400。
+应用商店（Chrome Web Store / Firefox Add-ons）要求截图是 1280x800 或 640x400，
+比例固定 16:10 = 1.6。
 
-本脚本**直接拉伸到目标尺寸，不保持比例** —— 这是明确选定的行为，
-不是疏忽。截图工具截出来的比例（常见 2.08）与商店要求的 16:10 = 1.6 差得较多，
-另外两种做法各有各的代价：
+处理分两步：
 
-    等比缩放 + 留边   内容完整，但上下会有大片空白
-    等比缩放 + 裁剪   没有空白，但会切掉左右内容（侧边栏首当其冲）
+    1. 裁到 16:10 —— 比目标宽就裁左右，比目标窄就裁底部
+    2. 等比缩放到 1280x800 与 640x400
 
-拉伸则没有空白、也不丢内容，代价是**画面被压扁**：1920x921 拉到 1280x800 时，
-宽度缩到 67%、高度只缩到 87%，横向比纵向多缩约 23%，文字会变窄、图标会变瘦。
+这样既不留边、也不变形，代价只是裁掉一点点边缘像素。
+截图越接近 16:10，裁得越少：实测 1314x819（比例 1.604）裁完只需缩放，
+几乎是无损的。
 
-想要既不变形又没空白，唯一的办法是**截图时就截成 16:10** ——
-按 F11 全屏后内容区就是 1536x864（比例 1.78），已经很接近了。
+**裁底部而不是上下均分**：截图底部往往是空白或状态栏一类可以舍弃的区域，
+顶部才有标题和工具栏。横向居中裁，两侧对称。
 
 ────────────────────────────────────────────────────────────────
 用法
@@ -54,6 +54,16 @@
 
     --keep-stale    保留尺寸目录里原图已不存在的旧输出
                     （默认会清掉，避免删了原图后结果里留着幽灵文件）
+
+────────────────────────────────────────────────────────────────
+截图本身的建议
+────────────────────────────────────────────────────────────────
+
+- **截成 16:10 最省事**。做法：F12 打开 DevTools → Ctrl+Shift+M 开启设备工具栏
+  → 尺寸填 1600x1000 或 1440x900 → Ctrl+Shift+P 输入 screenshot
+  → 选 Capture screenshot。这样截出来直接就是 16:10
+- 注意窗口宽度别低于 824px，否则侧边栏会收成抽屉（见 app.css 的断点注释）
+- 别把浏览器边框、桌面背景截进去，那会改变比例，白白多裁一些
 """
 
 from __future__ import annotations
@@ -66,6 +76,9 @@ from PIL import Image
 ROOT = Path('截图')
 SIZES = [(1280, 800), (640, 400)]
 
+# 商店要求的比例，两个尺寸都是它
+TARGET_RATIO = 1280 / 800
+
 IMAGE_SUFFIXES = {'.png', '.jpg', '.jpeg', '.webp'}
 
 
@@ -75,6 +88,25 @@ def looks_like_size_dir(name: str) -> bool:
         return False
     left, _, right = name.lower().partition('x')
     return left.isdigit() and right.isdigit()
+
+
+def crop_to_ratio(img: Image.Image, ratio: float) -> tuple[Image.Image, str]:
+    """裁到指定宽高比。返回（裁好的图, 裁掉了什么的说明）"""
+    w, h = img.size
+    current = w / h
+
+    if abs(current - ratio) < 0.002:
+        return img, '无需裁剪'
+
+    if current > ratio:
+        # 太宽 → 裁左右，居中
+        new_w = round(h * ratio)
+        left = (w - new_w) // 2
+        return img.crop((left, 0, left + new_w, h)), f'裁左右 {w - new_w}px'
+
+    # 太高 → 裁底部，保住顶部的标题与工具栏
+    new_h = round(w / ratio)
+    return img.crop((0, 0, w, new_h)), f'裁底部 {h - new_h}px'
 
 
 def process_lang(lang_dir: Path, keep_stale: bool) -> int:
@@ -88,31 +120,34 @@ def process_lang(lang_dir: Path, keep_stale: bool) -> int:
 
     names = {s.name for s in sources}
     written = 0
+    notes: list[str] = []
 
-    for size in SIZES:
-        out_dir = lang_dir / f'{size[0]}x{size[1]}'
-        out_dir.mkdir(parents=True, exist_ok=True)
+    for src in sources:
+        with Image.open(src) as raw:
+            img = raw.convert('RGB')
+            w0, h0 = img.size
+            cropped, how = crop_to_ratio(img, TARGET_RATIO)
 
-        # 清掉原图已删除、但上一轮生成过的旧文件
-        if not keep_stale:
+        for size in SIZES:
+            out_dir = lang_dir / f'{size[0]}x{size[1]}'
+            out_dir.mkdir(parents=True, exist_ok=True)
+            cropped.resize(size, Image.LANCZOS).save(out_dir / src.name, 'PNG')
+            written += 1
+
+        scale = 1280 / cropped.width
+        notes.append(f'    {src.name:<40} {w0}x{h0} → {how}，缩放 {scale * 100:.0f}%')
+
+    # 清理陈旧输出
+    if not keep_stale:
+        for size in SIZES:
+            out_dir = lang_dir / f'{size[0]}x{size[1]}'
             for old in out_dir.iterdir():
                 if old.is_file() and old.name not in names:
                     old.unlink()
                     print(f'    清理陈旧输出 {out_dir.name}/{old.name}')
 
-        for src in sources:
-            img = Image.open(src).convert('RGB')
-            img.resize(size, Image.LANCZOS).save(out_dir / src.name, 'PNG')
-            written += 1
-
-    for src in sources:
-        with Image.open(src) as im:
-            sx, sy = 1280 / im.width, 800 / im.height
-            if abs(sx - sy) > 0.005:
-                note = f'横向 {sx * 100:.0f}% / 纵向 {sy * 100:.0f}%  ← 不等比，画面会压扁'
-            else:
-                note = f'等比例 {sx * 100:.0f}%'
-            print(f'    {src.name:<44} {im.width}x{im.height} → {note}')
+    for line in notes:
+        print(line)
     return written
 
 
@@ -133,7 +168,7 @@ def main() -> int:
         return 1
 
     print(f'输出到 {ROOT}/<语言>/{{1280x800, 640x400}}/，原图不动')
-    print('处理：直接拉伸到目标尺寸（不保持比例）\n')
+    print('处理：裁到 16:10 → 等比缩放（不留边、不变形）\n')
 
     total = 0
     for lang in langs:
