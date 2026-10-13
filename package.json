@@ -16,6 +16,7 @@
     "check": "npm run typecheck && npm test && npm run build",
     "locales": "python scripts/check-locales.py",
     "icons": "python scripts/make-icons.py",
+    "screenshots": "python scripts/resize-screenshots.py",
     "package": "npm run build:all && python scripts/package.py"
   },
   "dependencies": {
