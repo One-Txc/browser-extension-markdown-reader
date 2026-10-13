@@ -1,6 +1,6 @@
 {
-  "name": "md-reader",
-  "version": "0.1.0",
+  "name": "markdown-read",
+  "version": "1.0.0",
   "private": true,
   "description": "浏览器扩展：直接阅读本地与在线 Markdown 文档",
   "type": "module",

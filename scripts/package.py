@@ -80,7 +80,8 @@ def package(target: str) -> Path:
     total = sum(f.stat().st_size for f in files)
 
     OUT_DIR.mkdir(exist_ok=True)
-    out = OUT_DIR / f'md-reader-{version}-{target}.zip'
+    # 包名跟产品名走（与 manifest 里的 extName 一致），便于在商店后台辨认
+    out = OUT_DIR / f'markdown-read-{version}-{target}.zip'
 
     with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
         for f in files:

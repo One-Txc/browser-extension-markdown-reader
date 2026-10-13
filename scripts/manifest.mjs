@@ -59,7 +59,11 @@ export const LAYOUT = {
 };
 
 const NAME = '__MSG_extName__';
-const VERSION = '0.1.0';
+/**
+ * 版本号。★ 唯一的版本来源 —— 改这里即可，package.json 只是给 npm 看的。
+ * Chrome 与 Firefox 都会拒绝「版本号回退」的上传，改小之前务必确认。
+ */
+const VERSION = '1.0.0';
 /** 由浏览器按 __MSG_extDescription__ 从 _locales 解析 */
 const DESCRIPTION = '__MSG_extDescription__';
 
