@@ -14,9 +14,65 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 BASE = Path(__file__).resolve().parent.parent / "testMd"
+
+
+def make_demo_image(
+    path: Path,
+    width: int,
+    height: int,
+    start: tuple[int, int, int],
+    end: tuple[int, int, int],
+    number: str,
+    caption: str,
+) -> None:
+    """生成演示用图片：对角渐变底 + 大编号 + 底部说明。
+
+    专供 testMd/11-综合示例.md 的截图使用 —— 那张图要干净、好看，
+    不能像 make_image 那样只有白框白圆（那是给自动化测试看的）。
+
+    字体优先用系统里的中文字体，取不到就退回默认位图字体（只影响文字观感，
+    不影响生成成功）。所以这里的文字用中英混排时要留意：默认字体画不出中文，
+    会显示成方块，真出现那种情况说明字体没加载上。
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    img = Image.new("RGB", (width, height))
+    draw = ImageDraw.Draw(img)
+
+    # 对角渐变：按 (x+y) 的占比在两端颜色之间插值
+    span = (width - 1) + (height - 1)
+    for y in range(height):
+        for x in range(0, width, 2):  # 每次画两列，肉眼无差别但快一倍
+            t = (x + y) / span
+            color = tuple(round(s + (e - s) * t) for s, e in zip(start, end))
+            draw.line([(x, y), (min(x + 1, width - 1), y)], fill=color)
+
+    def load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+        for name in ("msyh.ttc", "msyhbd.ttc", "simhei.ttf", "arial.ttf"):
+            try:
+                return ImageFont.truetype(name, size)
+            except OSError:
+                continue
+        return ImageFont.load_default()
+
+    big = load_font(int(height * 0.42))
+    small = load_font(int(height * 0.065))
+
+    # 大编号居中（用 anchor="mm" 省去手工测量宽高）
+    draw.text((width / 2, height * 0.46), number, fill="white", font=big, anchor="mm")
+
+    # 底部说明，带一点半透明压暗，保证在任何底色上都看得清
+    bar_h = int(height * 0.13)
+    bar = Image.new("RGBA", (width, bar_h), (0, 0, 0, 90))
+    img.paste(Image.alpha_composite(
+        img.crop((0, height - bar_h, width, height)).convert("RGBA"), bar
+    ).convert("RGB"), (0, height - bar_h))
+
+    draw.text((width / 2, height - bar_h / 2), caption, fill="white", font=small, anchor="mm")
+
+    img.save(path, "PNG")
 
 
 def make_image(path: Path, width: int, height: int, bg: str, label: str) -> None:
@@ -138,16 +194,26 @@ def make_huge_doc(path: Path, target_mb: float = 3.3) -> None:
 def main() -> None:
     print(f"输出目录：{BASE}")
 
-    print("[1/4] sample.png")
+    print("[1/5] sample.png")
     make_image(BASE / "img" / "sample.png", 800, 400, "#2f6f4e", "Markdown Read sample image")
 
-    print("[2/4] nested/deep.png")
+    print("[2/5] nested/deep.png")
     make_image(BASE / "img" / "nested" / "deep.png", 400, 300, "#8a4b2a", "nested/deep.png")
 
-    print("[3/4] 09-GBK编码测试.md")
+    # 演示图：11-综合示例.md 里用来展示「点击放大 + 上一张/下一张」
+    print("[3/5] img/demo-1~3.png")
+    demos = [
+        ("demo-1.png", (79, 70, 229), (147, 51, 234), "1", "渐变色卡 · 第一张"),
+        ("demo-2.png", (13, 148, 136), (59, 130, 246), "2", "渐变色卡 · 第二张"),
+        ("demo-3.png", (234, 88, 12), (219, 39, 119), "3", "渐变色卡 · 第三张"),
+    ]
+    for name, start, end, number, caption in demos:
+        make_demo_image(BASE / "img" / name, 960, 540, start, end, number, caption)
+
+    print("[4/5] 09-GBK编码测试.md")
     make_gbk_doc(BASE / "09-GBK编码测试.md")
 
-    print("[4/4] 10-超大文件测试.md")
+    print("[5/5] 10-超大文件测试.md")
     make_huge_doc(BASE / "10-超大文件测试.md")
 
     print("完成。")
