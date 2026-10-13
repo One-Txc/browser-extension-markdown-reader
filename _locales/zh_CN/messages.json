@@ -1,6 +1,6 @@
 {
   "extName": {
-    "message": "MD Reader",
+    "message": "Markdown Read",
     "description": "扩展名称。显示在浏览器扩展管理页与商店卡片上。品牌名，各语言均不翻译。"
   },
   "extDescription": {
@@ -75,7 +75,7 @@
     "description": "页面右上角齿轮按钮的悬停提示与无障碍标签。点击后打开扩展的设置面板。请用短词，它是按钮的提示文字。"
   },
   "openSettingsHint": {
-    "message": "没能打开设置面板。请点击浏览器工具栏上的 MD Reader 图标。",
+    "message": "没能打开设置面板。请点击浏览器工具栏上的 Markdown Read 图标。",
     "description": "打开设置失败时，页面右上角出现的提示气泡。只在 chrome.action.openPopup() 不可用时出现（例如 Firefox）。请给出可操作的指引，而不是只报告失败。"
   },
   "viewRendered": {
@@ -396,8 +396,8 @@
     "description": "解决步骤第 1 步的文字，后面会紧跟一个 chrome://extensions 链接。请保留末尾的冒号。"
   },
   "popupStep2": {
-    "message": "找到「MD Reader」，打开「允许访问文件网址」",
-    "description": "解决步骤第 2 步：在扩展管理页里为 MD Reader 打开文件访问开关。请沿用本语言习惯的引号样式。"
+    "message": "找到「Markdown Read」，打开「允许访问文件网址」",
+    "description": "解决步骤第 2 步：在扩展管理页里为 Markdown Read 打开文件访问开关。请沿用本语言习惯的引号样式。"
   },
   "popupStep3": {
     "message": "回到 .md 页面按 F5 刷新",

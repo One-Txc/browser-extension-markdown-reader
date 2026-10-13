@@ -1,6 +1,6 @@
-# 翻译指南 / Translating MD Reader
+# 翻译指南 / Translating Markdown Read
 
-MD Reader 是一个在浏览器里直接阅读本地 `.md` 文件的扩展。它除了英文与简体中文，
+Markdown Read 是一个在浏览器里直接阅读本地 `.md` 文件的扩展。它除了英文与简体中文，
 还提供日语、韩语。**欢迎补充其他语言，或修正现有翻译。**
 
 - [语言包在哪里](#语言包在哪里)
@@ -130,7 +130,7 @@ python scripts/check-locales.py
 - `Monokai`、`Nord`、`Tokyo Night`、`Xcode`、`GitHub Light` 等**主题名是品牌名**  —— 译了反而难找
 - `.md`、`F5`、`chrome://extensions`、`file://` 等**技术标识**
 - `H1` `H2`（标题层级）、`Esc`
-- `MD Reader`（产品名）
+- `Markdown Read`（产品名）
 
 **2. 注意长度**
 

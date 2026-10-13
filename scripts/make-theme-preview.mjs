@@ -289,7 +289,7 @@ const page = `<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>代码高亮主题预览 · MD Reader</title>
+<title>代码高亮主题预览 · Markdown Read</title>
 <style>
   :root { color-scheme: light; }
   body {

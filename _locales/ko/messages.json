@@ -1,6 +1,6 @@
 {
   "extName": {
-    "message": "MD Reader",
+    "message": "Markdown Read",
     "description": "확장 프로그램 이름. 번역하지 않음"
   },
   "extDescription": {
@@ -95,7 +95,7 @@
   "popupInactive": { "message": "아직 로컬 Markdown 페이지에서 작동하지 않습니다" },
   "popupInactiveReason": { "message": "보통 파일 접근 권한이 없기 때문입니다." },
   "popupStep1": { "message": "주소 표시줄에서 다음을 엽니다:" },
-  "popupStep2": { "message": "\"MD Reader\"를 찾아 \"파일 URL에 대한 액세스 허용\"을 켭니다" },
+  "popupStep2": { "message": "\"Markdown Read\"를 찾아 \"파일 URL에 대한 액세스 허용\"을 켭니다" },
   "popupStep3": { "message": ".md 페이지로 돌아가 F5를 누릅니다" },
   "popupNever": { "message": "없음" },
   "popupLastActive": { "message": "마지막 작동: " },

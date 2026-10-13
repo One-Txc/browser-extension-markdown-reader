@@ -1,6 +1,6 @@
 {
   "extName": {
-    "message": "MD Reader",
+    "message": "Markdown Read",
     "description": "拡張機能名。翻訳しない"
   },
   "extDescription": {
@@ -95,7 +95,7 @@
   "popupInactive": { "message": "ローカルの Markdown ページではまだ有効になっていません" },
   "popupInactiveReason": { "message": "多くの場合、ファイルへのアクセス権限が不足しています。" },
   "popupStep1": { "message": "アドレスバーで次を開きます：" },
-  "popupStep2": { "message": "「MD Reader」を見つけ、「ファイルの URL へのアクセスを許可する」をオンにします" },
+  "popupStep2": { "message": "「Markdown Read」を見つけ、「ファイルの URL へのアクセスを許可する」をオンにします" },
   "popupStep3": { "message": ".md のページに戻り、F5 で再読み込みします" },
   "popupNever": { "message": "なし" },
   "popupLastActive": { "message": "最終有効日時: " },

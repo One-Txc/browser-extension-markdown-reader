@@ -1,5 +1,5 @@
 /**
- * MD Reader —— Service Worker
+ * Markdown Read —— Service Worker
  *
  * 三个职责：
  *   1. 记录「文件访问权限已被证明」（content script 成功注入即证明）
@@ -175,7 +175,7 @@ async function injectMermaid(tabId?: number): Promise<{ ok: boolean; error?: str
     });
     return { ok: true };
   } catch (err) {
-    console.warn('[MD Reader] Mermaid 注入失败：', err);
+    console.warn('[Markdown Read] Mermaid 注入失败：', err);
     return { ok: false, error: String(err) };
   }
 }

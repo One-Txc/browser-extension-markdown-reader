@@ -1,5 +1,5 @@
 /**
- * MD Reader —— content script 主流程（M1）
+ * Markdown Read —— content script 主流程（M1）
  *
  * 依据 M0 实测结论实现：
  *   1. file:// 下的 .md 会被 Chrome 渲染成 text/markdown 纯文本页面
@@ -120,7 +120,7 @@ async function main(): Promise<void> {
     applyInitialHash();
   } catch (err) {
     // 渲染失败时保留 Chrome 原始纯文本视图，绝不留下白屏
-    console.error('[MD Reader] 渲染失败，已保留原始文本视图：', err);
+    console.error('[Markdown Read] 渲染失败，已保留原始文本视图：', err);
   } finally {
     html.style.visibility = prevVisibility;
     // 恢复可见即用户看到内容，这一刻就是白屏的结束点
@@ -477,9 +477,9 @@ async function requestMermaid(): Promise<void> {
     const res = (await chrome.runtime.sendMessage({ type: 'render-mermaid' })) as
       | { ok: boolean; error?: string }
       | undefined;
-    if (!res?.ok) console.warn('[MD Reader] Mermaid 未渲染：', res?.error);
+    if (!res?.ok) console.warn('[Markdown Read] Mermaid 未渲染：', res?.error);
   } catch (err) {
-    console.warn('[MD Reader] 请求 Mermaid 渲染失败：', err);
+    console.warn('[Markdown Read] 请求 Mermaid 渲染失败：', err);
   }
 }
 
@@ -541,9 +541,9 @@ async function readSource(url: string): Promise<string | null> {
     })) as { ok: boolean; text?: string; error?: string } | undefined;
 
     if (res?.ok && res.text) return res.text;
-    console.warn('[MD Reader] SW 兜底读取失败：', res?.error);
+    console.warn('[Markdown Read] SW 兜底读取失败：', res?.error);
   } catch (err) {
-    console.warn('[MD Reader] SW 兜底读取异常：', err);
+    console.warn('[Markdown Read] SW 兜底读取异常：', err);
   }
 
   // SW 也拿不到：退回 DOM 文本。宁可显示乱码，也不要整页空白。
@@ -674,7 +674,7 @@ function renderTooLargeNotice(size: number): void {
     'padding:8px 14px', 'background:#fff8c5', 'border-bottom:1px solid #d4a72c',
     'font:13px/1.5 system-ui,"Segoe UI","Microsoft YaHei",sans-serif', 'color:#4d2d00',
   ].join(';');
-  bar.textContent = `MD Reader: ${t('tooLarge', [mb])}`;
+  bar.textContent = `Markdown Read: ${t('tooLarge', [mb])}`;
   document.documentElement.appendChild(bar);
 }
 

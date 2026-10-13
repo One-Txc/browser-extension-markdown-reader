@@ -58,7 +58,7 @@ async function renderAll(): Promise<void> {
       // 渲染失败：保留原始代码文本，并给出提示样式
       node.setAttribute('data-processed', 'error');
       node.classList.add('md-reader-mermaid-error');
-      console.warn('[MD Reader] Mermaid 渲染失败：', err);
+      console.warn('[Markdown Read] Mermaid 渲染失败：', err);
     }
   }
 }

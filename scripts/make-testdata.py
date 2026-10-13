@@ -139,7 +139,7 @@ def main() -> None:
     print(f"输出目录：{BASE}")
 
     print("[1/4] sample.png")
-    make_image(BASE / "img" / "sample.png", 800, 400, "#2f6f4e", "MD Reader sample image")
+    make_image(BASE / "img" / "sample.png", 800, 400, "#2f6f4e", "Markdown Read sample image")
 
     print("[2/4] nested/deep.png")
     make_image(BASE / "img" / "nested" / "deep.png", 400, 300, "#8a4b2a", "nested/deep.png")

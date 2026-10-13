@@ -1,5 +1,5 @@
 /**
- * MD Reader —— popup
+ * Markdown Read —— popup
  *
  * 三块内容：
  *   1. 配色：颜色模式 + 浅色/深色代码配色

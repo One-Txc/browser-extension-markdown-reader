@@ -11,7 +11,7 @@
  * 常驻生产不会造成可测量的影响。
  *
  * 取数方式：
- * 打开任意 .md 文档，控制台会输出一行 `[MD Reader 性能] {...}`，
+ * 打开任意 .md 文档，控制台会输出一行 `[Markdown Read 性能] {...}`，
  * 也可以直接查看全局变量：
  *   __mdReaderPerf
  * 或者在 DevTools 的 Performance 面板里按 `md-reader:` 前缀找原生标记。
@@ -73,5 +73,5 @@ export function reportPerf(): PerfReport {
 export function publishPerf(): void {
   const report = reportPerf();
   (window as unknown as Record<string, unknown>).__mdReaderPerf = report;
-  console.info('[MD Reader 性能]', JSON.stringify(report));
+  console.info('[Markdown Read 性能]', JSON.stringify(report));
 }

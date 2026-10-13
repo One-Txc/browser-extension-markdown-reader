@@ -1,6 +1,6 @@
 {
   "extName": {
-    "message": "MD Reader",
+    "message": "Markdown Read",
     "description": "Extension name, not translated"
   },
   "extDescription": {
@@ -95,7 +95,7 @@
   "popupInactive": { "message": "Not active on local Markdown pages yet" },
   "popupInactiveReason": { "message": "Usually this means file access is not allowed." },
   "popupStep1": { "message": "Open this URL in the address bar:" },
-  "popupStep2": { "message": "Find \"MD Reader\" and turn on \"Allow access to file URLs\"" },
+  "popupStep2": { "message": "Find \"Markdown Read\" and turn on \"Allow access to file URLs\"" },
   "popupStep3": { "message": "Go back to the .md page and press F5" },
   "popupNever": { "message": "Never" },
   "popupLastActive": { "message": "Last active: " },

@@ -1,4 +1,4 @@
-# MD Reader
+# Markdown Read
 
 在 Chrome / Edge / Firefox 里直接阅读 Markdown。打开 `file:///.../foo.md` 或一个返回 Markdown 的网址，看到的是渲染后的文档，而不是一屏纯文本。
 
@@ -34,7 +34,7 @@ output/
 1. 地址栏打开 `chrome://extensions`
 2. 右上角开启 **开发者模式**
 3. 点 **加载已解压的扩展程序**，选择 **`output/MV3`** 目录
-4. **关键一步**：找到「MD Reader」→ 点「详情」→ 打开 **「允许访问文件网址」**
+4. **关键一步**：找到「Markdown Read」→ 点「详情」→ 打开 **「允许访问文件网址」**
 5. 打开任意 `.md` 文件（若已打开，按 `F5` 刷新）
 
 ### Firefox
