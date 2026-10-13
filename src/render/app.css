@@ -25,8 +25,18 @@ body.md-reader-body {
   box-sizing: border-box;
 }
 
-/* 宽屏有目录时，给左侧固定目录让出空间 */
-@media (min-width: 1280px) {
+/*
+ * 宽屏断点。★ 这个值在四处必须保持一致，改一处就要改全部：
+ *   1. 本文件「宽屏有目录时给左侧让位」（下方紧邻这段）
+ *   2. 本文件「左上角按钮让开目录」
+ *   3. 本文件末尾「窄屏收成抽屉」的 max-width（比本值小 1）
+ *   4. src/render/toc.ts 的 NARROW_QUERY（同样比本值小 1）
+ * CSS 里没法共用常量，所以只能靠注释约束。
+ *
+ * 取 1024 是因为：目录默认宽 268，留出后正文仍有 756px，
+ * 比「窄」档的 720 略宽，读起来不憋屈。
+ */
+@media (min-width: 1024px) {
   body.md-reader-has-toc {
     padding-left: var(--md-toc-width, 268px);
   }
@@ -989,7 +999,8 @@ html.md-reader-resizing * {
   left: 12px;
 }
 
-@media (min-width: 1280px) {
+/* 宽屏时把按钮推到目录右侧；断点与文件开头那处保持一致 */
+@media (min-width: 1024px) {
   body.md-reader-has-toc .md-reader-btn-toc {
     left: calc(var(--md-toc-width, 268px) + 12px);
   }
@@ -1088,8 +1099,8 @@ body.md-reader-source-mode .md-reader-toc-list a {
   cursor: default;
 }
 
-/* 窄屏：目录收成可滑出的抽屉 */
-@media (max-width: 1279px) {
+/* 窄屏：目录收成可滑出的抽屉（断点比宽屏那处小 1，避免重叠） */
+@media (max-width: 1023px) {
   .md-reader-toc {
     transform: translateX(-100%);
     transition: transform 0.18s ease;
