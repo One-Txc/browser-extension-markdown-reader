@@ -546,10 +546,10 @@ export interface TocHandlers {
  * 窄屏阈值。
  *
  * ★ 必须与 app.css 里那三处媒体查询保持一致（CSS 无法共用常量，只能靠这里约束）：
- *   宽屏用 `min-width: 1024px`，窄屏用 `max-width: 1023px`，
- *   也就是本常量要比宽屏断点小 1，否则正好 1024 宽时两边都不匹配。
+ *   宽屏用 `min-width: 824px`，窄屏用 `max-width: 823px`，
+ *   也就是本常量要比宽屏断点小 1，否则正好 824 宽时两边都不匹配。
  */
-const NARROW_QUERY = '(max-width: 1023px)';
+const NARROW_QUERY = '(max-width: 823px)';
 
 function isNarrow(): boolean {
   return window.matchMedia(NARROW_QUERY).matches;

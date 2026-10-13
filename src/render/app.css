@@ -33,10 +33,12 @@ body.md-reader-body {
  *   4. src/render/toc.ts 的 NARROW_QUERY（同样比本值小 1）
  * CSS 里没法共用常量，所以只能靠注释约束。
  *
- * 取 1024 是因为：目录默认宽 268，留出后正文仍有 756px，
- * 比「窄」档的 720 略宽，读起来不憋屈。
+ * 取 824 是为了在更窄的窗口里也能保留目录。代价是正文会偏窄：
+ * 目录默认宽 268，让出后正文只剩 556px，比「窄」档的 720 还窄一截，
+ * 长段落读起来会明显憋屈。若目录被拖宽（上限 560），正文会更紧张。
+ * 觉得挤的话把目录拖窄、或把正文宽度设为「全宽」能缓解。
  */
-@media (min-width: 1024px) {
+@media (min-width: 824px) {
   body.md-reader-has-toc {
     padding-left: var(--md-toc-width, 268px);
   }
@@ -1000,7 +1002,7 @@ html.md-reader-resizing * {
 }
 
 /* 宽屏时把按钮推到目录右侧；断点与文件开头那处保持一致 */
-@media (min-width: 1024px) {
+@media (min-width: 824px) {
   body.md-reader-has-toc .md-reader-btn-toc {
     left: calc(var(--md-toc-width, 268px) + 12px);
   }
@@ -1100,7 +1102,7 @@ body.md-reader-source-mode .md-reader-toc-list a {
 }
 
 /* 窄屏：目录收成可滑出的抽屉（断点比宽屏那处小 1，避免重叠） */
-@media (max-width: 1023px) {
+@media (max-width: 823px) {
   .md-reader-toc {
     transform: translateX(-100%);
     transition: transform 0.18s ease;
