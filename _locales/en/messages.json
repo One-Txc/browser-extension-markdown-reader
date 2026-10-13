@@ -11,10 +11,13 @@
   "tabOutline": { "message": "Outline" },
   "tabFolder": { "message": "Folder" },
   "tocCaret": { "message": "Expand / collapse subsections" },
-  "tocCollapseLevel": { "message": "Collapse all H$1 headings" },
-  "tocExpandLevel": { "message": "Expand all H$1 headings" },
   "resizerHint": { "message": "Drag to resize the sidebar, double-click to reset" },
   "toggleSidebar": { "message": "Show / hide sidebar" },
+
+  "tocBulkAll": { "message": "All" },
+  "tocBulkLevel1": { "message": "Level 1" },
+  "tocBulkLevel2": { "message": "First 2" },
+  "tocBulkLevel3": { "message": "First 3" },
 
   "copy": { "message": "Copy" },
   "copied": { "message": "Copied" },
@@ -24,8 +27,18 @@
   "viewSource": { "message": "View raw Markdown" },
   "viewRendered": { "message": "Back to rendered view" },
 
+  "openSettings": { "message": "Settings" },
+  "openSettingsHint": {
+    "message": "Couldn't open the settings panel. Click the Markdown Read icon in your browser toolbar."
+  },
+
   "imagePreview": { "message": "Image preview" },
   "imagePreviewHint": { "message": "Scroll to zoom · drag to pan · Esc to close" },
+  "imagePreviewHintNav": {
+    "message": "Scroll to zoom · drag to pan · ← → to switch · Esc to close"
+  },
+  "imagePrev": { "message": "Previous image" },
+  "imageNext": { "message": "Next image" },
 
   "themeNoteGithubLight": { "message": "Default, softer palette" },
 
@@ -60,6 +73,12 @@
   "popupModeAuto": { "message": "Follow system" },
   "popupModeLight": { "message": "Always light" },
   "popupModeDark": { "message": "Always dark" },
+  "popupModeEyecare": { "message": "Eye comfort" },
+  "popupModeOtherGroup": { "message": "More palettes" },
+  "popupModeParchment": { "message": "Parchment" },
+  "popupModeWarmWhite": { "message": "Warm white" },
+  "popupModeSoftGray": { "message": "Soft gray" },
+  "popupModeDarkWarm": { "message": "Warm dark" },
   "popupLightTheme": { "message": "Light code theme" },
   "popupDarkTheme": { "message": "Dark code theme" },
   "popupAdvanced": { "message": "Advanced settings" },
@@ -83,6 +102,11 @@
   "popupExpand4": { "message": "Expand 4 levels" },
   "popupFoldHint": {
     "message": "Fold buttons appear when the outline has more than this many items (0 = always). Initial expand depth sets how many levels are open when a document loads."
+  },
+  "popupExtraExt": { "message": "Additional extensions" },
+  "popupExtraExtPlaceholder": { "message": "txt, log" },
+  "popupExtraExtHint": {
+    "message": "Separate with commas or spaces. Adding txt makes .txt files render as Markdown too. The defaults (.md and others) always apply — this only adds to them."
   },
   "popupLocale": { "message": "Language" },
   "popupLocaleAuto": { "message": "Follow browser" },
