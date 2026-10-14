@@ -114,9 +114,6 @@ npm run typecheck       # 仅 tsc 类型检查
 npm test                # 渲染 / 目录 / 原文视图三组测试（jsdom，共 97 项断言）
 npm run preview         # 生成代码高亮主题对比页（输出到 preview/）
 npm run testdata        # 重新生成 testMd/ 的图片、GBK 文件与超大文件
-
-python scripts/check-locales.py       # 校验语言包：key 是否齐全、占位符是否对齐
-python scripts/make-icons.py          # 重新生成 icons/ 下的扩展图标
 ```
 
 改完代码后，除了重新构建，还要到 `chrome://extensions` 点一下本扩展的**刷新**按钮，然后刷新页面。
@@ -128,6 +125,43 @@ python scripts/make-icons.py          # 重新生成 icons/ 下的扩展图标
 > 注意 jsdom 的 `getBoundingClientRect` 恒为 0，**目录的滚动高亮测不了**，那部分需要人眼验证。
 > 同理，所有视觉与布局相关的东西（配色、间距、图标）都只能在实际浏览器里确认。
 
+### 出包
+
+```bash
+npm run release         # 构建两个目标 + 打包成 zip（默认，快）
+npm run release:full    # 先跑类型检查 / 测试 / 语言包校验，再执行上面那步
+```
+
+产物落在 `dist/`，文件名带版本号与目标平台：
+
+```
+dist/
+├─ markdown-read-1.0.0-chrome.zip     ← Chrome / Edge，上传这个
+└─ markdown-read-1.0.0-firefox.zip    ← Firefox
+```
+
+**校验默认不做**是有意的：改点文案、调个样式再出一版，不必每次都等一遍完整测试。
+**上架前跑一次 `release:full`**，平时出包用 `release` 即可。
+
+> ⚠️ 两条命令都走 `build:all`，不要图快改成只跑 `npm run build` ——
+> 那样 `output/MV2` 会停在旧产物，**而它照样会被打进 zip**，
+> 上传后 Firefox 用户拿到的是过时代码。这类问题在构建日志里看不出来。
+
+版本号的唯一来源是 `scripts/manifest.mjs` 的 `VERSION`，`package.json` 里那份只是给 npm 看的。
+**Chrome 与 Firefox 都拒绝版本号回退**，改小会被商店直接退件。
+
+### 辅助脚本
+
+```bash
+npm run locales                       # 校验语言包：key 是否齐全、占位符是否对齐
+npm run icons                         # 重新生成 icons/ 下的扩展图标
+npm run screenshots                   # 把 截图/<语言>/ 里的原图裁到 16:10 并缩成商店尺寸
+python scripts/check-locales.py       # 同 npm run locales
+python scripts/make-testdata.py       # 同 npm run testdata
+```
+
+`npm run screenshots` 的输入输出约定见 [scripts/resize-screenshots.py](scripts/resize-screenshots.py) 的文件头注释。
+
 ---
 
 ## 项目结构
@@ -137,16 +171,19 @@ markdown_reader/
 ├─ output/                  # 【生成物】构建产物，两个目标各是一个扩展根
 │  ├─ MV3/                  # Chrome / Edge：加载这个目录
 │  └─ MV2/                  # Firefox：加载这里的 manifest.json
+├─ dist/                    # 【生成物】npm run release 产出的商店上传包
 ├─ icons/                   # 扩展图标（由 scripts/make-icons.py 生成）
 ├─ _locales/                # 语言包：zh_CN（基准）/ en / ja / ko
 ├─ scripts/
 │  ├─ build.mjs             # esbuild 构建（content + background + popup + mermaid）
 │  ├─ manifest.mjs          # 清单生成：两个平台的字段差异集中在这一个文件
+│  ├─ package.py            # 把扩展根打成可上传商店的 zip（npm run release 调用）
 │  ├─ test-render.mjs       # 渲染管线测试
 │  ├─ test-toc.mjs          # 目录构建测试
 │  ├─ test-source-view.mjs  # 原文视图测试
 │  ├─ check-locales.py      # 语言包校验（以 zh_CN 为基准）
 │  ├─ make-icons.py         # 生成扩展图标
+│  ├─ resize-screenshots.py # 商店截图：裁到 16:10 再缩放成要求尺寸
 │  ├─ make-theme-preview.mjs
 │  ├─ make-testdata.py      # 生成测试图片 / GBK 文件 / 超大文件
 │  └─ make-weird-filenames.py
@@ -338,7 +375,7 @@ highlight.js 的浅色主题背景普遍是 `#fff` / `#fafafa`，落在白色文
 支持简体中文、英语、日语、韩语，也可跟随浏览器语言。
 
 ```bash
-python scripts/check-locales.py    # 校验语言包
+npm run locales    # 校验语言包（等价于 python scripts/check-locales.py）
 ```
 
 **约定：加功能时只维护 `_locales/zh_CN/messages.json`**，其他语言在明确需要时才同步。
