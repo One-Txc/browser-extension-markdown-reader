@@ -1,103 +1,316 @@
 {
   "extName": {
-    "message": "Markdown Read",
-    "description": "拡張機能名。翻訳しない"
+    "message": "Markdown Read"
   },
   "extDescription": {
-    "message": "ローカルの .md ファイルをブラウザでそのまま読めるようにします。ローカルサーバーは不要です。"
+    "message": "ローカルサーバー不要で、ブラウザ内でローカルの .md（Markdown）ファイルを読めるようにします。"
   },
 
-  "sidebar": { "message": "サイドバー" },
-  "tabOutline": { "message": "アウトライン" },
-  "tabFolder": { "message": "フォルダ" },
-  "tocCaret": { "message": "小見出しを展開 / 折りたたむ" },
-  "tocCollapseLevel": { "message": "H$1 の見出しをすべて折りたたむ" },
-  "tocExpandLevel": { "message": "H$1 の見出しをすべて展開" },
-  "resizerHint": { "message": "ドラッグでサイドバーの幅を変更、ダブルクリックで既定値に戻す" },
-  "toggleSidebar": { "message": "サイドバーの表示 / 非表示" },
+  "sidebar": {
+    "message": "サイドバー"
+  },
+  "tabOutline": {
+    "message": "アウトライン"
+  },
+  "tabFolder": {
+    "message": "フォルダ"
+  },
+  "tocCaret": {
+    "message": "サブ見出しを展開 / 折りたたむ"
+  },
+  "tocBulkAll": {
+    "message": "すべて"
+  },
+  "tocBulkLevel1": {
+    "message": "1 階層"
+  },
+  "tocBulkLevel2": {
+    "message": "2 階層まで"
+  },
+  "tocBulkLevel3": {
+    "message": "3 階層まで"
+  },
+  "resizerHint": {
+    "message": "ドラッグでサイドバーの幅を変更、ダブルクリックで既定値に戻す"
+  },
+  "toggleSidebar": {
+    "message": "サイドバーの表示 / 非表示"
+  },
 
-  "copy": { "message": "コピー" },
-  "copied": { "message": "コピーしました" },
-  "copyFailed": { "message": "コピーに失敗しました" },
-  "tooLarge": { "message": "ファイルが大きすぎます（$1 MB）。レンダリングを省略し、生のテキストを表示しています。" },
+  "copy": {
+    "message": "コピー"
+  },
+  "copied": {
+    "message": "コピーしました"
+  },
+  "copyFailed": {
+    "message": "コピーに失敗しました"
+  },
+  "tooLarge": {
+    "message": "ファイルが大きすぎます（$1 MB）。レンダリングをスキップし、プレーンテキストを表示しています。"
+  },
 
-  "viewSource": { "message": "生の Markdown を表示" },
-  "viewRendered": { "message": "プレビューに戻る" },
+  "viewSource": {
+    "message": "生の Markdown を表示"
+  },
+  "openSettings": {
+    "message": "設定"
+  },
+  "openSettingsHint": {
+    "message": "設定パネルを開けませんでした。ブラウザのツールバーにある Markdown Read アイコンをクリックしてください。"
+  },
+  "viewRendered": {
+    "message": "プレビューに戻る"
+  },
 
-  "imagePreview": { "message": "画像プレビュー" },
-  "imagePreviewHint": { "message": "スクロールでズーム · ドラッグで移動 · Esc で閉じる" },
+  "imagePreview": {
+    "message": "画像プレビュー"
+  },
+  "imagePreviewHint": {
+    "message": "ホイールでズーム · ドラッグで移動 · Esc で閉じる"
+  },
+  "imagePreviewHintNav": {
+    "message": "ホイールでズーム · ドラッグで移動 · ← → で切替 · Esc で閉じる"
+  },
+  "imagePrev": {
+    "message": "前の画像"
+  },
+  "imageNext": {
+    "message": "次の画像"
+  },
 
-  "themeNoteGithubLight": { "message": "既定。配色は控えめ" },
+  "themeNoteGithubLight": {
+    "message": "標準。配色は控えめ"
+  },
 
-  "dirOnly": { "message": "file:// のディレクトリのみ対応しています" },
-  "dirEmpty": { "message": "ディレクトリが空で返されました" },
-  "noTabId": { "message": "タブ ID を取得できません" },
-  "fileOnly": { "message": "file:// のパスのみ読み取れます" },
+  "dirOnly": {
+    "message": "file:// のディレクトリのみ対応しています"
+  },
+  "dirEmpty": {
+    "message": "ディレクトリが空で返されました"
+  },
+  "noTabId": {
+    "message": "タブ ID を取得できません"
+  },
+  "fileOnly": {
+    "message": "file:// または http(s) のパスのみ読み取れます"
+  },
 
-  "folder_collapseAll": { "message": "すべて折りたたむ" },
-  "folder_settings": { "message": "設定を表示" },
-  "folder_sort": { "message": "並べ替え" },
-  "folder_sortName": { "message": "名前" },
-  "folder_sortSize": { "message": "サイズ" },
-  "folder_sortModified": { "message": "更新日時" },
-  "folder_foldersFirst": { "message": "フォルダを先頭に" },
-  "folder_showHidden": { "message": "隠し項目を表示" },
-  "folder_sortAsc": { "message": "↑ 昇順" },
-  "folder_sortDesc": { "message": "↓ 降順" },
-  "folder_sortAscHint": { "message": "現在は昇順。クリックで降順に" },
-  "folder_sortDescHint": { "message": "現在は降順。クリックで昇順に" },
-  "folder_toggle": { "message": "展開 / 折りたたみ" },
-  "folder_openDirInNewTab": { "message": "このフォルダを新しいタブで開く" },
-  "folder_openFileInNewTab": { "message": "このファイルを新しいタブで開く" },
-  "folder_readFailed": { "message": "読み取りに失敗しました: $1" },
-  "folder_listFailed": { "message": "フォルダを読み取れません: $1" },
-  "folder_count": { "message": "$1 件" },
-  "folder_noResponse": { "message": "応答がありません" },
-  "folder_unknownError": { "message": "不明なエラー" },
+  "folder_collapseAll": {
+    "message": "すべて折りたたむ"
+  },
+  "folder_settings": {
+    "message": "表示設定"
+  },
+  "folder_sort": {
+    "message": "並べ替え"
+  },
+  "folder_sortName": {
+    "message": "名前"
+  },
+  "folder_sortSize": {
+    "message": "サイズ"
+  },
+  "folder_sortModified": {
+    "message": "更新日時"
+  },
+  "folder_foldersFirst": {
+    "message": "フォルダを先頭に"
+  },
+  "folder_showHidden": {
+    "message": "隠し項目を表示"
+  },
+  "folder_sortAsc": {
+    "message": "↑ 昇順"
+  },
+  "folder_sortDesc": {
+    "message": "↓ 降順"
+  },
+  "folder_sortAscHint": {
+    "message": "現在は昇順。クリックで降順に"
+  },
+  "folder_sortDescHint": {
+    "message": "現在は降順。クリックで昇順に"
+  },
+  "folder_toggle": {
+    "message": "展開 / 折りたたみ"
+  },
+  "folder_openDirInNewTab": {
+    "message": "このフォルダを新しいタブで開く"
+  },
+  "folder_openFileInNewTab": {
+    "message": "このファイルを新しいタブで開く"
+  },
+  "folder_readFailed": {
+    "message": "読み取りに失敗しました：$1（もう一度クリックで再試行）"
+  },
+  "folder_listFailed": {
+    "message": "フォルダを読み取れません：$1（もう一度クリックで再試行）"
+  },
+  "folder_count": {
+    "message": "$1 件"
+  },
+  "folder_noResponse": {
+    "message": "応答がありません"
+  },
+  "folder_unknownError": {
+    "message": "不明なエラー"
+  },
 
-  "popupBasic": { "message": "基本設定" },
-  "popupMode": { "message": "カラーモード" },
-  "popupModeAuto": { "message": "システムに合わせる" },
-  "popupModeLight": { "message": "常にライト" },
-  "popupModeDark": { "message": "常にダーク" },
-  "popupLightTheme": { "message": "ライト用コード配色" },
-  "popupDarkTheme": { "message": "ダーク用コード配色" },
-  "popupAdvanced": { "message": "詳細設定" },
-  "popupFontSize": { "message": "文字サイズ" },
-  "popupSizeSmall": { "message": "小" },
-  "popupSizeMedium": { "message": "中" },
-  "popupSizeLarge": { "message": "大" },
-  "popupContentWidth": { "message": "本文の幅" },
-  "popupWidthNarrow": { "message": "狭い" },
-  "popupWidthMedium": { "message": "中" },
-  "popupWidthWide": { "message": "広い" },
-  "popupWidthFull": { "message": "全幅" },
-  "popupShowSidebar": { "message": "サイドバーを表示" },
-  "popupFoldThreshold": { "message": "折りたたみのしきい値" },
-  "popupExpandLevel": { "message": "初期展開レベル" },
-  "popupExpandAll": { "message": "すべて展開" },
-  "popupExpand0": { "message": "第 1 階層のみ" },
-  "popupExpand1": { "message": "1 階層を展開" },
-  "popupExpand2": { "message": "2 階層を展開" },
-  "popupExpand3": { "message": "3 階層を展開" },
-  "popupExpand4": { "message": "4 階層を展開" },
+  "popupBasic": {
+    "message": "基本設定"
+  },
+  "popupMode": {
+    "message": "カラーモード"
+  },
+  "popupModeAuto": {
+    "message": "システムに合わせる"
+  },
+  "popupModeLight": {
+    "message": "常にライト"
+  },
+  "popupModeDark": {
+    "message": "常にダーク"
+  },
+  "popupModeEyecare": {
+    "message": "目をいたわる緑"
+  },
+  "popupModeParchment": {
+    "message": "羊皮紙"
+  },
+  "popupModeOtherGroup": {
+    "message": "その他の配色"
+  },
+  "popupModeWarmWhite": {
+    "message": "暖かみのある白"
+  },
+  "popupModeSoftGray": {
+    "message": "ソフトグレー"
+  },
+  "popupModeDarkWarm": {
+    "message": "ダークウォーム"
+  },
+  "popupLightTheme": {
+    "message": "ライト用コード配色"
+  },
+  "popupDarkTheme": {
+    "message": "ダーク用コード配色"
+  },
+  "popupAdvanced": {
+    "message": "詳細設定"
+  },
+  "popupFontSize": {
+    "message": "文字サイズ"
+  },
+  "popupSizeSmall": {
+    "message": "小"
+  },
+  "popupSizeMedium": {
+    "message": "中"
+  },
+  "popupSizeLarge": {
+    "message": "大"
+  },
+  "popupContentWidth": {
+    "message": "本文の幅"
+  },
+  "popupWidthNarrow": {
+    "message": "狭い"
+  },
+  "popupWidthMedium": {
+    "message": "中"
+  },
+  "popupWidthWide": {
+    "message": "広い"
+  },
+  "popupWidthFull": {
+    "message": "全幅"
+  },
+  "popupShowSidebar": {
+    "message": "サイドバーを表示"
+  },
+  "popupFoldThreshold": {
+    "message": "アウトライン折りたたみのしきい値"
+  },
+  "popupExpandLevel": {
+    "message": "アウトラインの初期表示階層"
+  },
+  "popupExpandAll": {
+    "message": "すべて表示"
+  },
+  "popupExpand0": {
+    "message": "第 1 階層まで表示"
+  },
+  "popupExpand1": {
+    "message": "上位 2 階層まで表示"
+  },
+  "popupExpand2": {
+    "message": "上位 3 階層まで表示"
+  },
+  "popupExpand3": {
+    "message": "上位 4 階層まで表示"
+  },
+  "popupExpand4": {
+    "message": "上位 5 階層まで表示"
+  },
   "popupFoldHint": {
-    "message": "項目数がしきい値を超えると折りたたみボタンを表示します（0 で常に表示）。初期展開レベルは、文書を開いたときに何階層まで開くかを決めます。"
+    "message": "アウトラインの項目数がしきい値を超えると折りたたみボタンを表示します（0 で常に表示）。初期表示階層は、文書を開いたときに何階層までリストするかを決めます。"
   },
-  "popupLocale": { "message": "表示言語" },
-  "popupLocaleAuto": { "message": "ブラウザに合わせる" },
-  "popupReset": { "message": "既定値に戻す" },
-  "popupResetConfirm": { "message": "もう一度クリックで確定" },
-  "popupResetDone": { "message": "既定値に戻しました" },
-  "popupChecking": { "message": "確認中…" },
-  "popupActive": { "message": "ローカルの Markdown ページで有効です" },
-  "popupActiveHint": { "message": "設定の変更は現在のページにすぐ反映されます。再読み込みは不要です。" },
-  "popupInactive": { "message": "ローカルの Markdown ページではまだ有効になっていません" },
-  "popupInactiveReason": { "message": "多くの場合、ファイルへのアクセス権限が不足しています。" },
-  "popupStep1": { "message": "アドレスバーで次を開きます：" },
-  "popupStep2": { "message": "「Markdown Read」を見つけ、「ファイルの URL へのアクセスを許可する」をオンにします" },
-  "popupStep3": { "message": ".md のページに戻り、F5 で再読み込みします" },
-  "popupNever": { "message": "なし" },
-  "popupLastActive": { "message": "最終有効日時: " },
-  "popupVersion": { "message": "v$1 · ビルド $2" }
+  "popupExtraExt": {
+    "message": "追加でサポートする拡張子"
+  },
+  "popupExtraExtPlaceholder": {
+    "message": "txt、log"
+  },
+  "popupExtraExtHint": {
+    "message": "カンマまたはスペースで区切ってください。例えば txt と入力すると、.txt ファイルも Markdown としてレンダリングされます。.md などデフォルトの拡張子は常に有効で、ここではそれへの追加となります。"
+  },
+  "popupLocale": {
+    "message": "表示言語"
+  },
+  "popupLocaleAuto": {
+    "message": "ブラウザに合わせる"
+  },
+  "popupReset": {
+    "message": "既定値に戻す"
+  },
+  "popupResetConfirm": {
+    "message": "もう一度クリックで確定"
+  },
+  "popupResetDone": {
+    "message": "既定値に戻しました"
+  },
+  "popupChecking": {
+    "message": "確認中…"
+  },
+  "popupActive": {
+    "message": "ローカルの Markdown ページで有効です"
+  },
+  "popupActiveHint": {
+    "message": "設定の変更は現在のページにすぐ反映されます。再読み込みは不要です。"
+  },
+  "popupInactive": {
+    "message": "まだローカルの Markdown ページで有効になっていません"
+  },
+  "popupInactiveReason": {
+    "message": "よくある原因は、ファイルへのアクセス権限がないことです。"
+  },
+  "popupStep1": {
+    "message": "アドレスバーで次を開いてください："
+  },
+  "popupStep2": {
+    "message": "「Markdown Read」を見つけて、「ファイル URL へのアクセスを許可する」をオンにします"
+  },
+  "popupStep3": {
+    "message": ".md のページに戻って F5 で再読み込みします"
+  },
+  "popupNever": {
+    "message": "なし"
+  },
+  "popupLastActive": {
+    "message": "最終有効日時："
+  },
+  "popupVersion": {
+    "message": "v$1 · ビルド日 $2"
+  }
 }

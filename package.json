@@ -17,7 +17,8 @@
     "locales": "python scripts/check-locales.py",
     "icons": "python scripts/make-icons.py",
     "screenshots": "python scripts/resize-screenshots.py",
-    "package": "npm run build:all && python scripts/package.py"
+    "package": "npm run build:all && python scripts/package.py",
+    "release": "npm run typecheck && npm test && npm run locales && npm run package"
   },
   "dependencies": {
     "dompurify": "^3.4.16",
