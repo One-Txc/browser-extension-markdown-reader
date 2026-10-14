@@ -29,8 +29,9 @@ globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 dom.window.scrollTo = () => {};
 
+// 产物落在仓库根的 .tmp/ 下，本文件在 tests/ 里 —— 往上只有一层
 const { setupSourceView } = await import(
-  new URL(`../../${TMP}/source-view.mjs`, import.meta.url).href
+  new URL(`../${TMP}/source-view.mjs`, import.meta.url).href
 );
 
 const cases = [];

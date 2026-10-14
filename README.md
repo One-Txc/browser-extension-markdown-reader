@@ -232,8 +232,8 @@ markdown_reader/
 │  └─ icons/                  # 图标源码：16/32/48/128 PNG，由 scripts/tools/icons.py 生成
 ├─ scripts/
 │  ├─ build/                  # build.mjs（esbuild）· manifest.mjs（清单生成）· package.py（打 zip）
-│  ├─ test/                   # render.mjs · toc.mjs · source-view.mjs（jsdom，无需浏览器）
 │  └─ tools/                  # locales.py · icons.py · testdata.py · screenshots.py · theme-preview.mjs
+├─ tests/                      # 自动化测试：render / toc / source-view（jsdom，不需要浏览器）
 ├─ testMd/                     # 手工测试文档，索引见 testMd/00-索引.md
 ├─ preview/                    # 主题对比页（npm run preview 生成，不入库）
 ├─ docs/                       # 商店上架资料等，不参与构建
@@ -378,9 +378,9 @@ npm test        # 97 项断言，全部跑在 jsdom 里，不需要浏览器
 
 | 脚本 | 断言 | 覆盖 |
 |---|---|---|
-| `scripts/test/render.mjs` | 31 | 渲染管线：标题锚点（含中文锚点）、表格、代码高亮、任务列表只读、脚注、XSS 清除、公式占位符回填、`$5` 不被误判为公式、mermaid 占位容器 |
-| `scripts/test/toc.mjs` | 51 | 目录树：层级 class、折叠、批量档位互斥、permalink 符号剔除、挂载与销毁 |
-| `scripts/test/source-view.mjs` | 15 | 原文 ⇄ 渲染切换：hidden 标志、按钮文案、body class |
+| `tests/render.mjs` | 31 | 渲染管线：标题锚点（含中文锚点）、表格、代码高亮、任务列表只读、脚注、XSS 清除、公式占位符回填、`$5` 不被误判为公式、mermaid 占位容器 |
+| `tests/toc.mjs` | 51 | 目录树：层级 class、折叠、批量档位互斥、permalink 符号剔除、挂载与销毁 |
+| `tests/source-view.mjs` | 15 | 原文 ⇄ 渲染切换：hidden 标志、按钮文案、body class |
 
 做法是先用 esbuild 把待测模块打成 ESM，再用 jsdom 提供 `window`/`document`（每组的临时产物放在 `.tmp/<脚本名>/`，互不干扰）。
 

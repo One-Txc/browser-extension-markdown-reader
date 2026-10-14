@@ -36,7 +36,8 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', {
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 
-const { renderMarkdown } = await import(new URL(`../../${TMP}/markdown.mjs`, import.meta.url).href);
+// 产物落在仓库根的 .tmp/ 下，本文件在 tests/ 里 —— 往上只有一层
+const { renderMarkdown } = await import(new URL(`../${TMP}/markdown.mjs`, import.meta.url).href);
 
 /* ------------------------------------------------------------ 3. 测试用例 */
 const source = [

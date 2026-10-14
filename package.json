@@ -10,7 +10,7 @@
     "build:all": "npm run build && npm run build:firefox",
     "watch": "node scripts/build/build.mjs --watch",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/test/render.mjs && node scripts/test/toc.mjs && node scripts/test/source-view.mjs",
+    "test": "node tests/render.mjs && node tests/toc.mjs && node tests/source-view.mjs",
     "preview": "node scripts/tools/theme-preview.mjs",
     "testdata": "python scripts/tools/testdata.py",
     "check": "npm run typecheck && npm test && npm run build",

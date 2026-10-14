@@ -44,7 +44,8 @@ dom.window.matchMedia = (query) => ({
   removeEventListener() {},
 });
 
-const { buildToc, mountToc } = await import(new URL(`../../${TMP}/toc.mjs`, import.meta.url).href);
+// 产物落在仓库根的 .tmp/ 下，本文件在 tests/ 里 —— 往上只有一层
+const { buildToc, mountToc } = await import(new URL(`../${TMP}/toc.mjs`, import.meta.url).href);
 
 const cases = [];
 const check = (name, ok) => cases.push({ name, ok: !!ok });
