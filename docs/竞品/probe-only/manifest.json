@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "MDR 探针 · 仅数据",
+  "version": "1.0.0",
+  "description": "只报告 Chrome 目录页的真实数据与 background fetch 结果，不渲染任何东西。",
+  "permissions": ["storage", "tabs"],
+  "background": {
+    "service_worker": "bg.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "file:///*.md",
+        "file:///*.markdown",
+        "file:///*/",
+        "file:///"
+      ],
+      "js": ["probe-log.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
