@@ -25,7 +25,7 @@ _locales/
 
 > **按项目约定，新增文案只加 `zh_CN` 一份**，其他语言按需同步。
 > 所以某个时间点上，其他语言可能暂时少几条 —— 不必担心：
-> `t()` 找不到时会回退到中文，`scripts/check-locales.py` 也只把它列为警告而非错误。
+> `t()` 找不到时会回退到中文，`scripts/tools/locales.py` 也只把它列为警告而非错误。
 
 ## 每个字段的含义
 
@@ -117,7 +117,7 @@ const TABLES: Record<string, MessageTable> = {
 **6. 跑一下校验**
 
 ```bash
-python scripts/check-locales.py
+python scripts/tools/locales.py
 ```
 
 它会检查：JSON 语法、**各语言 key 是否一致**、**占位符数量是否一致**，

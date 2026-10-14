@@ -1,6 +1,6 @@
 """把构建产物打成可上传的应用商店压缩包。
 
-产物布局（见 scripts/manifest.mjs 的 LAYOUT）：
+产物布局（见 scripts/build/manifest.mjs 的 LAYOUT）：
 
     output/MV3/        Chrome / Edge 的扩展根，manifest.json 就在这一层
     output/MV2/        Firefox 的扩展根
@@ -14,8 +14,8 @@ zip 与扩展根放在同一个 output/ 下，是为了「加载用」和「上�
 集中在一处，找起来不用来回切换目录。
 
 用法：
-    python scripts/package.py            # 打包两个目标
-    python scripts/package.py chrome     # 只打包 Chrome
+    python scripts/build/package.py            # 打包两个目标
+    python scripts/build/package.py chrome     # 只打包 Chrome
 """
 
 from __future__ import annotations

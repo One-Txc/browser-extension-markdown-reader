@@ -33,7 +33,7 @@
 
     npm run screenshots
     # 等价于
-    python scripts/resize-screenshots.py
+    python scripts/tools/screenshots.py
 
 输出（会覆盖同名结果，原图永远不动）：
 
@@ -48,7 +48,7 @@
 
 只想处理某一个语言：
 
-    python scripts/resize-screenshots.py 中文
+    python scripts/tools/screenshots.py 中文
 
 另一个选项：
 

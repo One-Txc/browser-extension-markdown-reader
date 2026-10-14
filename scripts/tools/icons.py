@@ -12,7 +12,7 @@
 纯黑在深色工具栏上看不清、纯白反之；白底则两种主题下都稳定。
 
 用法：
-    python scripts/make-icons.py
+    python scripts/tools/icons.py
 """
 
 from __future__ import annotations

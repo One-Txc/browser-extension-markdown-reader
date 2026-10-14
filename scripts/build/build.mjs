@@ -11,9 +11,9 @@
  * 反而多一层需要绕开的抽象。跨浏览器那点清单差异用 manifest.mjs 表达就够了。
  *
  * 用法：
- *   node scripts/build.mjs                    # Chrome / Edge（MV3）
- *   node scripts/build.mjs --target=firefox   # Firefox（MV2）
- *   node scripts/build.mjs --watch            # 监听重建
+ *   node scripts/build/build.mjs                    # Chrome / Edge（MV3）
+ *   node scripts/build/build.mjs --target=firefox   # Firefox（MV2）
+ *   node scripts/build/build.mjs --watch            # 监听重建
  */
 import * as esbuild from 'esbuild';
 import { rm, mkdir, cp, readFile, writeFile } from 'node:fs/promises';

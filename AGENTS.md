@@ -32,7 +32,7 @@
 - `t()` 在目标语言缺 key 时会**回退到 `zh_CN`**，再缺才返回 key 本身。
   所以只加中文不会让其他语言界面出现裸露的 key
 - `TRANSLATING.md` 是给贡献者的翻译指南
-- `scripts/check-locales.py` 校验语言包。**以 `zh_CN` 为基准**：
+- `scripts/tools/locales.py` 校验语言包。**以 `zh_CN` 为基准**：
   其他语言缺 key 只警告，不影响通过 —— 这样「只加中文」不会卡住构建
 - 加新语言时只需改 `src/shared/i18n.ts` 一处（`Locale`、`LOCALES`、`TABLES`），
   `settings.ts` 用 `LOCALES.includes()` 校验，无需改
@@ -51,7 +51,7 @@ npm run build:firefox # 构建 Firefox  → output/MV2
 - **任何视觉、布局、交互手感相关的验证必须由用户在实际浏览器里完成**
   （本项目的测试跑在 jsdom 里，看不到样式与布局）
 - 提交前跑一次 `npm run check`；改了 `_locales/` 再跑一次
-  `python scripts/check-locales.py`
+  `python scripts/tools/locales.py`
 
 ### 发布
 

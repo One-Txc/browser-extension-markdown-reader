@@ -7,7 +7,7 @@
  *
  * 输出的 HTML 是自包含的（无外部依赖），直接双击打开即可对比。
  *
- * 用法：node scripts/make-theme-preview.mjs
+ * 用法：node scripts/tools/theme-preview.mjs
  */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -18,7 +18,7 @@ import javascript from 'highlight.js/lib/languages/javascript';
 import python from 'highlight.js/lib/languages/python';
 import sql from 'highlight.js/lib/languages/sql';
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OUT = join(ROOT, 'preview', '代码主题预览.html');
 
 hljs.registerLanguage('javascript', javascript);

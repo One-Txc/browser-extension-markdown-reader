@@ -30,7 +30,7 @@ globalThis.document = dom.window.document;
 dom.window.scrollTo = () => {};
 
 const { setupSourceView } = await import(
-  new URL(`../${TMP}/source-view.mjs`, import.meta.url).href
+  new URL(`../../${TMP}/source-view.mjs`, import.meta.url).href
 );
 
 const cases = [];

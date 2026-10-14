@@ -12,10 +12,12 @@ node_modules/
 #   output/dist/   npm run release 产出的商店上传包
 output/
 
-# 早期布局的产物路径，保留忽略以免误提交
-build/
-build-firefox/
-manifest.json
+# 早期布局的产物路径，保留忽略以免误提交。
+# ★ 这几条用前导斜杠锚定到仓库根目录 —— 不加的话 build/ 会连
+#   scripts/build/ 一起吃掉（那是源码，不是产物）。
+/build/
+/build-firefox/
+/manifest.json
 
 # 用于参考的第三方插件打包产物（体积大，不入库）
 test/

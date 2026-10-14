@@ -7,7 +7,7 @@
   4. 10-超大文件测试.md     超过 3 MB，用于验证大文件降级提示
 
 用法：
-  python scripts/make-testdata.py
+  python scripts/tools/testdata.py
 """
 
 from __future__ import annotations
@@ -16,7 +16,8 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-BASE = Path(__file__).resolve().parent.parent / "testMd"
+# 本脚本在 scripts/tools/ 下，仓库根要往上三层
+BASE = Path(__file__).resolve().parents[2] / "testMd"
 
 
 def make_demo_image(

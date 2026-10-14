@@ -44,7 +44,7 @@ dom.window.matchMedia = (query) => ({
   removeEventListener() {},
 });
 
-const { buildToc, mountToc } = await import(new URL(`../${TMP}/toc.mjs`, import.meta.url).href);
+const { buildToc, mountToc } = await import(new URL(`../../${TMP}/toc.mjs`, import.meta.url).href);
 
 const cases = [];
 const check = (name, ok) => cases.push({ name, ok: !!ok });
