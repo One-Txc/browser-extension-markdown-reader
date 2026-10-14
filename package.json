@@ -11,11 +11,9 @@
     "watch": "node scripts/build/build.mjs --watch",
     "typecheck": "tsc --noEmit",
     "test": "node tests/render.mjs && node tests/toc.mjs && node tests/source-view.mjs",
-    "preview": "node scripts/tools/theme-preview.mjs",
     "testdata": "python scripts/tools/testdata.py",
     "check": "npm run typecheck && npm test && npm run build",
     "locales": "python scripts/tools/locales.py",
-    "icons": "python scripts/tools/icons.py",
     "screenshots": "python scripts/tools/screenshots.py",
     "release": "npm run build:all && python scripts/build/package.py",
     "release:full": "npm run typecheck && npm test && npm run locales && npm run release"

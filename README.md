@@ -229,13 +229,12 @@ markdown_reader/
 │  │  └─ perf.ts              # 首屏性能打点
 │  ├─ types/                  # 手工补的模块类型声明（*.css、注入常量）
 │  ├─ _locales/               # 语言包源码：zh_CN（基准）/ en / ja / ko，各 102 条
-│  └─ icons/                  # 图标源码：16/32/48/128 PNG，由 scripts/tools/icons.py 生成
+│  └─ icons/                  # 图标：16/32/48/128 PNG，白底黑字，形状取自 folder.ts 的 ICON_MD
 ├─ scripts/
 │  ├─ build/                  # build.mjs（esbuild）· manifest.mjs（清单生成）· package.py（打 zip）
-│  └─ tools/                  # locales.py · icons.py · testdata.py · screenshots.py · theme-preview.mjs
+│  └─ tools/                  # locales.py · testdata.py · screenshots.py
 ├─ tests/                      # 自动化测试：render / toc / source-view（jsdom，不需要浏览器）
 ├─ testMd/                     # 手工测试文档，索引见 testMd/00-索引.md
-├─ preview/                    # 主题对比页（npm run preview 生成，不入库）
 ├─ docs/                       # 商店上架资料等，不参与构建
 └─ output/                     # 构建产物与 zip（不入库）
 ```
@@ -352,9 +351,7 @@ npm run typecheck       # tsc --noEmit
 npm test                # 三组 jsdom 测试（无需浏览器）
 npm run check           # typecheck + test + build(chrome)，提交前跑这个
 
-npm run preview         # 生成代码高亮主题对比页 → preview/代码主题预览.html
 npm run testdata        # 重新生成 testMd/ 的测试图片、GBK 文件、3.4MB 超大文件
-npm run icons           # 重新生成 src/icons/ 下的扩展图标
 npm run locales         # 校验语言包
 npm run screenshots     # 把 截图/<语言>/ 里的原图裁成 16:10 并缩成商店尺寸
 ```

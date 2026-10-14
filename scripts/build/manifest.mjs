@@ -82,8 +82,8 @@ const MATCHES = ['file:///*', 'http://*/*', 'https://*/*'];
 
 /*
  * 扩展图标。形状取自 folder.ts 里表示 Markdown 文件的那枚
- * （圆角卡片 + M 折线），PNG 由 scripts/tools/icons.py 生成 ——
- * manifest 只接受位图，认不了 SVG。
+ * （圆角卡片 + M 折线），位图直接提交在 src/icons 下，由 build.mjs 复制 ——
+ * manifest 只接受位图，认不了 SVG，所以这里只能是 PNG。
  *
  * 路径不带 build/ 前缀：图标与语言包这类资源必须位于**扩展根目录**。
  * 源码在 src/icons 下，构建时由 build.mjs 复制到每个目标的扩展根，
@@ -130,8 +130,8 @@ export function buildManifest(target) {
     permissions: ['storage', 'scripting'],
     /*
      * 扩展图标，形状取自 folder.ts 里表示 Markdown 文件的那枚
-     * （圆角卡片 + M 折线）。PNG 由 scripts/tools/icons.py 生成 ——
-     * manifest 只接受位图，认不了 SVG。
+     * （圆角卡片 + M 折线）。位图直接提交在 src/icons 下 ——
+     * manifest 只接受位图，认不了 SVG，所以这里只能是 PNG。
      */
     icons: ICONS,
     content_scripts: [
