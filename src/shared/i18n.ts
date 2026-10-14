@@ -1,12 +1,13 @@
 /**
  * 国际化。
  *
- * ★ 语言包用 import 静态引入，而不是运行时 fetch `_locales/<locale>/messages.json`：
+ * ★ 语言包用 import 静态引入，而不是运行时 fetch 扩展目录里的
+ *   `_locales/<locale>/messages.json`：
  *   1. t() 必须同步返回，fetch 是异步的 —— 否则每个调用点都得 await
  *   2. content script 读取扩展资源要经过 web_accessible_resources，
  *      而 `_locales` 是特殊目录，能否这样暴露并不确定
- * 数据源仍然是 `_locales/` 下的那一份，与 manifest 的 `__MSG_key__` 共用，
- * 不存在两套文案需要同步维护的问题。
+ * 数据源仍然是 `src/_locales/` 下的那一份，与 manifest 的 `__MSG_key__` 共用
+ * （构建时复制到扩展根），不存在两套文案需要同步维护的问题。
  *
  * ★ 为什么不直接用 chrome.i18n.getMessage：
  * 它只能跟随浏览器语言，无法手动切换。本地文档阅读器有个常见场景 ——
@@ -14,10 +15,10 @@
  * 所以这里加了一层：优先读用户设置，没设置才回退到 chrome.i18n。
  */
 
-import enMessages from '../../_locales/en/messages.json';
-import jaMessages from '../../_locales/ja/messages.json';
-import koMessages from '../../_locales/ko/messages.json';
-import zhMessages from '../../_locales/zh_CN/messages.json';
+import enMessages from '../_locales/en/messages.json';
+import jaMessages from '../_locales/ja/messages.json';
+import koMessages from '../_locales/ko/messages.json';
+import zhMessages from '../_locales/zh_CN/messages.json';
 
 /** auto = 跟随浏览器 */
 export type Locale = 'auto' | 'zh_CN' | 'en' | 'ja' | 'ko';
@@ -34,7 +35,7 @@ type MessageTable = Record<string, MessageEntry>;
 
 /**
  * 可手动切换的语言包。
- * 新增语言时在这里加一行、并在 _locales/ 下建对应目录即可。
+ * 新增语言时在这里加一行、并在 src/_locales/ 下建对应目录即可。
  */
 const TABLES: Record<string, MessageTable> = {
   zh_CN: zhMessages as MessageTable,

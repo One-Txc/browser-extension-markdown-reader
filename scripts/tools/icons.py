@@ -21,7 +21,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-OUT_DIR = Path('icons')
+OUT_DIR = Path('src/icons')
 
 BG = (255, 255, 255, 255)
 # 与正文色一致（--md-fg 的浅色值），比纯黑柔和一点

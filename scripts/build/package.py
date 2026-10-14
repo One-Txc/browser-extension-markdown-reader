@@ -6,7 +6,7 @@
     output/MV2/        Firefox 的扩展根
     output/dist/       ← 本脚本的输出，两个 zip 放这里
 
-打包时**直接压缩扩展根**即可 —— icons/ 与 _locales/ 由 build.mjs 复制进去，
+打包时**直接压缩扩展根**即可 —— icons/ 与 _locales/ 由 build.mjs 从 src/ 下复制进去，
 `output/` 里不含任何源码、测试或 node_modules。这一点值得确保：
 把开发文件混进发布包既会撑大体积，也可能触发商店审核的额外询问。
 

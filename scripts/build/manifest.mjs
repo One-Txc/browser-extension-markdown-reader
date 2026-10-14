@@ -85,8 +85,9 @@ const MATCHES = ['file:///*', 'http://*/*', 'https://*/*'];
  * （圆角卡片 + M 折线），PNG 由 scripts/tools/icons.py 生成 ——
  * manifest 只接受位图，认不了 SVG。
  *
- * 路径不带 build/ 前缀：_locales 与 icons 这类资源必须位于扩展根目录，
- * Firefox 目标由 build.mjs 复制过去（同 _locales 的处理）。
+ * 路径不带 build/ 前缀：图标与语言包这类资源必须位于**扩展根目录**。
+ * 源码在 src/icons 下，构建时由 build.mjs 复制到每个目标的扩展根，
+ * 产物里仍叫 icons/ —— 这个名字是浏览器定的，不跟着源码目录走。
  */
 const ICONS = {
   16: 'icons/icon16.png',
@@ -122,8 +123,8 @@ export function buildManifest(target) {
     description: DESCRIPTION,
     /*
      * 语言包目录 _locales 必须位于扩展根目录，浏览器据此解析上面的 __MSG_ 占位。
-     * Chrome 的扩展根就是项目根，_locales 本来就在那儿；
-     * Firefox 的扩展根是 output/MV2，构建时会复制一份过去（见 build.mjs）。
+     * 源码在 src/_locales，构建时由 build.mjs 复制到每个目标的扩展根 ——
+     * 目录名保持 _locales，浏览器只认这个位置。
      */
     default_locale: 'zh_CN',
     permissions: ['storage', 'scripting'],

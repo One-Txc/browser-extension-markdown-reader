@@ -10,7 +10,7 @@
 
 ### 要做的
 
-1. 新出现的用户可见文案，**加进 `_locales/zh_CN/messages.json`**
+1. 新出现的用户可见文案，**加进 `src/_locales/zh_CN/messages.json`**
 2. 每条都要写 `description` —— 按「位置 · 作用」描述，并注明长度约束、
    不译项、占位符含义（格式参照文件里已有的条目）
 3. 代码里一律通过 `t('key')` 取用，**不要在代码里写中文字面量**
@@ -50,7 +50,7 @@ npm run build:firefox # 构建 Firefox  → output/MV2
 - **类型检查 / 测试 / 构建由助手负责**
 - **任何视觉、布局、交互手感相关的验证必须由用户在实际浏览器里完成**
   （本项目的测试跑在 jsdom 里，看不到样式与布局）
-- 提交前跑一次 `npm run check`；改了 `_locales/` 再跑一次
+- 提交前跑一次 `npm run check`；改了 `src/_locales/` 再跑一次
   `python scripts/tools/locales.py`
 
 ### 发布
@@ -72,7 +72,8 @@ npm run release:full  # 先跑类型检查 / 测试 / 语言包校验，再执�
 - Chrome 加载 `output/MV3`，Firefox 加载 `output/MV2`
 - 构建产物必须是**纯 ASCII**（扩展脚本的编码检查比「合法 UTF-8」更严），
   构建脚本会在出现非 ASCII 时直接失败；中文在产物里表现为 `\uXXXX`
-- `_locales/` 会被复制进扩展包，**不要把说明文档之类的文件放进去**
+- `src/_locales/` 会被复制进扩展包（产物里仍是 `_locales/`），
+  **不要把说明文档之类的文件放进去**
 - `messages.json` 里每个键都必须是合法的消息条目（对象且含 `message`），
   否则 Chrome 会拒绝加载整个扩展
 

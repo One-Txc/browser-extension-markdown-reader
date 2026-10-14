@@ -141,13 +141,17 @@ await cp('src/popup/popup.html', `${outDir}/popup.html`);
 
 /*
  * 语言包与图标都必须位于**扩展根目录**：浏览器靠前者解析清单里的 __MSG_ 占位，
- * 靠后者显示工具栏与管理页图标。Chrome 的扩展根就是项目根，两者本来就在那儿；
- * Firefox 的扩展根是 output/MV2，得复制一份过去。
+ * 靠后者显示工具栏与管理页图标。
+ *
+ * 源码放在 src/ 下（跟代码同一棵树），构建时复制到各自的扩展根。
+ * ★ 产物里的目录名固定是 _locales 与 icons —— 这两个名字是浏览器定的，
+ *   清单里的 icons/... 路径同理，都不能跟着源码目录一起改名。
+ *
+ * 这里不再判断 extRoot 是否为 '.'：两个目标都在 output/ 下，
+ * 而源码已经不在项目根，所以无论哪个目标都要复制。
  */
-if (extRoot !== '.') {
-  await cp('_locales', `${extRoot}/_locales`, { recursive: true });
-  await cp('icons', `${extRoot}/icons`, { recursive: true });
-}
+await cp('src/_locales', `${extRoot}/_locales`, { recursive: true });
+await cp('src/icons', `${extRoot}/icons`, { recursive: true });
 
 // KaTeX 字体：只复制 woff2（20 个 / 约 260KB），浏览器优先使用它。
 // 这些文件要由 file:// 页面加载，因此必须在清单的 web_accessible_resources

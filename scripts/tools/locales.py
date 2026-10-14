@@ -20,7 +20,7 @@ import re
 import sys
 from pathlib import Path
 
-LOCALES_DIR = Path('_locales')
+LOCALES_DIR = Path('src/_locales')
 BASE = 'zh_CN'
 
 # Chrome 只认这些字段，多出来的会被忽略（但不报错）

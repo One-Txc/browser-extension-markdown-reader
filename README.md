@@ -227,13 +227,13 @@ markdown_reader/
 │  │  ├─ directory.ts         # 目录索引解析、过滤、排序
 │  │  ├─ i18n.ts              # 语言包静态 import + t() 回退链
 │  │  └─ perf.ts              # 首屏性能打点
-│  └─ types/                  # 手工补的模块类型声明（*.css、注入常量）
+│  ├─ types/                  # 手工补的模块类型声明（*.css、注入常量）
+│  ├─ _locales/               # 语言包源码：zh_CN（基准）/ en / ja / ko，各 102 条
+│  └─ icons/                  # 图标源码：16/32/48/128 PNG，由 scripts/tools/icons.py 生成
 ├─ scripts/
 │  ├─ build/                  # build.mjs（esbuild）· manifest.mjs（清单生成）· package.py（打 zip）
 │  ├─ test/                   # render.mjs · toc.mjs · source-view.mjs（jsdom，无需浏览器）
 │  └─ tools/                  # locales.py · icons.py · testdata.py · screenshots.py · theme-preview.mjs
-├─ _locales/                  # zh_CN（基准）/ en / ja / ko，各 102 条
-├─ icons/                     # 16/32/48/128 PNG，由 scripts/tools/icons.py 生成
 ├─ testMd/                     # 手工测试文档，索引见 testMd/00-索引.md
 ├─ preview/                    # 主题对比页（npm run preview 生成，不入库）
 ├─ docs/                       # 商店上架资料等，不参与构建
@@ -354,7 +354,7 @@ npm run check           # typecheck + test + build(chrome)，提交前跑这个
 
 npm run preview         # 生成代码高亮主题对比页 → preview/代码主题预览.html
 npm run testdata        # 重新生成 testMd/ 的测试图片、GBK 文件、3.4MB 超大文件
-npm run icons           # 重新生成 icons/ 下的扩展图标
+npm run icons           # 重新生成 src/icons/ 下的扩展图标
 npm run locales         # 校验语言包
 npm run screenshots     # 把 截图/<语言>/ 里的原图裁成 16:10 并缩成商店尺寸
 ```
@@ -427,7 +427,7 @@ output/dist/
 
 支持简体中文、English、日本語、한국어，也可跟随浏览器语言（`auto`）。
 
-**约定：加功能时只维护 `_locales/zh_CN/messages.json`**，其他语言在明确需要时才同步。配套机制保证这不会让其他语言出问题：
+**约定：加功能时只维护 `src/_locales/zh_CN/messages.json`**，其他语言在明确需要时才同步。配套机制保证这不会让其他语言出问题：
 
 - `t()` 逐级回退：手动选定语言 → `chrome.i18n` → `zh_CN` → key 本身。只加中文时，其他语言界面显示中文，而不是露出 `folder_collapseAll` 这样的裸 key
 - `scripts/tools/locales.py` **以 `zh_CN` 为基准**：基准文件自身的结构问题（JSON 语法、`message` 缺失或为空、非标准字段）报错；其他语言缺 key / 多 key / 占位符数量不符只列为**警告**，不阻塞开发
@@ -436,7 +436,9 @@ output/dist/
 
 代码里一律用 `t('key')`，**不写中文字面量**；HTML 里的静态文案用 `data-i18n` / `data-i18n-title` / `data-i18n-label` / `data-i18n-placeholder` 标记，由 popup 启动时统一填充。
 
-**加一种新语言**只需改三处：`_locales/<code>/messages.json`（复制 `zh_CN`，它带 `description`）、`src/shared/i18n.ts` 的 `Locale`/`LOCALES`/`TABLES`、`popup.html` 的下拉项。`settings.ts` 用 `LOCALES.includes()` 校验，无需改动。
+**加一种新语言**只需改三处：`src/_locales/<code>/messages.json`（复制 `zh_CN`，它带 `description`）、`src/shared/i18n.ts` 的 `Locale`/`LOCALES`/`TABLES`、`popup.html` 的下拉项。`settings.ts` 用 `LOCALES.includes()` 校验，无需改动。
+
+语言包与图标的**源码在 `src/` 下**（与代码同一棵树），构建时由 `build.mjs` 复制到各目标的扩展根，产物里的目录名仍是浏览器约定的 `_locales/` 与 `icons/`。
 
 给翻译贡献者的详细说明见 [TRANSLATING.md](./TRANSLATING.md)。
 
@@ -461,7 +463,7 @@ output/dist/
 - **注释、提交信息、文档一律用中文**
 - **不要自作主张 `git push`** —— 完成一个改动就本地提交，推送时机由用户掌握（这个仓库的用途是私人备份，不是对外协作）
 - **类型检查 / 测试 / 构建由助手负责；视觉、布局、交互手感的验证必须由用户在实际浏览器里完成**（测试跑在 jsdom 里，看不到样式与布局）
-- 提交前跑 `npm run check`；改了 `_locales/` 再跑一次 `npm run locales`
+- 提交前跑 `npm run check`；改了 `src/_locales/` 再跑一次 `npm run locales`
 - 换行统一 LF（`.gitattributes` 里 `* text=auto eol=lf`）
 - 更细的项目约定见 [AGENTS.md](./AGENTS.md)
 

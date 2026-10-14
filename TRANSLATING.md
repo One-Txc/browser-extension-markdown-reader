@@ -14,12 +14,15 @@ Markdown Read 是一个在浏览器里直接阅读本地 `.md` 文件的扩展�
 ## 语言包在哪里
 
 ```
-_locales/
+src/_locales/
 ├── en/messages.json      英语
 ├── ja/messages.json      日语
 ├── ko/messages.json      韩语
 └── zh_CN/messages.json   简体中文（default_locale，也是文案的原始出处）
 ```
+
+> 语言包源码放在 `src/` 下（跟代码同一棵树），构建时由 `scripts/build/build.mjs`
+> 复制到扩展根的 `_locales/` —— 这个目录名是浏览器定的，不能改名。
 
 每个文件 86 条，当前四份的 key 完全一致。
 
@@ -77,10 +80,10 @@ _locales/
 用 Chrome 的写法，例如 `de`（德语）、`fr`（法语）、`pt_BR`（巴西葡语）、`zh_TW`（繁体中文）。
 完整列表见 [Chrome 官方文档](https://developer.chrome.com/docs/extensions/reference/api/i18n#supported-locales)。
 
-**2. 复制 `_locales/zh_CN/messages.json`，改名为你的语言代码**
+**2. 复制 `src/_locales/zh_CN/messages.json`，改名为你的语言代码**
 
 ```
-_locales/de/messages.json
+src/_locales/de/messages.json
 ```
 
 复制 `zh_CN` 而不是 `en`，是因为**它带 `description`**（每条文案的位置与作用说明），
@@ -97,7 +100,7 @@ export type Locale = 'auto' | 'zh_CN' | 'en' | 'ja' | 'ko' | 'de';
 export const LOCALES: Locale[] = ['auto', 'zh_CN', 'en', 'ja', 'ko', 'de'];
 //                                                                 ^^^^
 
-import deMessages from '../../_locales/de/messages.json';
+import deMessages from '../_locales/de/messages.json';
 //    ^^^^^^^^^^ 加这行
 
 const TABLES: Record<string, MessageTable> = {
