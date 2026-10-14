@@ -53,6 +53,20 @@ npm run build:firefox # 构建 Firefox  → output/MV2
 - 提交前跑一次 `npm run check`；改了 `_locales/` 再跑一次
   `python scripts/check-locales.py`
 
+### 发布
+
+```bash
+npm run release       # 构建两个目标 + 打包成 zip（默认，快）
+npm run release:full  # 先跑类型检查 / 测试 / 语言包校验，再执行上面那步
+```
+
+**校验默认不做**是有意的：改点文案、调个样式再出一版，不必每次都等一遍完整测试。
+**上架前跑 `release:full`**，平时出包用 `release`。
+
+产物在 `dist/`，文件名带版本号与目标平台。两条命令都会走 `build:all` ——
+这一点很要紧：只跑 `npm run build` 会让 `output/MV2` 停在旧产物，
+而它照样会被打进 zip，上传后 Firefox 用户拿到的是过时代码。
+
 ### 改产物时留意
 
 - Chrome 加载 `output/MV3`，Firefox 加载 `output/MV2`
