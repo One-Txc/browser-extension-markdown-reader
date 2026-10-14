@@ -6,7 +6,10 @@ node_modules/
 .idea/
 .vscode/
 
-# 构建产物统一输出到这里，output/MV3 与 output/MV2 各自是一个扩展根
+# 构建产物与打包结果统一输出到这里：
+#   output/MV3/    Chrome / Edge 的扩展根
+#   output/MV2/    Firefox 的扩展根
+#   output/dist/   npm run release 产出的商店上传包
 output/
 
 # 早期布局的产物路径，保留忽略以免误提交
@@ -25,9 +28,6 @@ testMd/10-超大文件测试.md
 
 # 由 npm run preview 生成的主题预览页
 preview/
-
-# 由 npm run package 生成的应用商店上架包
-dist/
 
 # 文件管理器复制出来的副本
 *副本*

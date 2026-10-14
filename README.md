@@ -132,12 +132,15 @@ npm run release         # 构建两个目标 + 打包成 zip（默认，快）
 npm run release:full    # 先跑类型检查 / 测试 / 语言包校验，再执行上面那步
 ```
 
-产物落在 `dist/`，文件名带版本号与目标平台：
+产物落在 `output/dist/`，文件名带版本号与目标平台：
 
 ```
-dist/
-├─ markdown-read-1.0.0-chrome.zip     ← Chrome / Edge，上传这个
-└─ markdown-read-1.0.0-firefox.zip    ← Firefox
+output/
+├─ MV3/                            ← Chrome / Edge：加载这个目录
+├─ MV2/                            ← Firefox：加载这里的 manifest.json
+└─ dist/
+   ├─ markdown-read-1.0.0-chrome.zip     ← 上传这个
+   └─ markdown-read-1.0.0-firefox.zip
 ```
 
 **校验默认不做**是有意的：改点文案、调个样式再出一版，不必每次都等一遍完整测试。
@@ -168,10 +171,10 @@ python scripts/make-testdata.py       # 同 npm run testdata
 
 ```
 markdown_reader/
-├─ output/                  # 【生成物】构建产物，两个目标各是一个扩展根
+├─ output/                  # 【生成物】构建产物与打包结果都在这
 │  ├─ MV3/                  # Chrome / Edge：加载这个目录
-│  └─ MV2/                  # Firefox：加载这里的 manifest.json
-├─ dist/                    # 【生成物】npm run release 产出的商店上传包
+│  ├─ MV2/                  # Firefox：加载这里的 manifest.json
+│  └─ dist/                 # npm run release 产出的商店上传包
 ├─ icons/                   # 扩展图标（由 scripts/make-icons.py 生成）
 ├─ _locales/                # 语言包：zh_CN（基准）/ en / ja / ko
 ├─ scripts/

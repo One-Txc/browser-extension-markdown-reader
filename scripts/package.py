@@ -2,12 +2,16 @@
 
 产物布局（见 scripts/manifest.mjs 的 LAYOUT）：
 
-    output/MV3/   Chrome / Edge 的扩展根，manifest.json 就在这一层
-    output/MV2/   Firefox 的扩展根
+    output/MV3/        Chrome / Edge 的扩展根，manifest.json 就在这一层
+    output/MV2/        Firefox 的扩展根
+    output/dist/       ← 本脚本的输出，两个 zip 放这里
 
 打包时**直接压缩扩展根**即可 —— icons/ 与 _locales/ 由 build.mjs 复制进去，
 `output/` 里不含任何源码、测试或 node_modules。这一点值得确保：
 把开发文件混进发布包既会撑大体积，也可能触发商店审核的额外询问。
+
+zip 与扩展根放在同一个 output/ 下，是为了「加载用」和「上传用」两套东西
+集中在一处，找起来不用来回切换目录。
 
 用法：
     python scripts/package.py            # 打包两个目标
@@ -27,7 +31,12 @@ TARGETS = {
     'firefox': 'output/MV2',
 }
 
-OUT_DIR = Path('dist')
+# 产物与构建结果放在一起，output/ 一个目录就装齐「加载用」和「上传用」两套东西
+#
+# ★ 注意：build.mjs 清理时只删各自的目标目录（output/MV3 与 output/MV2），
+# 不会碰这里。若以后有人把清理逻辑改成整个 output/，这份包会被一并删掉 ——
+# 所以 zip 放在 output/ 下是安全的，但改清理逻辑时要记得这一点。
+OUT_DIR = Path('output/dist')
 
 # 正常情况下不该出现在产物里的东西，出现就说明构建流程有问题，直接拦下
 FORBIDDEN_PARTS = {'node_modules', 'src', 'scripts', 'testMd', 'preview', 'docs', '.git'}
