@@ -70,9 +70,32 @@ npm run build:firefox # 构建 Firefox  → output/MV2
 ### 发布
 
 ```bash
-npm run release       # 构建两个目标 + 打包成 zip（默认，快）
+npm run release       # 升版本 → 提交 → 构建两个目标 → 打包成 zip
 npm run release:full  # 先跑类型检查 / 测试 / 语言包校验，再执行上面那步
+npm run bump          # 只把版本号第三位 +1（release 内部会调用）
 ```
+
+**本地调试不打包**：`npm run build` / `npm run check` 不动版本号、不生成 zip。
+只有发布才走 `release`。
+
+`release`（`scripts/tools/release.mjs`）的步骤与约束：
+
+1. **工作区必须干净**（含未跟踪文件），否则直接拒绝并列出来 —— 发布出去的 zip
+   必须对应一个有提交记录的代码状态。先提交，再发布
+2. 版本号第三位 +1（`npm version patch --no-git-tag-version`）
+3. 只提交 `package.json` + `package-lock.json`，提交信息 `chore(release): v1.0.1`。
+   **不打 tag、不 push**
+4. 构建两个目标 → 打包到 `output/dist/`
+5. 构建或打包失败 → 自动 `git reset --hard HEAD~1` 撤回那次版本提交，修好后重跑
+
+**版本号唯一来源是 `package.json` 的 `version`**，清单与 zip 文件名都从它派生。
+每次发布必然 +1，没有「不升版本号的出包」；已安装用户靠这个版本号递增才会自动更新
+（两个商店都拒绝版本号回退）。
+
+- **不要手动改第三位**，发布会自动 +1
+- 升大/小版本时直接改 `package.json`（例如改成 `1.1.0`），下一次发布从 `1.1.1` 继续
+- `package.py` 会核对产物里的版本与 `package.json`，不一致就报「产物过期」，
+  所以改完版本号必须走 `build:all`，不要直接跑 `package.py`
 
 **校验默认不做**是有意的：改点文案、调个样式再出一版，不必每次都等一遍完整测试。
 **上架前跑 `release:full`**，平时出包用 `release`。
@@ -102,6 +125,8 @@ npm run release:full  # 先跑类型检查 / 测试 / 语言包校验，再执�
   为理由自行 `git commit`，也不要用 `git stash` 或新建分支去「整理」这些改动
 - **推送到 `origin` 同样要等用户开口**，不要顺手带上，也不要在
   「顺便同步一下」之类的判断下自行决定
+- 例外只有一个：`npm run release` 会自己做一个 `chore(release): vX.Y.Z` 的版本
+  提交，那是发布流程的一部分（由用户主动运行）；这不等于「助手可以自行提交」
 - 这条是因为该仓库的用途是**私人备份**，不是对外协作：看改动、改东西、
   什么时候提交与推送，节奏都由用户掌握
 

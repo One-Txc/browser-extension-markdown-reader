@@ -76,11 +76,39 @@ const BRAND = JSON.parse(
   readFileSync(new URL('../../src/shared/brand.json', import.meta.url), 'utf8')
 );
 const NAME = BRAND.name;
-/**
- * 版本号。★ 唯一的版本来源 —— 改这里即可，package.json 只是给 npm 看的。
+
+/*
+ * 版本号。
+ *
+ * ★ 唯一来源是 package.json 的 version —— 这里只读，不要再写第二份常量。
+ *   推进版本由 `npm run release` 负责（内部是 `npm version patch
+ *   --no-git-tag-version`，每次出包把第三位 +1）；手动升大/小版本时直接改
+ *   package.json，之后的出包继续在第三位 +1。
+ *
+ * 为什么要校验格式：package.json 允许 `1.0.1-beta.1` 这类 semver，而清单只
+ * 接受 1–4 段纯数字（每段 0..65535）。带了预发布标记 Chrome 会直接拒绝加载
+ * 整个扩展，报错又不会指向版本号，所以宁可在构建期就停下。
+ *
  * Chrome 与 Firefox 都会拒绝「版本号回退」的上传，改小之前务必确认。
  */
-const VERSION = '1.0.0';
+const VERSION = readPackageVersion();
+
+/** 读 package.json 的 version，并保证它是清单能接受的 x.y.z */
+function readPackageVersion() {
+  const { version } = JSON.parse(
+    readFileSync(new URL('../../package.json', import.meta.url), 'utf8')
+  );
+  const text = String(version);
+
+  if (!/^\d+\.\d+\.\d+$/.test(text) || text.split('.').some((part) => Number(part) > 65535)) {
+    throw new Error(
+      `package.json 的 version 必须是 x.y.z 形式的纯数字（当前：${text}）—— ` +
+        '清单不接受预发布标记，每段也不能超过 65535'
+    );
+  }
+
+  return text;
+}
 /** 由浏览器按 __MSG_extDescription__ 从 _locales 解析（简介需要翻译，与品牌名不同） */
 const DESCRIPTION = '__MSG_extDescription__';
 

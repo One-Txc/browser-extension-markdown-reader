@@ -15,7 +15,8 @@
     "check": "npm run typecheck && npm test && npm run build",
     "locales": "python scripts/tools/locales.py",
     "screenshots": "python scripts/tools/screenshots.py",
-    "release": "npm run build:all && python scripts/build/package.py",
+    "bump": "npm version patch --no-git-tag-version",
+    "release": "node scripts/tools/release.mjs",
     "release:full": "npm run typecheck && npm test && npm run locales && npm run release"
   },
   "dependencies": {

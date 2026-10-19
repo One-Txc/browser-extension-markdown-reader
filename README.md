@@ -106,7 +106,7 @@ npm run watch          # esbuild 监听重建（Chrome 目标，带 sourcemap、
 
 然后到扩展管理页点一下本扩展的**刷新**，再刷新文档页面。
 
-> `watch` 只重建脚本产物。改了 `scripts/build/manifest.mjs`（清单字段、版本号）或 `popup.html` 之后要重启 `watch` —— 清单只在构建启动时生成一次。
+> `watch` 只重建脚本产物。改了 `scripts/build/manifest.mjs`（清单字段）、`package.json`（版本号）或 `popup.html` 之后要重启 `watch` —— 清单只在构建启动时生成一次。
 
 > 为什么不直接用 `chrome.extension.isAllowedFileSchemeAccess` 检测权限？**实测它在 content script 里不存在**，只暴露给扩展页面。
 > 这里改用「content script 能注入进来 = 权限已开」的判据：注入成功后向 Service Worker 上报一次并落盘，由 popup 读取展示。
@@ -269,7 +269,7 @@ Chrome 加载扩展时对脚本编码的校验**比「是否合法 UTF-8」更�
 
 `scripts/build/manifest.mjs` 用「一份公共配置 + 目标覆盖」表达两个平台的差异（background 写法、web_accessible_resources 结构、host_permissions 有无、`gecko.id`）。维护两份静态 JSON 迟早漂移。
 
-**版本号的唯一来源是这个文件里的 `VERSION`**，改这里即可（`package.json` 里那份只是给 npm 看的）。
+**版本号的唯一来源是 `package.json` 的 `version`**：`manifest.mjs` 读它并校验格式（清单只接受 `x.y.z` 纯数字，预发布标记会让 Chrome 拒绝加载整个扩展），`npm run release` 负责每次出包把第三位 +1；`package.json` 那份 `version` 不再是「只给 npm 看的」，它就是标准答案。
 
 ### 4. 页面判定分两级，`matches` 只能写宽
 
@@ -398,9 +398,24 @@ npm test        # 97 项断言，全部跑在 jsdom 里，不需要浏览器
 ## 出包与发布
 
 ```bash
-npm run release         # 构建两个目标 + 打包成 zip（默认，快）
+npm run release         # 升版本 → 提交 → 构建两个目标 → 打包成 zip
 npm run release:full    # 先跑 typecheck / test / locales，再执行上面那步
+npm run bump            # 只把版本号第三位 +1（release 内部会调用）
 ```
+
+**本地调试不打包**：`npm run build` / `npm run check` 不动版本号、不生成 zip。只有发布才走 `release`。
+
+`npm run release`（`scripts/tools/release.mjs`）做的事情与约束：
+
+1. **工作区必须干净**（含未跟踪文件），否则直接拒绝并列出来 —— 发布出去的 zip 必须对应一个有提交记录的代码状态。先提交，再发布
+2. 版本号第三位 +1（`npm version patch --no-git-tag-version`）
+3. 只提交 `package.json` + `package-lock.json`，提交信息 `chore(release): v1.0.1`；**不打 tag、不 push**
+4. 构建两个目标 → 打包到 `output/dist/`
+5. 构建或打包失败 → 自动 `git reset --hard HEAD~1` 撤回那次版本提交，修好后重跑
+
+「先提交、再构建」是有意的：这样 zip 对应的就是那个提交（HEAD），将来回滚或对账某个商店版本的代码时能对上，而不是「提交里的代码 ≠ 打包出去的代码」。代价是失败时要撤一次提交 —— 预检已保证工作区干净，那一步只会撤掉本次发布产生的提交。
+
+每次发布必然 +1，没有「不升版本号的出包」；已安装用户靠版本号递增才会自动更新（两个商店都拒绝版本号回退）。升大/小版本时直接改 `package.json`（例如 `1.1.0`），之后从 `1.1.1` 继续；**不要手动改第三位**。`package.py` 会核对产物里的版本与 `package.json`，不一致就报「产物过期」，所以改完版本号必须走 `build:all`。
 
 产物在 `output/dist/`（各约 1.9 MB）：
 
@@ -416,7 +431,7 @@ output/dist/
 
 > ⚠️ 两条命令都走 `build:all`。**不要图快改成只跑 `npm run build`** —— 那样 `output/MV2` 会停在旧产物，**而它照样会被打进 zip**，上传后 Firefox 用户拿到的是过时代码。这类问题在构建日志里完全看不出来。
 
-版本号回退会被两个商店直接退件（版本号唯一来源见[关键设计决策 3](#3-清单由代码生成服务端差异集中在一处)）。
+版本号回退会被两个商店直接退件；版本号怎么推进、唯一来源在哪，见[关键设计决策 3](#3-清单由代码生成服务端差异集中在一处) 与上面那段。
 
 商店上架用的描述文案见 `docs/商店文案.md`。
 

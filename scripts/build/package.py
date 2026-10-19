@@ -13,6 +13,11 @@
 zip 与扩展根放在同一个 output/ 下，是为了「加载用」和「上传用」两套东西
 集中在一处，找起来不用来回切换目录。
 
+版本号的唯一来源是 package.json（见 scripts/build/manifest.mjs 的注释），
+`npm run release` 会先用 `npm version patch` 把它 +1 再构建。所以这里要核对
+「产物里的版本」与 package.json 是否一致：改完版本没重新构建就来打包，zip 会
+带着旧版本号，上传时被商店按「重复版本」退件，而报错完全看不出是产物过期。
+
 用法：
     python scripts/build/package.py            # 打包两个目标
     python scripts/build/package.py chrome     # 只打包 Chrome
@@ -41,6 +46,9 @@ OUT_DIR = Path('output/dist')
 # 产品名与文件名用的短标识，唯一出处是 src/shared/brand.json（与前端共用）。
 # 改名只改那个文件，zip 文件名会自动跟着变，这里不要再写死一份。
 BRAND = json.loads(Path('src/shared/brand.json').read_text(encoding='utf-8'))
+
+# 版本号的唯一来源是 package.json（构建时由 manifest.mjs 写进清单）
+SOURCE_VERSION = json.loads(Path('package.json').read_text(encoding='utf-8'))['version']
 
 # 正常情况下不该出现在产物里的东西，出现就说明构建流程有问题，直接拦下
 FORBIDDEN_PARTS = {'node_modules', 'src', 'scripts', 'testMd', 'preview', 'docs', '.git'}
@@ -88,6 +96,13 @@ def package(target: str) -> Path:
     manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
     version = manifest['version']
     name = manifest['name']
+
+    # 产物过期就停下，别打出一个带着旧版本号的包（商店会按重复版本退件）
+    if version != SOURCE_VERSION:
+        raise SystemExit(
+            f'✗ {root / "manifest.json"} 里的版本 {version} 与 package.json 的 '
+            f'{SOURCE_VERSION} 不一致 —— 产物过期了，先跑 npm run build:all'
+        )
 
     files = collect(root)
     total = sum(f.stat().st_size for f in files)
