@@ -2,7 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>Markdown Read</title>
+  <!-- 产品名不写在这里：带 data-ext-name 的元素由 popup.ts 从 brand.json 填入 -->
+  <title data-ext-name></title>
   <style>
     /*
      * 默认的 content-box 会让 width:100% + padding + border 一起溢出容器 ——
@@ -101,7 +102,8 @@
   </style>
 </head>
 <body>
-  <h1>Markdown Read</h1>
+  <!-- 产品名由 popup.ts 从 brand.json 填入（data-ext-name），改名不必改这里 -->
+  <h1 data-ext-name></h1>
 
   <fieldset>
     <legend data-i18n="popupBasic">基本设置</legend>

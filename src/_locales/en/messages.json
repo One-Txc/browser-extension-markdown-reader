@@ -1,8 +1,4 @@
 {
-  "extName": {
-    "message": "Markdown Read",
-    "description": "Extension name, not translated"
-  },
   "extDescription": {
     "message": "Read local .md files elegantly in your browser. No local server required."
   },
@@ -29,7 +25,7 @@
 
   "openSettings": { "message": "Settings" },
   "openSettingsHint": {
-    "message": "Couldn't open the settings panel. Click the Markdown Read icon in your browser toolbar."
+    "message": "Couldn't open the settings panel. Click the $1 icon in your browser toolbar."
   },
 
   "imagePreview": { "message": "Image preview" },
@@ -119,7 +115,7 @@
   "popupInactive": { "message": "Not active on local Markdown pages yet" },
   "popupInactiveReason": { "message": "Usually this means file access is not allowed." },
   "popupStep1": { "message": "Open this URL in the address bar:" },
-  "popupStep2": { "message": "Find \"Markdown Read\" and turn on \"Allow access to file URLs\"" },
+  "popupStep2": { "message": "Find \"$1\" and turn on \"Allow access to file URLs\"" },
   "popupStep3": { "message": "Go back to the .md page and press F5" },
   "popupNever": { "message": "Never" },
   "popupLastActive": { "message": "Last active: " },

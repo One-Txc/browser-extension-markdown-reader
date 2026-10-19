@@ -38,6 +38,10 @@ TARGETS = {
 # 所以 zip 放在 output/ 下是安全的，但改清理逻辑时要记得这一点。
 OUT_DIR = Path('output/dist')
 
+# 产品名与文件名用的短标识，唯一出处是 src/shared/brand.json（与前端共用）。
+# 改名只改那个文件，zip 文件名会自动跟着变，这里不要再写死一份。
+BRAND = json.loads(Path('src/shared/brand.json').read_text(encoding='utf-8'))
+
 # 正常情况下不该出现在产物里的东西，出现就说明构建流程有问题，直接拦下
 FORBIDDEN_PARTS = {'node_modules', 'src', 'scripts', 'testMd', 'preview', 'docs', '.git'}
 FORBIDDEN_SUFFIX = ('.ts', '.mjs', '.py', '.map')
@@ -89,8 +93,8 @@ def package(target: str) -> Path:
     total = sum(f.stat().st_size for f in files)
 
     OUT_DIR.mkdir(exist_ok=True)
-    # 包名跟产品名走（与 manifest 里的 extName 一致），便于在商店后台辨认
-    out = OUT_DIR / f'markdown-read-{version}-{target}.zip'
+    # 包名跟产品名走（slug 取自 src/shared/brand.json），便于在商店后台辨认
+    out = OUT_DIR / f'{BRAND["slug"]}-{version}-{target}.zip'
 
     with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
         for f in files:

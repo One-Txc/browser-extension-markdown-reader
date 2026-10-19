@@ -354,4 +354,4 @@ Public papers and write-ups on lakehouse and data mesh.
 
 ---
 
-*This file is an outline-folding test case for Markdown Read. The content is fictitious.*
+*This file is an outline-folding test case for Just Markdown. The content is fictitious.*

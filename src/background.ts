@@ -1,5 +1,5 @@
 /**
- * Markdown Read —— Service Worker
+ * Service Worker
  *
  * 三个职责：
  *   1. 记录「文件访问权限已被证明」（content script 成功注入即证明）
@@ -14,6 +14,7 @@ import { parseDirectoryIndex, type DirEntry } from './shared/directory';
 import { setLocale, t } from './shared/i18n';
 import { loadSettings } from './shared/settings';
 import type { Locale } from './shared/i18n';
+import { LOG_PREFIX } from './shared/brand';
 
 /*
  * Service Worker 也要知道当前语言 —— 它产生的错误文案会直接显示给用户。
@@ -175,7 +176,7 @@ async function injectMermaid(tabId?: number): Promise<{ ok: boolean; error?: str
     });
     return { ok: true };
   } catch (err) {
-    console.warn('[Markdown Read] Mermaid 注入失败：', err);
+    console.warn(`${LOG_PREFIX} Mermaid 注入失败：`, err);
     return { ok: false, error: String(err) };
   }
 }

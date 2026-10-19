@@ -16,6 +16,8 @@
  * @typedef {'chrome' | 'firefox'} Target
  */
 
+import { readFileSync } from 'node:fs';
+
 /**
  * 各目标的产物布局。
  *
@@ -58,13 +60,28 @@ export const LAYOUT = {
   },
 };
 
-const NAME = '__MSG_extName__';
+/*
+ * 产品名。
+ *
+ * ★ 唯一出处在 src/shared/brand.json（前端由 src/shared/brand.ts 取用），
+ *   这里读出同一个文件 —— 改名只改那一处，不必再动 manifest 或语言包。
+ *
+ * 用 readFileSync + JSON.parse 而不是 `import ... with { type: 'json' }`：
+ * JSON 导入属性在某些 Node 版本上有兼容差异，这里不引入那个依赖。
+ *
+ * 之所以不再用 `__MSG_extName__`：品牌名各语言都不翻译，走语言包只会让
+ * 改名时要同步 en / ja / ko 四份，漏一份那门语言就显示旧名。
+ */
+const BRAND = JSON.parse(
+  readFileSync(new URL('../../src/shared/brand.json', import.meta.url), 'utf8')
+);
+const NAME = BRAND.name;
 /**
  * 版本号。★ 唯一的版本来源 —— 改这里即可，package.json 只是给 npm 看的。
  * Chrome 与 Firefox 都会拒绝「版本号回退」的上传，改小之前务必确认。
  */
 const VERSION = '1.0.0';
-/** 由浏览器按 __MSG_extDescription__ 从 _locales 解析 */
+/** 由浏览器按 __MSG_extDescription__ 从 _locales 解析（简介需要翻译，与品牌名不同） */
 const DESCRIPTION = '__MSG_extDescription__';
 
 /*

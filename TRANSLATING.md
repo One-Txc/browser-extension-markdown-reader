@@ -1,6 +1,6 @@
-# 翻译指南 / Translating Markdown Read
+# 翻译指南 / Translating Just Markdown
 
-Markdown Read 是一个在浏览器里直接阅读本地 `.md` 文件的扩展。它除了英文与简体中文，
+Just Markdown 是一个在浏览器里直接阅读本地 `.md` 文件的扩展。它除了英文与简体中文，
 还提供日语、韩语。**欢迎补充其他语言，或修正现有翻译。**
 
 - [语言包在哪里](#语言包在哪里)
@@ -133,7 +133,7 @@ python scripts/tools/locales.py
 - `Monokai`、`Nord`、`Tokyo Night`、`Xcode`、`GitHub Light` 等**主题名是品牌名**  —— 译了反而难找
 - `.md`、`F5`、`chrome://extensions`、`file://` 等**技术标识**
 - `H1` `H2`（标题层级）、`Esc`
-- `Markdown Read`（产品名）
+- 产品名（品牌名，例如 `Just Markdown`）—— 它**不在语言包里**，由代码从 `src/shared/brand.json` 取、以 `$1` 传入，请不要翻译或改写 `$1`
 
 **2. 注意长度**
 

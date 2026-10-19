@@ -108,7 +108,7 @@ pie title 评论来源占比
 
 ```mermaid
 mindmap
-  root((Markdown Read))
+  root((Just Markdown))
     渲染
       markdown-it
       DOMPurify

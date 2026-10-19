@@ -1,5 +1,5 @@
 /**
- * Markdown Read —— popup
+ * popup
  *
  * 三块内容：
  *   1. 配色：颜色模式 + 浅色/深色代码配色
@@ -29,6 +29,7 @@ import {
 import { themesFor, type Appearance } from '../render/theme-catalog';
 import type { Locale } from '../shared/i18n';
 import { setLocale, t } from '../shared/i18n';
+import { EXT_NAME } from '../shared/brand';
 
 function pick<T extends HTMLElement>(id: string): T {
   return document.getElementById(id) as T;
@@ -67,6 +68,23 @@ function renderVersion(): void {
 }
 
 const SETTINGS_URL = 'chrome://extensions/?id=' + chrome.runtime.id;
+
+/* ---------------------------------------------------------------- 品牌名 */
+
+/**
+ * 把产品名填进 HTML 里带 data-ext-name 的元素（<title> 与 <h1>）。
+ *
+ * 名字不写死在 HTML 里 —— 唯一出处是 src/shared/brand.json，改名只改那一处。
+ * 这里在模块顶层同步执行（脚本位于 body 末尾，早于首次绘制），
+ * 所以不会先闪一下空标题。名字与语言无关，切换语言时无需重跑。
+ */
+function applyBrand(root: ParentNode = document): void {
+  root.querySelectorAll<HTMLElement>('[data-ext-name]').forEach((el) => {
+    el.textContent = EXT_NAME;
+  });
+}
+
+applyBrand();
 
 /* ---------------------------------------------------------- 静态文案填充 */
 
@@ -206,7 +224,7 @@ async function renderPermission(): Promise<void> {
     detailEl.innerHTML = [
       '<ol>',
       `<li>${t('popupStep1')}<br><code>${SETTINGS_URL}</code></li>`,
-      `<li>${t('popupStep2')}</li>`,
+      `<li>${t('popupStep2', [EXT_NAME])}</li>`,
       `<li>${t('popupStep3')}</li>`,
       '</ol>',
     ].join('');

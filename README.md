@@ -1,4 +1,4 @@
-# Markdown Read
+# Just Markdown
 
 浏览器扩展：打开本地 `.md` 文件或访问返回 Markdown 的网址时，看到的是**渲染后的文档**，而不是一屏纯文本。
 
@@ -222,13 +222,15 @@ markdown_reader/
 │  │  └─ app.css              # 侧边栏、按钮、面板等补充样式
 │  ├─ popup/                  # 设置面板（popup.html / popup.ts）
 │  ├─ shared/
+│  │  ├─ brand.json           # ★ 产品名的唯一出处（name / slug），改名只改这里
+│  │  ├─ brand.ts             # 品牌常量：EXT_NAME / EXT_SLUG / LOG_PREFIX
 │  │  ├─ const.ts             # 常量、两级页面判定、DOM 就绪等待、URL 解码兜底
 │  │  ├─ settings.ts          # 设置模型 + storage.sync 读写 + 取值夹取
 │  │  ├─ directory.ts         # 目录索引解析、过滤、排序
 │  │  ├─ i18n.ts              # 语言包静态 import + t() 回退链
 │  │  └─ perf.ts              # 首屏性能打点
 │  ├─ types/                  # 手工补的模块类型声明（*.css、注入常量）
-│  ├─ _locales/               # 语言包源码：zh_CN（基准）/ en / ja / ko，各 102 条
+│  ├─ _locales/               # 语言包源码：zh_CN（基准）/ en / ja / ko，各 101 条
 │  └─ icons/                  # 图标：16/32/48/128 PNG，白底黑字，形状取自 folder.ts 的 ICON_MD
 ├─ scripts/
 │  ├─ build/                  # build.mjs（esbuild）· manifest.mjs（清单生成）· package.py（打 zip）
@@ -290,7 +292,7 @@ Chrome 加载扩展时对脚本编码的校验**比「是否合法 UTF-8」更�
 - 渲染失败时保留浏览器原始纯文本视图，**绝不留白屏**
 - 不用 `document.write`（会清空文档、丢 URL 语义）
 
-首屏耗时可以直接量：打开任意文档，控制台会输出 `[Markdown Read 性能] {…}`，也可以读全局变量 `__mdReaderPerf`（`visibleMs` 是最关键的指标），或在 Performance 面板里按 `md-reader:` 前缀找原生标记。
+首屏耗时可以直接量：打开任意文档，控制台会输出 `[Just Markdown 性能] {…}`，也可以读全局变量 `__mdReaderPerf`（`visibleMs` 是最关键的指标），或在 Performance 面板里按 `md-reader:` 前缀找原生标记。
 
 ### 6. 数学公式的 HTML 不走 DOMPurify
 
@@ -404,8 +406,8 @@ npm run release:full    # 先跑 typecheck / test / locales，再执行上面那
 
 ```
 output/dist/
-├─ markdown-read-1.0.0-chrome.zip      ← 上传 Chrome Web Store
-└─ markdown-read-1.0.0-firefox.zip     ← 上传 Firefox Add-ons
+├─ just-markdown-1.0.0-chrome.zip      ← 上传 Chrome Web Store
+└─ just-markdown-1.0.0-firefox.zip     ← 上传 Firefox Add-ons
 ```
 
 `scripts/build/package.py` 会**直接压缩扩展根**，并拦截不该出现在包里的东西（`node_modules`、`src`、`scripts`、`testMd`、`docs`、`.ts`/`.mjs`/`.py`/`.map`），出现即构建失败。
@@ -429,13 +431,29 @@ output/dist/
 - `t()` 逐级回退：手动选定语言 → `chrome.i18n` → `zh_CN` → key 本身。只加中文时，其他语言界面显示中文，而不是露出 `folder_collapseAll` 这样的裸 key
 - `scripts/tools/locales.py` **以 `zh_CN` 为基准**：基准文件自身的结构问题（JSON 语法、`message` 缺失或为空、非标准字段）报错；其他语言缺 key / 多 key / 占位符数量不符只列为**警告**，不阻塞开发
 - 语言包以**静态 `import`** 引入而非运行时 fetch —— `t()` 必须同步返回，且 content script 读扩展资源要经过 `web_accessible_resources`，`_locales` 能否这样暴露并不确定
-- 语言包数据源与清单的 `__MSG_key__` 共用同一份文件，不存在两套文案
+- 语言包与清单里唯一还在用 `__MSG_` 的字段是简介（`__MSG_extDescription__`）—— 简介要翻译，共用同一份文件，不存在两套文案
+- **产品名不在语言包里**：品牌名各语言都不翻译，放进去只会让改名要同步四份，见下一节
 
 代码里一律用 `t('key')`，**不写中文字面量**；HTML 里的静态文案用 `data-i18n` / `data-i18n-title` / `data-i18n-label` / `data-i18n-placeholder` 标记，由 popup 启动时统一填充。
 
 **加一种新语言**只需改三处：`src/_locales/<code>/messages.json`（复制 `zh_CN`，它带 `description`）、`src/shared/i18n.ts` 的 `Locale`/`LOCALES`/`TABLES`、`popup.html` 的下拉项。`settings.ts` 用 `LOCALES.includes()` 校验，无需改动。
 
 语言包与图标的**源码在 `src/` 下**（与代码同一棵树），构建时由 `build.mjs` 复制到各目标的扩展根，产物里的目录名仍是浏览器约定的 `_locales/` 与 `icons/`。
+
+### 产品名只改一处
+
+产品名的**唯一出处是 `src/shared/brand.json`**（`name` 是显示名，`slug` 给发布包文件名用）。改名只改这一个文件，下面这些位置全部自动跟着变：
+
+| 派生位置 | 读取方 |
+|---|---|
+| manifest 的 `name` 与 `action.default_title` | `scripts/build/manifest.mjs` |
+| popup 的 `<title>` 与 `<h1>`（`data-ext-name` 标记） | `src/popup/popup.ts` |
+| 控制台日志前缀 `[产品名]` | `src/shared/brand.ts` 的 `LOG_PREFIX` |
+| 发布包文件名 `<slug>-1.0.0-chrome.zip` | `scripts/build/package.py` |
+
+文案里需要提到产品名的地方用 `$1` 占位符（`openSettingsHint`、`popupStep2`），调用 `t()` 时传入 `EXT_NAME`。
+
+**不要跟着一起改**：`md-reader-*` 类名、`data-md-reader-done`、`__mdReaderPerf`、storage 键、Firefox 的 `gecko.id`。它们是与显示名无关的稳定内部标识 —— 改了会让老用户的设置或样式失效；`gecko.id` 改了等于换一个扩展，老用户收不到更新。
 
 给翻译贡献者的详细说明见 [TRANSLATING.md](./TRANSLATING.md)。
 

@@ -14,6 +14,7 @@
 
 import { t } from '../shared/i18n';
 import { ensureBody } from '../shared/const';
+import { EXT_NAME } from '../shared/brand';
 
 /**
  * 齿轮。
@@ -68,7 +69,7 @@ function showHint(anchor: HTMLElement): void {
   const toast = document.createElement('div');
   toast.className = TOAST_CLASS;
   toast.setAttribute('role', 'status');
-  toast.textContent = t('openSettingsHint');
+  toast.textContent = t('openSettingsHint', [EXT_NAME]);
 
   // 贴在按钮下方，随按钮位置走（窄屏时按钮的 left/right 会变）
   const box = anchor.getBoundingClientRect();

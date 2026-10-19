@@ -1,5 +1,5 @@
 {
-  "name": "markdown-read",
+  "name": "just-markdown",
   "version": "1.0.0",
   "private": true,
   "description": "浏览器扩展：直接阅读本地与在线 Markdown 文档",

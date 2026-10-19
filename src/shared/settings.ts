@@ -185,7 +185,7 @@ export const DEFAULT_SETTINGS: ReaderSettings = {
 
   advancedOpen: false,
 
-  extraExtensions: '',
+  extraExtensions: 'txt',
 };
 
 /** 实际像素值，供 buildThemeCss 注入 CSS 变量 */

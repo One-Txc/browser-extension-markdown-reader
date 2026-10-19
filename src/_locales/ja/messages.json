@@ -1,7 +1,4 @@
 {
-  "extName": {
-    "message": "Markdown Read"
-  },
   "extDescription": {
     "message": "ローカルサーバー不要で、ブラウザ内でローカルの .md（Markdown）ファイルを読めるようにします。"
   },
@@ -57,7 +54,7 @@
     "message": "設定"
   },
   "openSettingsHint": {
-    "message": "設定パネルを開けませんでした。ブラウザのツールバーにある Markdown Read アイコンをクリックしてください。"
+    "message": "設定パネルを開けませんでした。ブラウザのツールバーにある $1 アイコンをクリックしてください。"
   },
   "viewRendered": {
     "message": "プレビューに戻る"
@@ -299,7 +296,7 @@
     "message": "アドレスバーで次を開いてください："
   },
   "popupStep2": {
-    "message": "「Markdown Read」を見つけて、「ファイル URL へのアクセスを許可する」をオンにします"
+    "message": "「$1」を見つけて、「ファイル URL へのアクセスを許可する」をオンにします"
   },
   "popupStep3": {
     "message": ".md のページに戻って F5 で再読み込みします"
