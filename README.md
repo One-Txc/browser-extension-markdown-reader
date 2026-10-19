@@ -410,7 +410,7 @@ npm run bump            # 只把版本号第三位 +1（release 内部会调用�
 1. **工作区必须干净**（含未跟踪文件），否则直接拒绝并列出来 —— 发布出去的 zip 必须对应一个有提交记录的代码状态。先提交，再发布
 2. 版本号第三位 +1（`npm version patch --no-git-tag-version`）
 3. 只提交 `package.json` + `package-lock.json`，提交信息 `chore(release): v1.0.1`；**不打 tag、不 push**
-4. 构建两个目标 → 打包到 `output/dist/`
+4. 构建两个目标 → 打包到 `output/dist/`（打包前先清空该目录里的历史 zip）
 5. 构建或打包失败 → 自动 `git reset --hard HEAD~1` 撤回那次版本提交，修好后重跑
 
 「先提交、再构建」是有意的：这样 zip 对应的就是那个提交（HEAD），将来回滚或对账某个商店版本的代码时能对上，而不是「提交里的代码 ≠ 打包出去的代码」。代价是失败时要撤一次提交 —— 预检已保证工作区干净，那一步只会撤掉本次发布产生的提交。
@@ -421,9 +421,11 @@ npm run bump            # 只把版本号第三位 +1（release 内部会调用�
 
 ```
 output/dist/
-├─ just-markdown-1.0.0-chrome.zip      ← 上传 Chrome Web Store
-└─ just-markdown-1.0.0-firefox.zip     ← 上传 Firefox Add-ons
+├─ just-markdown-1.0.1-chrome.zip      ← 上传 Chrome Web Store
+└─ just-markdown-1.0.1-firefox.zip     ← 上传 Firefox Add-ons
 ```
+
+**每次打包前会先清空 `output/dist/` 里的历史 zip** —— 商店上传是人工操作，目录里留着旧版本、甚至改名前的包，很容易传错；而新包名带版本号，旧包永远不会被同名覆盖，只会越攒越多。只跑单个目标（`package.py chrome`）时同样会清空整个目录，另一个目标的包需要重新打。
 
 `scripts/build/package.py` 会**直接压缩扩展根**，并拦截不该出现在包里的东西（`node_modules`、`src`、`scripts`、`testMd`、`docs`、`.ts`/`.mjs`/`.py`/`.map`），出现即构建失败。
 

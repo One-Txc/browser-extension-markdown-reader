@@ -85,7 +85,8 @@ npm run bump          # 只把版本号第三位 +1（release 内部会调用）
 2. 版本号第三位 +1（`npm version patch --no-git-tag-version`）
 3. 只提交 `package.json` + `package-lock.json`，提交信息 `chore(release): v1.0.1`。
    **不打 tag、不 push**
-4. 构建两个目标 → 打包到 `output/dist/`
+4. 构建两个目标 → 打包到 `output/dist/`（**打包前会清空该目录里的历史 zip**，
+   免得上传时拿错旧版本或改名前的包）
 5. 构建或打包失败 → 自动 `git reset --hard HEAD~1` 撤回那次版本提交，修好后重跑
 
 **版本号唯一来源是 `package.json` 的 `version`**，清单与 zip 文件名都从它派生。

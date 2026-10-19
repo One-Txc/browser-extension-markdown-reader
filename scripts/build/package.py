@@ -11,7 +11,9 @@
 把开发文件混进发布包既会撑大体积，也可能触发商店审核的额外询问。
 
 zip 与扩展根放在同一个 output/ 下，是为了「加载用」和「上传用」两套东西
-集中在一处，找起来不用来回切换目录。
+集中在一处，找起来不用来回切换目录。每次打包前会**清空 output/dist 里的历史
+压缩包**：商店上传是人工操作，目录里躺着旧版本（甚至改名前的包）很容易传错，
+而新包名里带版本号，旧包永远不会被同名覆盖。
 
 版本号的唯一来源是 package.json（见 scripts/build/manifest.mjs 的注释），
 `npm run release` 会先用 `npm version patch` 把它 +1 再构建。所以这里要核对
@@ -88,6 +90,26 @@ def collect(root: Path) -> list[Path]:
     return files
 
 
+def clean_archives() -> None:
+    """打包前清空 output/dist 里的历史压缩包。
+
+    商店上传是人工操作：目录里留着旧版本、甚至改名前的包，很容易传错；
+    而新包名里带版本号，旧包永远不会被同名覆盖，只会越攒越多。
+    所以每次打包一律先清空 —— 只删 *.zip，不碰目录里别的东西。
+    """
+    if not OUT_DIR.exists():
+        return
+
+    old = sorted(OUT_DIR.glob('*.zip'))
+    for path in old:
+        path.unlink()
+
+    if old:
+        print(f'  清理 {OUT_DIR}：删除 {len(old)} 个历史压缩包')
+        for path in old:
+            print(f'      {path.name}')
+
+
 def package(target: str) -> Path:
     root = Path(TARGETS[target])
     if not (root / 'manifest.json').exists():
@@ -129,6 +151,9 @@ def main() -> None:
     unknown = [t for t in wanted if t not in TARGETS]
     if unknown:
         raise SystemExit(f'✗ 未知目标 {unknown}，可选：{list(TARGETS)}')
+
+    # 先清历史包再打新包：只在循环外做一次，否则第二个目标会把第一个刚出的包删掉
+    clean_archives()
 
     for target in wanted:
         package(target)
