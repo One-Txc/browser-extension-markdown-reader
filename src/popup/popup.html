@@ -103,8 +103,12 @@
 </head>
 <body>
   <!-- 产品名由 popup.ts 从 brand.json 填入（data-ext-name），改名不必改这里 -->
-  <h1 data-ext-name></h1>
+  <h1 id="brand" data-ext-name></h1>
 
+  <!-- 未开启「允许访问文件网址」时，这里显示开启权限的引导，下面的配置区整块隐藏 -->
+  <div id="guide" hidden></div>
+
+  <div id="config">
   <fieldset>
     <legend data-i18n="popupBasic">基本设置</legend>
 
@@ -221,6 +225,7 @@
   <div id="detail"></div>
   <div class="meta" id="version"></div>
   <div class="meta" id="meta"></div>
+  </div>
 
   <!-- 构建时 popup.html 与 popup.js 会被放进同一个产物目录，所以这里是同目录引用 -->
   <script src="popup.js"></script>

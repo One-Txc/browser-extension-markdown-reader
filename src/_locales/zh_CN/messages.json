@@ -380,24 +380,24 @@
     "description": "绿色状态条下方的一行小字，告诉用户改设置不用刷新页面。"
   },
   "popupInactive": {
-    "message": "尚未在本地 Markdown 页面生效",
-    "description": "黄色警告条的主文字：说明扩展还不能处理本地 md 文件。"
+    "message": "还没打开过本地 Markdown 文件",
+    "description": "黄色状态条的主文字：文件权限已经开了（没开的话根本进不到这一屏），只是扩展还没在任何本地 md 页面上跑过。新装用户常见。"
   },
   "popupInactiveReason": {
-    "message": "常见原因是缺少文件访问权限。",
-    "description": "黄色警告条的副文字，紧跟在主文字后面，说明最可能的原因。下面会列出解决步骤。"
+    "message": "在浏览器里直接打开任意 .md 文件，就能看到渲染后的效果。",
+    "description": "黄色状态条的副文字，告诉用户下一步做什么。注意：不要在这里再讲如何开启权限 —— 那由权限引导页负责，走到这里说明权限已开。"
   },
   "popupStep1": {
-    "message": "在地址栏打开：",
-    "description": "解决步骤第 1 步的文字，后面会紧跟一个 chrome://extensions 链接。请保留末尾的冒号。"
+    "message": "打开扩展详情页",
+    "description": "开启文件权限引导的第 1 步。后面紧跟着一串可点击的 chrome://extensions/?id=… 地址（点了直接跳转）和「复制」按钮。★ popup 与安装后打开的权限引导页共用这一条。"
   },
   "popupStep2": {
-    "message": "找到「$1」，打开「允许访问文件网址」",
-    "description": "解决步骤第 2 步：在扩展管理页里为本扩展打开文件访问开关。请沿用本语言习惯的引号样式。$1 是扩展名称（品牌名，不译，由代码从 src/shared/brand.json 传入）。"
+    "message": "打开「允许访问文件网址」",
+    "description": "引导第 2 步：在扩展管理页里为本扩展打开文件访问开关。★ 不要写「找到某某扩展」——第 1 步给出的地址已经直达本扩展的详情页。请沿用本语言习惯的引号样式，且不要使用 $1 占位符（各语言都不再提产品名）。"
   },
   "popupStep3": {
-    "message": "回到 .md 页面按 F5 刷新",
-    "description": "解决步骤第 3 步：回到 Markdown 页面刷新。.md 与 F5 不要翻译。"
+    "message": "返回并且刷新页面",
+    "description": "引导第 3 步：权限开完之后，回到原来的页面刷新一下才会生效（不开这一步，用户会以为权限没起作用）。措辞保持简短，不要出现 F5 这类按键名。"
   },
   "popupNever": {
     "message": "从未",
@@ -410,5 +410,62 @@
   "popupVersion": {
     "message": "v$1 · 构建于 $2",
     "description": "弹窗最底部一行，显示版本号与构建时间。$1 是版本号（如 0.1.0），$2 是构建时间（如 2026/10/10 15:17）。v 与间隔号请保留。"
+  },
+
+  "permissionTitle": {
+    "message": "请开启「访问文件网址」权限",
+    "description": "开启权限引导的标题，出现在 popup 与安装后打开的引导页顶部。★ 不要带产品名（产品名由页面标题单独显示，标题太长会挤成三行）；也不要解释原因。标题末尾不加句号。"
+  },
+  "permissionCopy": {
+    "message": "复制",
+    "description": "地址旁边的备用按钮：把 chrome://extensions/?id=… 复制到剪贴板（防止个别版本不允许直接跳转）。极短，两个字。"
+  },
+  "permissionOpenSettings": {
+    "message": "点击打开扩展详情页",
+    "description": "可点击地址按钮的无障碍标签与悬停提示（按钮上显示的是那串 chrome://extensions 地址本身）。说明点它会跳转，不要超过十个字。"
+  },
+  "permissionOpenFailed": {
+    "message": "打不开？地址已复制，请粘贴到地址栏",
+    "description": "点击地址但被浏览器拦下时的提示（此时地址已自动复制到剪贴板，页面上的「复制」按钮也还在）。给出下一步动作，不要只写「失败」。"
+  },
+  "permissionCopied": {
+    "message": "已复制",
+    "description": "点击复制按钮后 1.5 秒内显示在按钮右侧的反馈文字。请用短词。"
+  },
+  "permissionRecheck": {
+    "message": "重新检测",
+    "description": "引导底部的按钮：用户开完权限后点它重新检查，已开启就直接进入设置页。四个字以内。"
+  },
+  "permissionChecking": {
+    "message": "检测中…",
+    "description": "点「重新检测」后、结果回来之前，按钮上临时显示的文案（随后还原成「重新检测」）。极短，四个字以内，末尾用省略号。"
+  },
+  "permissionStillOff": {
+    "message": "仍未开启，回去检查一下那个开关",
+    "description": "点「重新检测」后发现权限还没开时，按钮右侧出现的一句提示，3 秒后自动消失。必须给出下一步动作，不要只写「失败」。"
+  },
+  "permissionOpenInTab": {
+    "message": "查看完整说明",
+    "description": "权限引导里「重新检测」按钮上方的一行文字链：把同一份说明在独立标签页打开（popup 太窄，标签页还能一直开着等用户去开权限）。用文字链样式，不是主按钮；六个字以内。"
+  },
+  "permissionScreenshotAlt": {
+    "message": "扩展详情页里「允许访问文件网址」开关的位置",
+    "description": "权限引导页里示意图的替代文字（alt）：屏幕阅读器会读它，图片加载失败时也会显示。描述图里指出的那个开关，不要写「截图」两个字。"
+  },
+  "permissionPreviewOpen": {
+    "message": "点击放大查看",
+    "description": "示意图可以点开放大：这句同时用作图片按钮的无障碍标签和悬停提示。八个字以内。"
+  },
+  "permissionPreviewClose": {
+    "message": "关闭放大预览",
+    "description": "放大层右上角关闭按钮的无障碍标签（按钮上显示的是 × 符号）。八个字以内。"
+  },
+  "permissionGranted": {
+    "message": "已开启文件访问权限",
+    "description": "引导页检测到权限已经打开时显示的标题，用来替代引导步骤。一行以内，不超过 10 个汉字。"
+  },
+  "permissionGrantedHint": {
+    "message": "现在可以直接打开本地 .md 文件了。设置项在浏览器工具栏的 $1 图标里。",
+    "description": "权限已开启时的说明文字。$1 是扩展名称（品牌名，不译，由代码从 src/shared/brand.json 传入）。"
   }
 }

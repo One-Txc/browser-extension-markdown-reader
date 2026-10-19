@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title data-ext-name></title>
+  <style>
+    /*
+     * 引导页外壳：白卡片 + 浅灰背景，让内容成为唯一的焦点。
+     * 引导内容本身的样式在 permission-guide.css（与 popup 共用），这里只管页面容器。
+     */
+    body {
+      margin: 0;
+      padding: 56px 24px;
+      background: #f6f8fa;
+      font: 14px/1.7 system-ui, "Segoe UI", "Microsoft YaHei", sans-serif;
+      color: #1f2328;
+    }
+    .page {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    #guide {
+      padding: 26px 28px;
+      background: #fff;
+      border: 1px solid #d0d7de;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(27, 31, 36, 0.06);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <!-- 页面上不显示产品名：标题只说要做的事（标签页标题里仍有产品名） -->
+    <div id="guide"></div>
+  </main>
+
+  <!-- 构建时 welcome.html 与 welcome.js 会落在同一个产物目录，所以这里同目录引用 -->
+  <script src="welcome.js"></script>
+</body>
+</html>

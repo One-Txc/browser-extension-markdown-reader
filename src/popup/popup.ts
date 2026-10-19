@@ -1,18 +1,18 @@
 /**
  * popup
  *
- * 三块内容：
- *   1. 配色：颜色模式 + 浅色/深色代码配色
- *   2. 排版：字号、正文宽度、侧边目录开关
- *   3. 权限状态：告诉用户「允许访问文件网址」这个开关开没开
+ * 内容分两块：
+ *   1. 已授权时：配色 / 排版 / 语言 / 侧边目录等设置项（见下面的 render）
+ *   2. 没开「允许访问文件网址」时：整页只显示开启权限的引导（showPermissionGate）
+ *
+ * ★ 为什么要门禁、而不是「提示一下、配置照旧」：没有这个权限，content script
+ *   根本不会注入，配置项对本地文档一个都不生效。引导内容与安装后打开的那一页共用
+ *   permission-guide.ts，两处只有容器宽度不同。
+ *
+ * ★ 判据是 chrome.extension.isAllowedFileSchemeAccess —— 它只存在于扩展页面，
+ *   content script 里没有（M0 实测）。背景见 src/shared/permission.ts。
  *
  * 所有设置改完都会立即通知当前标签页重新套用，无需刷新页面。
- *
- * 关于权限检测：不用 chrome.extension.isAllowedFileSchemeAccess ——
- * M0 实测该 API 在 content script 中不存在。改用「content script 注入成功后上报」
- * 的 storage 标志，逻辑上更干净：脚本能注入进来，本身就是权限已开的证明。
- *
- * 注意：扩展不允许导航到 chrome:// 协议，所以设置页地址只能作为文本让用户复制。
  */
 
 import {
@@ -30,6 +30,8 @@ import { themesFor, type Appearance } from '../render/theme-catalog';
 import type { Locale } from '../shared/i18n';
 import { setLocale, t } from '../shared/i18n';
 import { EXT_NAME } from '../shared/brand';
+import { isFileAccessAllowed, openExtensionSettings } from '../shared/permission';
+import { renderPermissionGuide } from './permission-guide';
 
 function pick<T extends HTMLElement>(id: string): T {
   return document.getElementById(id) as T;
@@ -52,6 +54,9 @@ const statusEl = pick<HTMLElement>('status');
 const detailEl = pick<HTMLElement>('detail');
 const metaEl = pick<HTMLElement>('meta');
 const versionEl = pick<HTMLElement>('version');
+const guideEl = pick<HTMLElement>('guide');
+const configEl = pick<HTMLElement>('config');
+const brandEl = pick<HTMLElement>('brand');
 
 /**
  * 版本与构建时间。
@@ -66,8 +71,6 @@ function renderVersion(): void {
     __BUILD_TIME__,
   ]);
 }
-
-const SETTINGS_URL = 'chrome://extensions/?id=' + chrome.runtime.id;
 
 /* ---------------------------------------------------------------- 品牌名 */
 
@@ -214,21 +217,25 @@ async function renderPermission(): Promise<void> {
     fileAccessLastSeen: 0,
   });
 
+  /*
+   * 走到这里说明「允许访问文件网址」已经开着（否则整个配置区被门禁挡住），
+   * 所以这里只区分「已经在本地 md 上跑过」和「装了还没打开过 md」，
+   * 不再教用户怎么开权限 —— 那是 permission-guide 的活。
+   */
+  const hint = document.createElement('div');
+  hint.className = 'hint';
+
   if (data.fileAccessProven) {
     statusEl.className = 'status ok';
-    statusEl.innerHTML = `<b>✓ ${t('popupActive')}</b>`;
-    detailEl.innerHTML = `<div class="hint">${t('popupActiveHint')}</div>`;
+    statusEl.textContent = `✓ ${t('popupActive')}`;
+    hint.textContent = t('popupActiveHint');
   } else {
     statusEl.className = 'status bad';
-    statusEl.innerHTML = `<b>${t('popupInactive')}</b><br>${t('popupInactiveReason')}`;
-    detailEl.innerHTML = [
-      '<ol>',
-      `<li>${t('popupStep1')}<br><code>${SETTINGS_URL}</code></li>`,
-      `<li>${t('popupStep2', [EXT_NAME])}</li>`,
-      `<li>${t('popupStep3')}</li>`,
-      '</ol>',
-    ].join('');
+    statusEl.textContent = t('popupInactive');
+    hint.textContent = t('popupInactiveReason');
   }
+
+  detailEl.replaceChildren(hint);
 
   const last = data.fileAccessLastSeen
     ? new Date(data.fileAccessLastSeen as number).toLocaleString()
@@ -274,10 +281,31 @@ async function render(settings: ReaderSettings): Promise<void> {
   await renderPermission();
 }
 
-async function init(): Promise<void> {
-  await render(await loadSettings());
+/** 没开文件访问权限时只显示引导：此时配置项对本地文档一个都不生效 */
+function showPermissionGate(): void {
+  // 门禁态不显示产品名：引导页上也不显示，两处保持一致，标题只说要做什么
+  brandEl.hidden = true;
+  configEl.hidden = true;
+  guideEl.hidden = false;
 
-  // 事件只绑一次，与 render 分开
+  renderPermissionGuide(guideEl, {
+    // 能直接跳到扩展详情页最好；被浏览器拦下时它会自动复制地址
+    onOpenSettings: openExtensionSettings,
+    onRecheck: async () => {
+      if (!(await isFileAccessAllowed())) return false;
+      // 权限已经开了：重新加载这一屏，直接进配置页
+      window.location.reload();
+      return true;
+    },
+    // popup 太窄、且焦点一离开就关了：同一份说明可以在标签页里打开，边看边开权限
+    onOpenInTab: () => {
+      void chrome.tabs.create({ url: chrome.runtime.getURL('build/welcome.html') });
+    },
+  });
+}
+
+/** 事件只绑一次，与 render 分开（门禁态下不绑 —— 那些控件根本没显示） */
+function bindEvents(): void {
   modeEl.addEventListener('change', () => void save({ mode: modeEl.value as ThemeMode }));
   lightEl.addEventListener('change', () => void save({ lightTheme: lightEl.value }));
   darkEl.addEventListener('change', () => void save({ darkTheme: darkEl.value }));
@@ -316,6 +344,21 @@ async function init(): Promise<void> {
   extraExtensionsEl.addEventListener('change', () =>
     void save({ extraExtensions: extraExtensionsEl.value })
   );
+}
+
+async function init(): Promise<void> {
+  // 门禁：没开「允许访问文件网址」时脚本不会注入，配置项全都用不上，先解决权限
+  if (!(await isFileAccessAllowed())) {
+    showPermissionGate();
+    return;
+  }
+
+  configEl.hidden = false;
+  guideEl.hidden = true;
+  brandEl.hidden = false;
+
+  await render(await loadSettings());
+  bindEvents();
 }
 
 void init();

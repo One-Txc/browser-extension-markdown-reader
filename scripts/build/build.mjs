@@ -120,6 +120,8 @@ const entries = [
   { in: 'src/content.ts', out: `${outDir}/content.js` },
   { in: 'src/background.ts', out: `${outDir}/background.js` },
   { in: 'src/popup/popup.ts', out: `${outDir}/popup.js` },
+  // 权限引导页：安装完成后由 Service Worker 打开，与 popup 共用 permission-guide
+  { in: 'src/popup/welcome.ts', out: `${outDir}/welcome.js` },
   // Mermaid 单独打包：只在页面真的含 ```mermaid 时按需注入，不拖累常规页面
   { in: 'src/render/mermaid-entry.ts', out: `${outDir}/mermaid.js` },
 ];
@@ -136,8 +138,13 @@ await mkdir(outDir, { recursive: true });
 // 清单也由脚本生成：两个平台的字段差异集中在 manifest.mjs，避免两份静态 JSON 漂移
 await writeFile(manifestPath, JSON.stringify(buildManifest(target), null, 2) + '\n', 'utf8');
 
-// popup 的 HTML 一并产出到产物目录，这样清单里可以统一写相对路径
+// popup 与权限引导页的 HTML 一并产出到产物目录，这样清单里可以统一写相对路径
 await cp('src/popup/popup.html', `${outDir}/popup.html`);
+await cp('src/popup/welcome.html', `${outDir}/welcome.html`);
+
+// 引导页里的示意图：整目录复制，路径与源码保持一致（welcome.html 用相对路径引用）。
+// 扩展自己的页面读这些资源不需要 web_accessible_resources —— 那个只对网页生效。
+await cp('src/assets', `${outDir}/assets`, { recursive: true });
 
 /*
  * 语言包与图标都必须位于**扩展根目录**：浏览器靠前者解析清单里的 __MSG_ 占位，

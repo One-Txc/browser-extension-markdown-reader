@@ -93,6 +93,8 @@ output/
 3. ⚠️ **详情 → 打开「允许访问文件网址」** —— 不做这一步，扩展对本地文件**完全不会生效**，页面上也不会有任何提示（脚本根本没被注入）
 4. 打开任意 `.md` 文件（已开着的按 `F5`）
 
+> 正式安装（商店版）时这一步不用自己记：装完会自动打开一个引导页，点过图标而权限还没开时，popup 也只会显示这段引导、不显示设置项。判据是 `chrome.extension.isAllowedFileSchemeAccess()`（见 `src/shared/permission.ts`）。
+
 **Firefox**
 
 1. 打开 `about:debugging#/runtime/this-firefox` → **临时载入附加组件** → 选 **`output/MV2/manifest.json`**
@@ -339,6 +341,15 @@ content 发现 .md-reader-mermaid
 唯一的例外是**界面语言**：文案是在创建 DOM 的那一刻 `t()` 出来的，已有文本节点不会重新求值（样式能「活」是因为走 CSS 变量与 class）。所以切语言时用保存的原文重建整份内容。
 
 主题 CSS 分两层：`github-markdown-css` 给正文观感，highlight.js 主题给代码配色。**`github-markdown-css` 把正文颜色硬编码在 `.markdown-body` 上、不读 CSS 变量**，所以五套护眼配色除了改变量，还需要 `app.css` 里一段只对护眼配色生效的覆盖规则（选择器带 `[data-md-reader-eye-care]`）。代码块背景统一走 `--md-code-bg`：highlight.js 的浅色主题背景普遍是 `#fff`/`#fafafa`，落在白色文档上几乎看不出代码块边界。
+
+### 10. 首次使用必须先开文件权限：安装时引导 + popup 门禁
+
+「允许访问文件网址」只能由用户在 `chrome://extensions` 手动打开，**没有任何 API 能改它**（清单里的 `file:///*` 只是申请）。而没开这个开关时 content script 根本不会注入 —— 页面里连提示都留不下一个字符。所以只在两个能触达用户的地方做：
+
+- **安装完成**：`onInstalled` 里打开扩展自己的 `build/welcome.html`（`chrome-extension://` 页面允许 `tabs.create`，`chrome://` 不允许）。这一页是标签页，会**轮询权限状态**，用户去开完开关切回来就自动变成「已授权」—— popup 做不到，焦点一离开就关了
+- **点图标**：popup 先查权限，没开就整块隐藏配置、只显示同一份引导（`permission-guide.ts` 两处共用），开了才进设置页
+
+判据是 `chrome.extension.isAllowedFileSchemeAccess()`：它只存在于**扩展页面**（content script 里没有，M0 实测）。没有它的浏览器（Firefox）视为已授权，不能把人卡在 Chrome 的引导页上。**不做「不再提示」** —— 权限没开时设置项对本地文档一个都不生效，藏起来只会让人更困惑。
 
 ---
 

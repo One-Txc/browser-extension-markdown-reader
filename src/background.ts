@@ -1,13 +1,15 @@
 /**
  * Service Worker
  *
- * 三个职责：
+ * 四个职责：
  *   1. 记录「文件访问权限已被证明」（content script 成功注入即证明）
  *      —— 因为 chrome.extension.isAllowedFileSchemeAccess 在 content script 中不可用（M0 实测）
  *   2. 兜底读取本地文件，并做编码嗅探
  *      —— content script 受页面 CORS 约束读不了 file://，但 SW 有 host_permissions 可以
  *   3. 列举目录内容（「文件夹」面板的数据来源）
  *      —— 同样是 CORS 的原因，必须由 SW 发起
+ *   4. 安装完成后打开权限引导页（没开「允许访问文件网址」时脚本压根不会注入，
+ *      页面里无法提示，只能在安装这一刻主动告知）
  */
 
 import { parseDirectoryIndex, type DirEntry } from './shared/directory';
@@ -15,6 +17,7 @@ import { setLocale, t } from './shared/i18n';
 import { loadSettings } from './shared/settings';
 import type { Locale } from './shared/i18n';
 import { LOG_PREFIX } from './shared/brand';
+import { probeFileAccess } from './shared/permission';
 
 /*
  * Service Worker 也要知道当前语言 —— 它产生的错误文案会直接显示给用户。
@@ -28,6 +31,31 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'sync' || !changes.locale) return;
   setLocale((changes.locale.newValue as Locale) ?? 'auto');
 });
+
+/*
+ * 安装完成后主动打开权限引导页。
+ *
+ * ★ 没有「允许访问文件网址」时 content script 根本不会注入，页面上做不出任何提示；
+ *   popup 又得用户自己想起来去点。安装完成这一刻是唯一能主动告诉用户的时机。
+ *
+ * ★ 只听 reason === 'install'：更新、浏览器升级都不该再弹。
+ * ★ 已经开着权限就跳过（重装、开发期「加载已解压的扩展程序」都会走到这里）；
+ *   查不到结果（没有该 API 的环境）按「可能需要引导」处理，宁可多弹一次。
+ */
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason !== 'install') return;
+  void openPermissionGuide();
+});
+
+async function openPermissionGuide(): Promise<void> {
+  if ((await probeFileAccess()) === true) return;
+
+  try {
+    await chrome.tabs.create({ url: chrome.runtime.getURL('build/welcome.html') });
+  } catch (err) {
+    console.warn(`${LOG_PREFIX} 打开权限引导页失败：`, err);
+  }
+}
 
 /** 记录最近一次收到注入上报的时间，供 popup 判断权限状态 */
 chrome.runtime.onMessage.addListener(

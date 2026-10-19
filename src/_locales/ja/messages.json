@@ -287,19 +287,19 @@
     "message": "設定の変更は現在のページにすぐ反映されます。再読み込みは不要です。"
   },
   "popupInactive": {
-    "message": "まだローカルの Markdown ページで有効になっていません"
+    "message": "ローカルの Markdown ファイルをまだ開いていません"
   },
   "popupInactiveReason": {
-    "message": "よくある原因は、ファイルへのアクセス権限がないことです。"
+    "message": "ブラウザで任意の .md ファイルを開くと、レンダリングされた表示になります。"
   },
   "popupStep1": {
-    "message": "アドレスバーで次を開いてください："
+    "message": "拡張機能の詳細ページを開く"
   },
   "popupStep2": {
-    "message": "「$1」を見つけて、「ファイル URL へのアクセスを許可する」をオンにします"
+    "message": "「ファイル URL へのアクセスを許可する」をオンにします"
   },
   "popupStep3": {
-    "message": ".md のページに戻って F5 で再読み込みします"
+    "message": "戻ってページを再読み込みします"
   },
   "popupNever": {
     "message": "なし"
@@ -309,5 +309,48 @@
   },
   "popupVersion": {
     "message": "v$1 · ビルド日 $2"
+  },
+
+  "permissionTitle": {
+    "message": "「ファイル URL へのアクセスを許可する」をオンにしてください"
+  },
+  "permissionCopy": {
+    "message": "コピー"
+  },
+  "permissionCopied": {
+    "message": "コピーしました"
+  },
+  "permissionOpenSettings": {
+    "message": "クリックで拡張機能の詳細ページを開く"
+  },
+  "permissionOpenFailed": {
+    "message": "開けませんでした。アドレスはコピー済みです。アドレスバーに貼り付けてください"
+  },
+  "permissionRecheck": {
+    "message": "再確認"
+  },
+  "permissionChecking": {
+    "message": "確認中…"
+  },
+  "permissionStillOff": {
+    "message": "まだオンになっていません。スイッチをもう一度確認してください"
+  },
+  "permissionOpenInTab": {
+    "message": "詳しい説明を見る"
+  },
+  "permissionScreenshotAlt": {
+    "message": "拡張機能の詳細ページにある「ファイル URL へのアクセスを許可する」スイッチの位置"
+  },
+  "permissionPreviewOpen": {
+    "message": "クリックで拡大表示"
+  },
+  "permissionPreviewClose": {
+    "message": "拡大表示を閉じる"
+  },
+  "permissionGranted": {
+    "message": "ファイルへのアクセス権限は有効です"
+  },
+  "permissionGrantedHint": {
+    "message": "ローカルの .md ファイルを直接開けるようになりました。設定はブラウザのツールバーにある $1 アイコンから開けます。"
   }
 }

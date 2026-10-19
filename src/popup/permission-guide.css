@@ -1,0 +1,308 @@
+/*
+ * 权限引导的样式。
+ *
+ * ★ 单独成文件、由 permission-guide.ts 注入：同一份内容要在两处出现 ——
+ *   popup（340px 宽）和安装后打开的引导页（整页标签）—— 样式只维护这一份。
+ *   宽度差异靠弹性布局（flex-wrap）自然适配；外层的卡片/留白由各自页面决定。
+ *
+ * ★ 重点是「让人一眼知道现在该干什么」：步骤用带序号的圆点，地址做成可点的链接，
+ *   可点的东西（复制 / 重新检测）明确区分主次。
+ *
+ * ★ 配色只在一个地方表达「还没配置好」：标题与主按钮用砖红（#d34a4c / #c23b3e）。
+ *   步骤区保持中性灰（序号底色 #f3f4f6、数字 #4b5563），不用绿色也不用红色 ——
+ *   绿色在用户眼里等于「已经就绪」，而整片红色会让步骤看起来像报错清单。
+ *   #c23b3e 比 #d34a4c 略深，是为了让白字按钮达到 4.5:1 对比度；
+ *   绿色只保留给「已授权」那个状态（见文件末尾 .md-guide--granted），那是真的成功。
+ */
+
+.md-guide {
+  font: 13px/1.65 system-ui, "Segoe UI", "Microsoft YaHei", sans-serif;
+  color: #1f2328;
+}
+
+.md-guide h2 {
+  margin: 0 0 14px;
+  font-size: 16px;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+/* 未授权时的提示标题：用砖红色，比正文更显眼，又不至于像报错 */
+.md-guide-title {
+  color: #d34a4c;
+}
+
+/* ---------- 步骤：左侧序号圆点 ---------- */
+
+.md-guide-steps {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  counter-reset: md-guide-step;
+}
+
+.md-guide-steps > li {
+  counter-increment: md-guide-step;
+  position: relative;
+  padding-left: 26px;
+  margin-bottom: 12px;
+}
+
+.md-guide-steps > li:last-child {
+  margin-bottom: 0;
+}
+
+.md-guide-steps > li::before {
+  content: counter(md-guide-step);
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  /* 步骤序号用中性灰：不参与告警配色，避免整片红色像报错清单 */
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* 步骤里要用户点开的那个开关名：只加粗，不上色（步骤区保持中性） */
+.md-guide-key {
+  color: #24292f;
+  font-weight: 600;
+}
+
+/* ---------- 地址 + 复制按钮 ---------- */
+
+.md-guide-url {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/*
+ * 地址就是一行链接文字：不做外框、不加底色、不留内边距 ——
+ * 它不该看起来像按钮，而该像正文里的一串可点地址（下划线 + 等宽字体）。
+ */
+.md-guide-url-open {
+  display: inline;
+  font: 12px/1.7 ui-monospace, Consolas, monospace;
+  color: #0969da;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+  cursor: pointer;
+}
+
+.md-guide-url-open:hover {
+  color: #0550ae;
+}
+
+.md-guide-url-open:focus-visible {
+  outline: 2px solid #0969da;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.md-guide-url-open code {
+  font: inherit;
+  color: inherit;
+  background: none;
+  padding: 0;
+}
+
+.md-guide-url-open-icon {
+  margin-left: 2px;
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.md-guide-url-open.is-busy {
+  opacity: 0.6;
+}
+
+.md-guide-url-open.is-disabled {
+  color: #57606a;
+  text-decoration: none;
+  cursor: default;
+}
+
+/* 底部操作区：说明链接一行在上，按钮一行在下 */
+.md-guide-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.md-guide-buttons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.md-guide-btn {
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+  background: #fff;
+  color: #24292f;
+  cursor: pointer;
+}
+
+.md-guide-btn:hover:not(:disabled) {
+  background: #f6f8fa;
+  border-color: #8c959f;
+}
+
+.md-guide-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* 主按钮：同样走砖红，和标题/序号一套配色 */
+.md-guide-btn-primary {
+  border-color: #a93336;
+  background: #c23b3e;
+  color: #fff;
+}
+
+.md-guide-btn-primary:hover:not(:disabled) {
+  background: #a93336;
+  border-color: #a93336;
+}
+
+/* 紧跟在地址后面的小按钮（复制）：更矮更窄，避免抢正文的注意力 */
+.md-guide-btn-sm {
+  padding: 1px 8px;
+  font-size: 11px;
+  line-height: 1.6;
+  border-radius: 4px;
+}
+
+/* 次要动作（比如「在标签页中打开」）：做成文字链，别和主按钮抢注意力 */
+.md-guide-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: #0969da;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---------- 反馈文字 ---------- */
+
+/* 「已复制」这类即时应答：用蓝色而不是绿色 —— 告警页面上不放绿色 */
+.md-guide-copied {
+  color: #0969da;
+  font-size: 12px;
+}
+
+.md-guide-note {
+  color: #9a6700;
+  font-size: 12px;
+}
+
+/* ---------- 示意图（第 2 步下方，可点击放大） ---------- */
+
+.md-guide-shot {
+  margin-top: 10px;
+}
+
+.md-guide-shot-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.md-guide-shot-open:focus-visible {
+  outline: 2px solid #0969da;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.md-guide-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  background: #f6f8fa;
+}
+
+/* ---------- 放大层 ---------- */
+
+.md-guide-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background: rgba(0, 0, 0, 0.86);
+  cursor: zoom-out;
+}
+
+.md-guide-lightbox img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+
+.md-guide-lightbox-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  font-size: 20px;
+  line-height: 1;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.md-guide-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+/* ---------- 已授权状态 ---------- */
+
+.md-guide--granted h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1a7f37;
+}
+
+.md-guide--granted h2::before {
+  content: "✓";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1f883d;
+  color: #fff;
+  font-size: 12px;
+}
