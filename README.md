@@ -379,6 +379,10 @@ npm run check           # typecheck + test + build(chrome)，提交前跑这个
 npm run testdata        # 重新生成 testMd/ 的测试图片、GBK 文件、3.4MB 超大文件
 npm run locales         # 校验语言包
 npm run screenshots     # 把 截图/<语言>/ 里的原图裁成 16:10 并缩成商店尺寸
+
+npm run release         # 升版本 → 提交 → 构建两个目标 → 打包成 zip
+npm run release:full    # 先跑 typecheck / test / locales，再执行上面那步
+npm run bump            # 只把版本号第三位 +1（release 内部会调用）
 ```
 
 **注意构建清理范围**：`build.mjs` 只删当前目标的扩展根（`output/MV3` 或 `output/MV2`），**不能改成清空整个 `output/`** —— `build:all` 会连续构建两次，第二次会把第一次的产物一起删掉。
