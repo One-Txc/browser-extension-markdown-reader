@@ -10,10 +10,19 @@
     "message": "アウトライン"
   },
   "tabFolder": {
-    "message": "フォルダ"
+    "message": "ファイル"
+  },
+  "tabFavorites": {
+    "message": "お気に入り"
+  },
+  "tabHistory": {
+    "message": "履歴"
   },
   "tocCaret": {
     "message": "サブ見出しを展開 / 折りたたむ"
+  },
+  "outlineEmpty": {
+    "message": "この文書には見出しがありません"
   },
   "tocBulkAll": {
     "message": "すべて"
@@ -352,5 +361,91 @@
   },
   "permissionGrantedHint": {
     "message": "ローカルの .md ファイルを直接開けるようになりました。設定はブラウザのツールバーにある $1 アイコンから開けます。"
+  },
+
+  "history_count": {
+    "message": "$1 件"
+  },
+  "history_empty": {
+    "message": "まだ文書を開いていません"
+  },
+  "history_emptyHint": {
+    "message": "文書を開くと自動的にここへ記録されます"
+  },
+  "history_clear": {
+    "message": "クリア"
+  },
+  "history_clearConfirm": {
+    "message": "すべて削除"
+  },
+  "history_clearHint": {
+    "message": "履歴をすべて削除（元に戻せません）"
+  },
+  "history_remove": {
+    "message": "履歴から削除"
+  },
+  "history_openInNewTab": {
+    "message": "新しいタブで開く"
+  },
+  "history_openFailed": {
+    "message": "開けませんでした：ファイルが移動・削除されたか、読み取り権限がありません"
+  },
+
+  "favorites_count": {
+    "message": "$1 件"
+  },
+  "favorites_empty": {
+    "message": "お気に入りはまだありません"
+  },
+  "favorites_emptyHint": {
+    "message": "本文右上の星印をクリックするとお気に入りに追加できます"
+  },
+  "favorites_clear": {
+    "message": "クリア"
+  },
+  "favorites_clearConfirm": {
+    "message": "すべて削除"
+  },
+  "favorites_clearHint": {
+    "message": "お気に入りをすべて削除（元に戻せません）"
+  },
+  "favorites_remove": {
+    "message": "お気に入りから削除"
+  },
+  "favorites_openInNewTab": {
+    "message": "新しいタブで開く"
+  },
+  "favorites_openFailed": {
+    "message": "開けませんでした：ファイルが移動・削除されたか、読み取り権限がありません"
+  },
+  "favorites_sort": {
+    "message": "並び順"
+  },
+  "favorites_sortName": {
+    "message": "名前"
+  },
+  "favorites_sortTime": {
+    "message": "保存日時"
+  },
+  "favorites_sortAsc": {
+    "message": "↑ 昇順"
+  },
+  "favorites_sortDesc": {
+    "message": "↓ 降順"
+  },
+  "favorites_sortAscHint": {
+    "message": "昇順です。クリックで降順に変更"
+  },
+  "favorites_sortDescHint": {
+    "message": "降順です。クリックで昇順に変更"
+  },
+  "favoriteAdd": {
+    "message": "お気に入り"
+  },
+  "favoriteRemove": {
+    "message": "お気に入り解除"
+  },
+  "favoriteFull": {
+    "message": "お気に入りが上限（$1 件）に達しました。先にいくつか削除してください"
   }
 }

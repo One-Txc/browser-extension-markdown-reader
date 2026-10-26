@@ -10,10 +10,19 @@
     "message": "개요"
   },
   "tabFolder": {
-    "message": "폴더"
+    "message": "파일"
+  },
+  "tabFavorites": {
+    "message": "즐겨찾기"
+  },
+  "tabHistory": {
+    "message": "기록"
   },
   "tocCaret": {
     "message": "하위 제목 펼치기 / 접기"
+  },
+  "outlineEmpty": {
+    "message": "이 문서에는 제목이 없습니다"
   },
   "tocBulkAll": {
     "message": "전체"
@@ -352,5 +361,91 @@
   },
   "permissionGrantedHint": {
     "message": "이제 로컬 .md 파일을 바로 열 수 있습니다. 설정은 브라우저 도구 모음의 $1 아이콘에 있습니다."
+  },
+
+  "history_count": {
+    "message": "$1개"
+  },
+  "history_empty": {
+    "message": "아직 연 문서가 없습니다"
+  },
+  "history_emptyHint": {
+    "message": "문서를 열면 자동으로 여기에 기록됩니다"
+  },
+  "history_clear": {
+    "message": "지우기"
+  },
+  "history_clearConfirm": {
+    "message": "모두 지우기"
+  },
+  "history_clearHint": {
+    "message": "모든 기록 지우기 (되돌릴 수 없음)"
+  },
+  "history_remove": {
+    "message": "기록에서 제거"
+  },
+  "history_openInNewTab": {
+    "message": "새 탭에서 열기"
+  },
+  "history_openFailed": {
+    "message": "열지 못했습니다: 파일이 이동·삭제되었거나 읽기 권한이 없습니다"
+  },
+
+  "favorites_count": {
+    "message": "$1개"
+  },
+  "favorites_empty": {
+    "message": "즐겨찾기가 아직 없습니다"
+  },
+  "favorites_emptyHint": {
+    "message": "본문 오른쪽 위의 별 아이콘을 클릭하면 즐겨찾기에 추가됩니다"
+  },
+  "favorites_clear": {
+    "message": "지우기"
+  },
+  "favorites_clearConfirm": {
+    "message": "모두 지우기"
+  },
+  "favorites_clearHint": {
+    "message": "모든 즐겨찾기 지우기 (되돌릴 수 없음)"
+  },
+  "favorites_remove": {
+    "message": "즐겨찾기에서 제거"
+  },
+  "favorites_openInNewTab": {
+    "message": "새 탭에서 열기"
+  },
+  "favorites_openFailed": {
+    "message": "열지 못했습니다: 파일이 이동·삭제되었거나 읽기 권한이 없습니다"
+  },
+  "favorites_sort": {
+    "message": "정렬"
+  },
+  "favorites_sortName": {
+    "message": "이름"
+  },
+  "favorites_sortTime": {
+    "message": "저장 시각"
+  },
+  "favorites_sortAsc": {
+    "message": "↑ 오름차순"
+  },
+  "favorites_sortDesc": {
+    "message": "↓ 내림차순"
+  },
+  "favorites_sortAscHint": {
+    "message": "오름차순입니다. 클릭하면 내림차순으로 바뀝니다"
+  },
+  "favorites_sortDescHint": {
+    "message": "내림차순입니다. 클릭하면 오름차순으로 바뀝니다"
+  },
+  "favoriteAdd": {
+    "message": "즐겨찾기"
+  },
+  "favoriteRemove": {
+    "message": "즐겨찾기 해제"
+  },
+  "favoriteFull": {
+    "message": "즐겨찾기가 가득 찼습니다($1개). 먼저 몇 개를 제거하세요"
   }
 }
