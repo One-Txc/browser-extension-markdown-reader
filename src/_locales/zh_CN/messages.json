@@ -13,12 +13,24 @@
     "description": "侧边栏顶部左侧的标签页按钮。点击后显示文档的标题层级树。尽量用短词，两到四字为宜。"
   },
   "tabFolder": {
-    "message": "文件夹",
-    "description": "侧边栏顶部右侧的标签页按钮。点击后显示当前文档所在文件夹的内容列表。尽量用短词。"
+    "message": "文件",
+    "description": "侧边栏顶部第二个标签页按钮。点击后显示当前文档所在文件夹的内容列表。★ 显示名是「文件」而不是「文件夹」—— 四个标签页并排时每个只有 40px，「文件夹」三个字放不下会被省略。尽量用两字短词。"
+  },
+  "tabFavorites": {
+    "message": "收藏",
+    "description": "侧边栏顶部第三个标签页按钮（在「历史」左侧）。点击后显示用户星标收藏过的文档列表。两字，与 tab 条其它成员等长。"
+  },
+  "tabHistory": {
+    "message": "历史",
+    "description": "侧边栏顶部第四个标签页按钮（最右侧）。点击后显示最近打开过的文档列表。尽量用短词，两字为宜。"
   },
   "tocCaret": {
     "message": "展开 / 收起子标题",
     "description": "大纲树里每个可折叠标题左侧小箭头的悬停提示与无障碍标签。"
+  },
+  "outlineEmpty": {
+    "message": "本篇没有标题",
+    "description": "「大纲」面板里显示的说明文字：当前正文一个标题都没有，所以目录树是空的。★ 标签页本身不会隐藏，所以这里要解释空白，而不是提示操作。请用陈述句，不要带句号。"
   },
   "tocBulkAll": {
     "message": "全部",
@@ -201,6 +213,120 @@
   "folder_unknownError": {
     "message": "未知错误",
     "description": "错误原因：出了错但拿不到具体原因。会作为 folder_readFailed 或 folder_listFailed 里的 $1 出现。"
+  },
+
+  "history_count": {
+    "message": "$1 条",
+    "description": "「历史」面板顶栏左侧的计数，表示一共记录了多少份文档。$1 是数量。请保持简短，例如英文用 items、日文用 件。"
+  },
+  "history_empty": {
+    "message": "还没有打开过文档",
+    "description": "「历史」面板为空时的主提示，居中显示。用陈述句，不要带句号。"
+  },
+  "history_emptyHint": {
+    "message": "打开文档后会自动记录到这里",
+    "description": "上一条主提示下方更小的辅助说明，解释记录时机（打开文档时自动记录）。不用句号。"
+  },
+  "history_clear": {
+    "message": "清空",
+    "description": "「历史」面板顶栏右侧的文字按钮。★ 点击不会立即清空，而是进入二次确认态。按钮很窄，两字即可。"
+  },
+  "history_clearConfirm": {
+    "message": "确认清空",
+    "description": "上一条按钮点击后 3 秒内的确认态文案，此时再点才真正清空全部记录。四个字，不要加问号。"
+  },
+  "history_clearHint": {
+    "message": "清空全部历史记录（不可恢复）",
+    "description": "「清空」按钮的悬停提示与无障碍标签，说明只清空记录、不删除文件。"
+  },
+  "history_remove": {
+    "message": "从历史中移除",
+    "description": "「历史」面板中每行右侧 × 图标的悬停提示与无障碍标签。只删这一条记录，不删文件。"
+  },
+  "history_openInNewTab": {
+    "message": "在新标签页打开",
+    "description": "「历史」面板中每行右侧跳转图标的悬停提示与无障碍标签。点击会在新标签页打开该文档的真实 URL。与「文件夹」面板同名含义一致。"
+  },
+  "history_openFailed": {
+    "message": "打开失败：文件可能已被移动、删除，或没有读取权限",
+    "description": "点击历史条目但读不到文件时，面板顶部出现的红色提示行，4 秒后自动消失。没有占位符。"
+  },
+
+  "favorites_count": {
+    "message": "$1 条",
+    "description": "「收藏」面板顶栏左侧的计数，表示一共收藏了多少份文档。$1 是数量。请保持简短，例如英文用 items、日文用 件。"
+  },
+  "favorites_empty": {
+    "message": "还没有收藏任何文档",
+    "description": "「收藏」面板为空时的主提示，居中显示。陈述句，不要带句号。"
+  },
+  "favorites_emptyHint": {
+    "message": "点正文右上角的星标即可收藏",
+    "description": "上一条主提示下方更小的辅助说明，告诉用户收藏入口在正文右上角。不加句号。"
+  },
+  "favorites_clear": {
+    "message": "清空",
+    "description": "「收藏」面板顶栏右侧的文字按钮。★ 点击不会立即清空，而是进入二次确认态。按钮很窄，两字即可。"
+  },
+  "favorites_clearConfirm": {
+    "message": "确认清空",
+    "description": "上一条按钮点击后 3 秒内的确认态文案，此时再点才真正清空全部收藏。四个字，不要加问号。"
+  },
+  "favorites_clearHint": {
+    "message": "清空全部收藏（不可恢复）",
+    "description": "「清空」按钮的悬停提示与无障碍标签，说明只清空收藏记录、不删除文件。"
+  },
+  "favorites_remove": {
+    "message": "移出收藏",
+    "description": "「收藏」面板中每行右侧 × 图标的悬停提示与无障碍标签。只取消这一条的收藏，不删除文件。四个字。"
+  },
+  "favorites_openInNewTab": {
+    "message": "在新标签页打开",
+    "description": "「收藏」面板中每行右侧跳转图标的悬停提示与无障碍标签。点击会在新标签页打开该文档的真实 URL。"
+  },
+  "favorites_openFailed": {
+    "message": "打开失败：文件可能已被移动、删除，或没有读取权限",
+    "description": "点击收藏条目但读不到文件时，面板顶部出现的红色提示行，4 秒后自动消失。没有占位符。"
+  },
+  "favorites_sort": {
+    "message": "排序",
+    "description": "「收藏」面板排序行的标签，后面跟着排序字段下拉框。两字。"
+  },
+  "favorites_sortName": {
+    "message": "名称",
+    "description": "收藏排序下拉框的选项：按文件名排序。两字。"
+  },
+  "favorites_sortTime": {
+    "message": "收藏时间",
+    "description": "收藏排序下拉框的选项：按收藏时间排序（默认项）。★ 下拉框很窄，不要再加「排序」二字。"
+  },
+  "favorites_sortAsc": {
+    "message": "↑ 升序",
+    "description": "收藏排序方向按钮上的文字，表示当前是升序。请保留 ↑ 符号与一个空格。"
+  },
+  "favorites_sortDesc": {
+    "message": "↓ 降序",
+    "description": "收藏排序方向按钮上的文字，表示当前是降序（默认）。请保留 ↓ 符号与一个空格。"
+  },
+  "favorites_sortAscHint": {
+    "message": "当前升序，点击改为降序",
+    "description": "收藏排序方向按钮在升序状态下的悬停提示，说明点击后的结果。"
+  },
+  "favorites_sortDescHint": {
+    "message": "当前降序，点击改为升序",
+    "description": "收藏排序方向按钮在降序状态下的悬停提示，说明点击后的结果。"
+  },
+  "favoriteAdd": {
+    "message": "收藏",
+    "description": "正文右上角星标按钮在**未收藏**状态下的悬停提示与无障碍标签。两字。"
+  },
+  "favoriteRemove": {
+    "message": "取消收藏",
+    "description": "正文右上角星标按钮在**已收藏**状态下的悬停提示与无障碍标签。四个字。"
+  },
+  "favoriteFull": {
+    "message": "收藏已满（$1 个），请先移出一些",
+    "description": "收藏数量达到上限、这次没能收藏上时，星标下方弹出的提示。$1 是上限（50）。语气要提示下一步动作。"
   },
 
   "popupBasic": {

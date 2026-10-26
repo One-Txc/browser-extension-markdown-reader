@@ -28,6 +28,7 @@ import {
 } from '../shared/directory';
 import { t } from '../shared/i18n';
 import { safeDecode } from '../shared/const';
+import { ICON_JUMP, ICON_MD } from './icons';
 
 /* ------------------------------------------------------------------ 图标 */
 
@@ -37,14 +38,8 @@ const ICON_FOLDER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
 /** 打开的文件夹（Lucide folder-open） */
 const ICON_FOLDER_OPEN = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>`;
 
-/** Markdown 文件：圆角卡片 + M */
-const ICON_MD = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linejoin="round"><rect x="2.2" y="2.6" width="11.6" height="10.8" rx="1.8" stroke-width="1.35"/><path d="M5.3 10.9V6.1l2.7 3.3 2.7-3.3v4.8" stroke-width="1.6" stroke-linecap="round"/></svg>`;
-
 /** 展开 / 收起箭头，与目录 tab 用同一套 */
 const ICON_CARET = `<svg viewBox="0 0 10 10"><path d="M2 3.4 L5 6.6 L8 3.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-
-/** 「在新标签页打开真实 URL」 */
-const ICON_JUMP = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5H3.6a1.1 1.1 0 0 0-1.1 1.1v7.8a1.1 1.1 0 0 0 1.1 1.1h7.8a1.1 1.1 0 0 0 1.1-1.1V9.5"/><path d="M9.6 2.4h4v4"/><path d="M13.3 2.7 7.6 8.4"/></svg>`;
 
 /**
  * 折叠全部：两个 V 形叠着朝上，表示「一路收到顶层」。

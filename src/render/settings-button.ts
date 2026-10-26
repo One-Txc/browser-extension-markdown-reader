@@ -15,6 +15,7 @@
 import { t } from '../shared/i18n';
 import { ensureBody } from '../shared/const';
 import { EXT_NAME } from '../shared/brand';
+import { showToast } from './toast';
 
 /**
  * 齿轮。
@@ -22,9 +23,6 @@ import { EXT_NAME } from '../shared/brand';
  * （folder.ts 里同一个坑踩过）。
  */
 const ICON_SETTINGS = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linejoin="round"><path d="M12.6 8h2M8 3.4v-2M3.4 8h-2M8 12.6v2M11.25 4.75l1.42-1.42M4.75 4.75 3.33 3.33M4.75 11.25l-1.42 1.42M11.25 11.25l1.42 1.42" stroke-width="2.3" stroke-linecap="butt"/><circle cx="8" cy="8" r="4.6" stroke-width="1.4"/><circle cx="8" cy="8" r="1.8" stroke-width="1.4"/></svg>`;
-
-const TOAST_CLASS = 'md-reader-toast';
-const TOAST_MS = 4200;
 
 /**
  * 挂载设置按钮。
@@ -58,24 +56,7 @@ async function openSettings(anchor: HTMLElement): Promise<void> {
   } catch {
     /* 落到下面的提示 */
   }
-  showHint(anchor);
-}
-
-/** 打开失败时的回退提示，告诉用户手动点工具栏图标 */
-function showHint(anchor: HTMLElement): void {
-  // 连点多次时只保留最新一个
-  document.querySelector(`.${TOAST_CLASS}`)?.remove();
-
-  const toast = document.createElement('div');
-  toast.className = TOAST_CLASS;
-  toast.setAttribute('role', 'status');
-  toast.textContent = t('openSettingsHint', [EXT_NAME]);
-
-  // 贴在按钮下方，随按钮位置走（窄屏时按钮的 left/right 会变）
-  const box = anchor.getBoundingClientRect();
-  toast.style.top = `${box.bottom + 8}px`;
-  toast.style.right = '12px';
-
-  document.body.append(toast);
-  window.setTimeout(() => toast.remove(), TOAST_MS);
+  // 打不开不是错误路径（Firefox 没有该 API，手势也可能传不过去），
+  // 所以给一条可操作的建议，而不是静默无反应
+  showToast(t('openSettingsHint', [EXT_NAME]), anchor);
 }

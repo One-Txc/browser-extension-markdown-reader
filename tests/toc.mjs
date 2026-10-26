@@ -256,6 +256,121 @@ check(
     !document.querySelector('.md-reader-resizer')
 );
 
+/* ---------------------------------- 8. 扩展面板（文件夹 / 历史） */
+const mkHandlers = (panes) => ({
+  getWidth: () => 268,
+  setWidth: () => {},
+  setVisible: () => {},
+  createPanes: () => panes,
+});
+
+const root3 = document.createElement('div');
+root3.innerHTML = '<h1 id="a">A</h1><h2 id="b">B</h2>';
+
+const historyEl = document.createElement('div');
+historyEl.textContent = '历史面板内容';
+
+const withPanes = buildToc(root3, 1, mkHandlers([{ id: 'history', label: '历史', element: historyEl }]));
+check('提供面板时多出一个 tab', withPanes.nav.querySelectorAll('.md-reader-tab').length === 2);
+check(
+  '面板 tab 的文案与 id 正确',
+  withPanes.nav.querySelector('.md-reader-tab[data-pane="history"]').textContent === '历史'
+);
+check(
+  '默认激活大纲',
+  withPanes.nav.querySelector('.md-reader-tab[data-pane="outline"]').classList.contains('is-active')
+);
+check(
+  '面板初始隐藏',
+  withPanes.nav
+    .querySelector('.md-reader-pane[data-pane="history"]')
+    .classList.contains('md-reader-hidden')
+);
+
+withPanes.nav.querySelector('.md-reader-tab[data-pane="history"]').click();
+check(
+  '点击后面板 tab 激活',
+  withPanes.nav.querySelector('.md-reader-tab[data-pane="history"]').classList.contains('is-active')
+);
+check(
+  '点击后面板可见',
+  !withPanes.nav
+    .querySelector('.md-reader-pane[data-pane="history"]')
+    .classList.contains('md-reader-hidden')
+);
+check(
+  '切换后大纲面板隐藏',
+  withPanes.nav
+    .querySelector('.md-reader-pane[data-pane="outline"]')
+    .classList.contains('md-reader-hidden')
+);
+
+withPanes.destroy();
+
+// tab 选择是模块级状态：重建侧边栏后应当仍是上次那个
+const rebuilt = buildToc(root3, 1, mkHandlers([{ id: 'history', label: '历史', element: document.createElement('div') }]));
+check(
+  '重建后仍记住上次选的 tab',
+  rebuilt.nav.querySelector('.md-reader-tab[data-pane="history"]').classList.contains('is-active')
+);
+rebuilt.destroy();
+
+// 多个扩展面板的 tab 顺序：文件 / 收藏 / 历史
+const ordered = buildToc(
+  root3,
+  1,
+  mkHandlers([
+    { id: 'folder', label: '文件', element: document.createElement('div') },
+    { id: 'favorites', label: '收藏', element: document.createElement('div') },
+    { id: 'history', label: '历史', element: document.createElement('div') },
+  ])
+);
+check(
+  'tab 顺序为 大纲 / 文件 / 收藏 / 历史',
+  [...ordered.nav.querySelectorAll('.md-reader-tab')]
+    .map((tab) => tab.textContent)
+    .join('/') === '大纲/文件/收藏/历史'
+);
+ordered.destroy();
+
+// 在线文档没有「文件」面板：只有 大纲 / 收藏 / 历史
+const online = buildToc(
+  root3,
+  1,
+  mkHandlers([
+    { id: 'favorites', label: '收藏', element: document.createElement('div') },
+    { id: 'history', label: '历史', element: document.createElement('div') },
+  ])
+);
+check(
+  '无文件面板时 tab 为 大纲 / 收藏 / 历史',
+  [...online.nav.querySelectorAll('.md-reader-tab')]
+    .map((tab) => tab.textContent)
+    .join('/') === '大纲/收藏/历史'
+);
+online.destroy();
+
+// 正文没有标题：tab 不隐藏，大纲面板给一行说明
+const noHeading = document.createElement('div');
+noHeading.innerHTML = '<p>这一段没有标题</p>';
+const noHeadingSidebar = buildToc(
+  noHeading,
+  1,
+  mkHandlers([{ id: 'history', label: '历史', element: document.createElement('div') }])
+);
+check('无标题但有面板时仍生成侧边栏', !!noHeadingSidebar);
+check(
+  '无标题时大纲面板给出说明',
+  !!noHeadingSidebar.nav.querySelector('.md-reader-toc-empty')
+);
+check(
+  '无标题时大纲 tab 不隐藏',
+  !noHeadingSidebar.nav
+    .querySelector('.md-reader-tab[data-pane="outline"]')
+    .classList.contains('md-reader-hidden')
+);
+noHeadingSidebar.destroy();
+
 /* ------------------------------------------------------------ 输出 */
 let failed = 0;
 for (const { name, ok } of cases) {

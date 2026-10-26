@@ -55,7 +55,7 @@ export interface TocHandle {
   expandToLevel(level: number): void;
   /**
    * 换一份正文，只重建目录树的内容。
-   * nav 与「文件夹」面板保持不动 —— 销毁整个侧边栏会让文件夹 tab 闪一下
+   * nav 与其它面板保持不动 —— 销毁整个侧边栏会让文件夹 tab 闪一下
    * 并丢掉它的展开状态。
    */
   setRoot(newRoot: HTMLElement): void;
@@ -297,11 +297,16 @@ export function buildToc(
   nav.setAttribute('aria-label', t('sidebar'));
 
   /*
-   * 顶部是 tab 条：目录 / 文件夹。
-   * 「文件夹」面板由外部通过 handlers 提供 —— 目录树与文件夹是两个独立功能，
-   * 不该让 toc.ts 反过来依赖 folder.ts。
+   * 顶部是 tab 条：大纲 / 文件夹 / 历史。
+   * 「大纲」以外的面板由外部通过 handlers 提供 —— 目录树与文件夹、历史
+   * 都是独立功能，不该让 toc.ts 反过来依赖它们。
+   *
+   * 用「返回数组」而不是每类面板一个回调：再加面板时不必同时改 toc.ts
+   * 与调用方的签名。
    */
-  const folderPane = handlers?.createFolderPane?.() ?? null;
+  const extras = (handlers?.createPanes?.() ?? []).filter(
+    (pane): pane is SidebarPane => !!pane && !!pane.element && !!pane.id
+  );
 
   const tabs = document.createElement('div');
   tabs.className = 'md-reader-tabs';
@@ -309,10 +314,6 @@ export function buildToc(
   const outlinePane = document.createElement('div');
   outlinePane.className = 'md-reader-pane';
   outlinePane.dataset.pane = 'outline';
-
-  const folderPaneWrap = document.createElement('div');
-  folderPaneWrap.className = 'md-reader-pane md-reader-hidden';
-  folderPaneWrap.dataset.pane = 'folder';
 
   const makeTab = (pane: string, label: string): HTMLButtonElement => {
     const btn = document.createElement('button');
@@ -329,20 +330,32 @@ export function buildToc(
    * 而隔壁 tab 正是文件夹列表，两者撞词会让人分不清。
    * 「大纲」是这个领域的通行叫法（VS Code / Typora / Obsidian 均如此）。
    */
-  const outlineTab = makeTab('outline', t('tabOutline'));
-  tabs.append(outlineTab);
-  if (folderPane) {
-    tabs.append(makeTab('folder', t('tabFolder')));
-    folderPaneWrap.append(folderPane);
+  tabs.append(makeTab('outline', t('tabOutline')));
+
+  /** pane 的容器，切换时统一显隐；顺序即 tab 顺序 */
+  const paneIds: string[] = ['outline'];
+  const paneWraps = new Map<string, HTMLElement>([['outline', outlinePane]]);
+
+  for (const extra of extras) {
+    // id 重复会让 tab 与 pane 对不上号，直接跳过
+    if (paneIds.includes(extra.id)) continue;
+    const wrap = document.createElement('div');
+    wrap.className = 'md-reader-pane md-reader-hidden';
+    wrap.dataset.pane = extra.id;
+    wrap.append(extra.element);
+    paneWraps.set(extra.id, wrap);
+    paneIds.push(extra.id);
+    tabs.append(makeTab(extra.id, extra.label));
   }
 
   const switchPane = (pane: string): void => {
-    lastActivePane = pane;
+    const target = paneIds.includes(pane) ? pane : 'outline';
+    lastActivePane = target;
     for (const tab of tabs.querySelectorAll<HTMLElement>('.md-reader-tab')) {
-      tab.classList.toggle('is-active', tab.dataset.pane === pane);
+      tab.classList.toggle('is-active', tab.dataset.pane === target);
     }
-    for (const p of nav.querySelectorAll<HTMLElement>('.md-reader-pane')) {
-      p.classList.toggle('md-reader-hidden', p.dataset.pane !== pane);
+    for (const [id, wrap] of paneWraps) {
+      wrap.classList.toggle('md-reader-hidden', id !== target);
     }
   };
 
@@ -352,15 +365,19 @@ export function buildToc(
   });
 
   nav.append(tabs, outlinePane);
-  if (folderPane) nav.append(folderPaneWrap);
-  // 恢复上次选中的 tab；若这次没有文件夹面板（未提供）则退回「目录」
-  switchPane(folderPane ? lastActivePane : 'outline');
+  for (const id of paneIds) {
+    if (id === 'outline') continue;
+    const wrap = paneWraps.get(id);
+    if (wrap) nav.append(wrap);
+  }
+  // 恢复上次选中的 tab；这次没有那个面板时退回「大纲」
+  switchPane(lastActivePane);
 
   /*
    * 目录树的状态。
    *
    * 之所以都用 let 并集中在这里：切换文档时要按新正文重建目录树，
-   * 但 nav 本身（tab 条、文件夹面板）不能动 —— 销毁重建会让文件夹 tab
+   * 但 nav 本身（tab 条与其它面板）不能动 —— 销毁重建会让文件夹 tab
    * 闪一下并丢掉展开状态。
    */
   let headings: HTMLElement[] = [];
@@ -439,7 +456,7 @@ export function buildToc(
    * 按一份正文重建目录树。
    *
    * ★ nav 与 tab 条保持不动，只替换 outlinePane 的内容。
-   * 这样切换文档时文件夹 tab 不会闪一下、也不会丢掉展开状态 ——
+   * 这样切换文档时其它面板的 tab 不会闪一下、也不会丢掉展开状态 ——
    * 这正是这个函数存在（而不是销毁整个 nav 重建）的原因。
    *
    * @returns 是否建出了内容（正文里没有标题时返回 false）
@@ -455,7 +472,19 @@ export function buildToc(
     bulkRefresh = () => {};
     currentId = '';
 
-    if (headings.length < minHeadings) return false;
+    if (headings.length < minHeadings) {
+      /*
+       * 正文没有标题时「大纲」面板留一行说明。
+       *
+       * tab 本身不会自动隐藏 —— 侧边栏的出现与消失不该随文档内容跳动；
+       * 但点进来一片空白会让人以为坏了，所以补一句。
+       */
+      const hint = document.createElement('div');
+      hint.className = 'md-reader-toc-empty';
+      hint.textContent = t('outlineEmpty');
+      outlinePane.append(hint);
+      return false;
+    }
 
     const tree = buildTree(headings);
     nodes = flattenTree(tree);
@@ -480,8 +509,8 @@ export function buildToc(
   }
 
   const hasOutline = rebuildOutline(root);
-  // 既没有标题、又没提供文件夹面板时，侧边栏没有存在意义
-  if (!hasOutline && !folderPane) return null;
+  // 既没有标题、也没有任何可扩展面板时，侧边栏没有存在意义
+  if (!hasOutline && extras.length === 0) return null;
 
   /*
    * 折叠 UI（caret 与批量按钮）始终生成，是否显示由这个开关控制。
@@ -513,7 +542,7 @@ export function buildToc(
     },
     setFoldEnabled,
     expandToLevel,
-    /** 换一份正文：只重建目录树的内容，nav 与文件夹面板保持不动 */
+    /** 换一份正文：只重建目录树的内容，nav 与其它面板保持不动 */
     setRoot(newRoot: HTMLElement) {
       rebuildOutline(newRoot);
     },
@@ -525,6 +554,16 @@ export function buildToc(
   };
 }
 
+/** 一个可扩展的侧边栏面板（「大纲」以外的标签页） */
+export interface SidebarPane {
+  /** tab 与 pane 的标识，同时用于恢复上次选择：'folder' | 'history' */
+  id: string;
+  /** tab 上的文案 */
+  label: string;
+  /** 面板内容，由调用方创建并挂在回调里 */
+  element: HTMLElement;
+}
+
 export interface TocHandlers {
   /** 读取当前目录宽度 */
   getWidth(): number;
@@ -533,13 +572,12 @@ export interface TocHandlers {
   /** 显示 / 隐藏目录 */
   setVisible(visible: boolean): void;
   /**
-   * 创建「文件夹」面板的内容。
-   * 返回 null 或不实现时，只显示「目录」一个 tab（保持原样）。
+   * 创建「大纲」以外的标签页。不实现或返回空数组时，只有「大纲」一个 tab。
    *
-   * 之所以从这里回调而不是由 toc.ts 直接依赖 folder.ts：
-   * 目录树与文件夹是两个独立功能，不该互相 import。
+   * 之所以从这里回调而不是由 toc.ts 直接依赖文件夹 / 历史模块：
+   * 目录树与它们是独立功能，不该互相 import。
    */
-  createFolderPane?(): HTMLElement | null;
+  createPanes?(): Array<SidebarPane | null | undefined>;
 }
 
 /**

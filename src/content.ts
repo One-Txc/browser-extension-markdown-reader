@@ -16,7 +16,7 @@
 
 import { renderMarkdown } from './render/markdown';
 import { applyTheme, injectKatexCss } from './render/styles';
-import { mountToc, type TocHandle, type TocHandlers } from './render/toc';
+import { mountToc, type SidebarPane, type TocHandle, type TocHandlers } from './render/toc';
 import { setupImageZoom } from './render/lightbox';
 import { setupSourceView, type SourceViewHandle } from './render/source-view';
 import {
@@ -38,9 +38,20 @@ import {
   titleFromUrl,
 } from './shared/const';
 import { mountFolderPane, type FolderPaneHandle } from './render/folder';
+import { mountHistoryPane } from './render/history';
+import { mountFavoritesPane } from './render/favorites';
+import type { LinkPaneHandle } from './render/link-pane';
+import {
+  mountFavoriteButton,
+  type FavoriteButtonHandle,
+  type FavoriteToggleResult,
+} from './render/favorite-button';
 import { mountSettingsButton } from './render/settings-button';
 import { setLocale, t } from './shared/i18n';
 import { EXT_NAME, LOG_PREFIX } from './shared/brand';
+import { normalizeLinkUrl, type LinkEntry } from './shared/link-store';
+import { historyStore } from './shared/history';
+import { favoritesStore } from './shared/favorites';
 
 /** 超过此长度不做渲染，避免超大文件卡死标签页 */
 const MAX_RENDER_LENGTH = 3 * 1024 * 1024;
@@ -61,6 +72,8 @@ async function main(): Promise<void> {
   html.setAttribute(DONE_ATTR, '1');
 
   registerSettingsListeners();
+  // 其它标签页改了历史 / 收藏时，两个面板与星标要跟着更新
+  registerCollectionsWatcher();
 
   /*
    * 右上角的设置按钮。它不依赖文档内容，所以尽早挂上 ——
@@ -96,6 +109,13 @@ async function main(): Promise<void> {
     return value;
   });
 
+  /*
+   * 历史 / 收藏与渲染互不依赖，一起读 —— 不要串行等多次 IO。
+   * 面板创建时（renderDocument 内）就要有数据，所以必须在它之前 await。
+   */
+  const historyPromise = historyStore.load();
+  const favoritesPromise = favoritesStore.load();
+
   try {
     /*
      * 扩展名判定。自定义后缀只能等设置读完才知道，所以这里必然有一次 await；
@@ -116,9 +136,15 @@ async function main(): Promise<void> {
 
     // 语言要在渲染之前定好：渲染过程中就会通过 t() 取文案
     setLocale(settingsNow.locale);
+    // 面板与星标创建时直接读内存副本，所以要在渲染之前拿到
+    historyEntries = await historyPromise;
+    favoritesEntries = await favoritesPromise;
     renderDocument(raw, currentDocUrl, settingsNow);
     // hash 只在首次加载时处理；原地切换文档后地址栏已不代表正文，跳了反而错
     applyInitialHash();
+    // 记录「已打开」：只在渲染成功后记录，读不到 / 超大的文档不进历史。
+    // 不 await —— 写 storage 不该拖慢首屏可见的时间
+    void recordOpened(location.href.split('#')[0]);
   } catch (err) {
     // 渲染失败时保留 Chrome 原始纯文本视图，绝不留下白屏
     console.error(`${LOG_PREFIX} 渲染失败，已保留原始文本视图：`, err);
@@ -187,8 +213,10 @@ function renderDocument(raw: string, url: string, settings: ReaderSettings): voi
     // 标题数量变了，折叠策略要重新判断（策略串置空以强制应用一次）
     lastFoldPolicy = '';
     applyFoldPolicy(settings);
-    // 原地切换后文件夹面板里的高亮要跟着走（根目录刻意保持不变）
+    // 原地切换后各面板里的高亮都要跟着走（文件夹的根目录刻意保持不变）
     folderHandle?.setCurrent(url);
+    favoritesHandle?.setCurrent(url);
+    historyHandle?.setCurrent(url);
   } else {
     syncToc(settings);
   }
@@ -211,6 +239,17 @@ function renderDocument(raw: string, url: string, settings: ReaderSettings): voi
    */
   sourceViewHandle?.destroy();
   sourceViewHandle = setupSourceView(main, raw);
+
+  /*
+   * 右上角星标。同样每次渲染重建：它绑的是「正在显示的文档」，
+   * 原地切换 / 切语言之后必须换成新文档的状态与文案。
+   */
+  favoriteButton?.destroy();
+  favoriteButton = mountFavoriteButton({
+    isFavorited: () => isFavorited(currentDocUrl),
+    onToggle: () => toggleFavorite(),
+  });
+
   applyFavicon();
 }
 
@@ -244,21 +283,90 @@ function applyFavicon(): void {
  * 原地打开另一个文档：读内容 → 重新渲染，**不改变 URL**。
  *
  * 这样做的好处是切换文档时侧边栏状态、展开的目录、滚动习惯都不会丢，
- * 也不产生历史记录。
+ * 也不产生浏览器历史记录。
  *
- * 代价是地址栏不再代表正在显示的内容 —— 所以文件夹面板给每一项都配了
+ * 代价是地址栏不再代表正在显示的内容 —— 所以文件夹 / 收藏 / 历史面板给每一项都配了
  * 「跳转」图标，需要真实 URL（分享、收藏、刷新）时走那个出口。
+ *
+ * @returns 是否成功打开；收藏与历史面板据此提示「打开失败」
  */
-async function openInPlace(url: string): Promise<void> {
-  if (url === currentDocUrl) return;
+async function openInPlace(url: string): Promise<boolean> {
+  if (url === currentDocUrl) return true;
 
   const raw = await readSource(url);
-  if (!raw || !raw.trim()) return;
+  if (!raw || !raw.trim()) return false;
 
   currentDocUrl = url;
   renderDocument(raw, url, currentSettings);
   folderHandle?.setCurrent(url);
+  // 通过收藏、历史或文件夹点开的文档同样算「打开过」
+  void recordOpened(url);
   window.scrollTo({ top: 0 });
+  return true;
+}
+
+/**
+ * 记录一次「文档已打开」。
+ *
+ * ★ 只在渲染成功之后调用 —— 读不到、超过大小限制没渲染的文档不该进历史，
+ *   否则用户点进去只会得到「打开失败」。
+ */
+async function recordOpened(url: string): Promise<void> {
+  const result = await historyStore.add(url);
+  historyEntries = result.items;
+  historyHandle?.refresh();
+}
+
+/** 当前文档是否已收藏（按归一化 URL 比较） */
+function isFavorited(url: string): boolean {
+  const key = normalizeLinkUrl(url);
+  return favoritesEntries.some((item) => item.url === key);
+}
+
+/**
+ * 星标点击：已收藏就移出，否则加入。
+ *
+ * 加入失败（收藏已满 50）时返回 full，由按钮弹提示并保持空心 ——
+ * 不静默淘汰旧收藏，与历史的行为刻意不同。
+ */
+async function toggleFavorite(): Promise<FavoriteToggleResult> {
+  const url = currentDocUrl;
+
+  if (isFavorited(url)) {
+    favoritesEntries = await favoritesStore.remove(url);
+    favoritesHandle?.refresh();
+    return { active: false };
+  }
+
+  const result = await favoritesStore.add(url);
+  favoritesEntries = result.items;
+  favoritesHandle?.refresh();
+  return result.ok ? { active: true } : { active: false, full: true };
+}
+
+/**
+ * 其它标签页改了历史 / 收藏时，本页的面板与星标跟着更新。
+ *
+ * 本页自己的写入也会触发 storage.onChanged，内容一致时跳过，避免重绘两次。
+ */
+function registerCollectionsWatcher(): void {
+  historyStore.watch((items) => {
+    if (isSameEntries(items, historyEntries)) return;
+    historyEntries = items;
+    historyHandle?.refresh();
+  });
+
+  favoritesStore.watch((items) => {
+    if (isSameEntries(items, favoritesEntries)) return;
+    favoritesEntries = items;
+    favoritesHandle?.refresh();
+    favoriteButton?.setActive(isFavorited(currentDocUrl));
+  });
+}
+
+function isSameEntries(a: readonly LinkEntry[], b: readonly LinkEntry[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((item, i) => item.url === b[i].url && item.time === b[i].time);
 }
 
 /* -------------------------------------------------------------- 主题与目录 */
@@ -283,6 +391,17 @@ let currentDocUrl = baseDocUrl;
 let tocHandle: TocHandle | null = null;
 /** 「文件夹」面板；随 toc 的 nav 一起挂载，销毁时由 nav 一并移除 */
 let folderHandle: FolderPaneHandle | null = null;
+/** 「收藏」「历史」面板；同上 */
+let favoritesHandle: LinkPaneHandle | null = null;
+let historyHandle: LinkPaneHandle | null = null;
+/** 右上角的星标按钮；随每次渲染重建 */
+let favoriteButton: FavoriteButtonHandle | null = null;
+/**
+ * 收藏 / 历史的内存副本。
+ * 面板与星标直接读它们，避免每次重绘都读一次 storage；由各自的写回与监听器维护。
+ */
+let favoritesEntries: LinkEntry[] = [];
+let historyEntries: LinkEntry[] = [];
 /**
  * 原文视图的句柄。
  * 它持有的面板与按钮挂在 body 上，切换文档时要先销毁旧的再建新的。
@@ -333,54 +452,147 @@ const tocHandlers: TocHandlers = {
     document.body.classList.toggle('md-reader-has-toc', visible);
   },
   /*
-   * 「文件夹」面板。懒创建 —— 只有真正渲染侧边栏时才会调到这里，
-   * 而且面板内部的数据请求本身也是懒的（展开子目录才取）。
+   * 「大纲」以外的面板：「文件」「收藏」「历史」。
    *
-   * onOpen 走「原地打开」：点文档不跳 URL，只换正文。
-   * 需要真实跳转时用每行右侧的跳转图标（默认新标签页打开）。
+   * 三者都是懒创建 —— 只有真正渲染侧边栏时才会调到这里，
+   * 面板内部的数据请求本身也是懒的（文件夹展开子目录才取）。
    */
-  createFolderPane: () => {
-    /*
-     * 在线文档不提供「文件夹」面板。
-     *
-     * 目录列表靠的是 Chrome 为 file:// 目录 URL 生成的索引页（见 shared/directory.ts），
-     * 这个机制在 http(s) 上不存在；硬做只能靠网页抓取猜目录结构，不可靠。
-     * 返回 null，toc.ts 就只渲染「大纲」一个标签页 —— 按钮条不会出现第二个空标签。
-     */
-    if (!baseDocUrl.startsWith('file:')) return null;
+  createPanes: () => {
+    const panes: SidebarPane[] = [];
 
-    folderHandle = mountFolderPane({
-      // 用最初打开的文档，而不是 currentDocUrl —— 根目录不该随切换而变
-      documentUrl: baseDocUrl,
-      getPrefs: () => ({
-        sortField: currentSettings.folderSortField,
-        sortAsc: currentSettings.folderSortAsc,
-        foldersFirst: currentSettings.folderFoldersFirst,
-        showHidden: currentSettings.folderShowHidden,
-        settingsOpen: currentSettings.folderSettingsOpen,
-        // 用户在设置里追加的后缀，要在文件夹列表里一并生效
-        extensions: effectiveExtensions(currentSettings.extraExtensions),
-      }),
+    const folderPane = createFolderPane();
+    if (folderPane) {
+      panes.push({ id: 'folder', label: t('tabFolder'), element: folderPane });
+    }
+
+    /*
+     * 「收藏」：任何文档都有（本地与在线都能收藏）。
+     * 排序偏好存设置里，面板只负责按它显示。
+     */
+    favoritesHandle = mountFavoritesPane({
+      getItems: () => favoritesEntries,
+      currentUrl: () => currentDocUrl,
+      // 与其它面板一致：点一行原地换正文
+      onOpen: (url) => openInPlace(url),
+      onOpenNewTab: (url) => {
+        window.open(url, '_blank');
+      },
+      onRemove: (url) => {
+        void favoritesStore.remove(url).then((items) => {
+          favoritesEntries = items;
+          favoritesHandle?.refresh();
+          // 移出的可能正是当前文档，星标要跟着变空心
+          favoriteButton?.setActive(isFavorited(currentDocUrl));
+        });
+      },
+      onClear: () => {
+        void favoritesStore.clear().then((items) => {
+          favoritesEntries = items;
+          favoritesHandle?.refresh();
+          favoriteButton?.setActive(false);
+        });
+      },
       /*
        * 面板偏好的键名与设置里的键名不同（前者面向面板，后者面向存储），
-       * 这里做一次显式映射，避免两处命名被迫耦合。
+       * 这里做一次显式映射，与文件夹面板的做法一致。
        */
-      setPrefs: (patch) => {
-        const next: Partial<ReaderSettings> = {};
-        if (patch.sortField !== undefined) next.folderSortField = patch.sortField;
-        if (patch.sortAsc !== undefined) next.folderSortAsc = patch.sortAsc;
-        if (patch.foldersFirst !== undefined) next.folderFoldersFirst = patch.foldersFirst;
-        if (patch.showHidden !== undefined) next.folderShowHidden = patch.showHidden;
-        if (patch.settingsOpen !== undefined) next.folderSettingsOpen = patch.settingsOpen;
-
-        currentSettings = { ...currentSettings, ...next };
-        void persistSettings(next);
+      sort: {
+        get: () => ({
+          field: currentSettings.favoritesSortField,
+          ascending: currentSettings.favoritesSortAsc,
+        }),
+        set: (patch) => {
+          const next: Partial<ReaderSettings> = {};
+          if (patch.field !== undefined) next.favoritesSortField = patch.field;
+          if (patch.ascending !== undefined) next.favoritesSortAsc = patch.ascending;
+          currentSettings = { ...currentSettings, ...next };
+          void persistSettings(next);
+        },
       },
-      onOpen: (url) => void openInPlace(url),
     });
-    return folderHandle.element;
+    panes.push({
+      id: 'favorites',
+      label: t('tabFavorites'),
+      element: favoritesHandle.element,
+    });
+
+    /*
+     * 「历史」：任何文档都有（本地与在线都记录）。
+     * 它不依赖当前文档所在位置，是全局列表。
+     */
+    historyHandle = mountHistoryPane({
+      getItems: () => historyEntries,
+      currentUrl: () => currentDocUrl,
+      // 与其它面板一致：点一行原地换正文
+      onOpen: (url) => openInPlace(url),
+      onOpenNewTab: (url) => {
+        window.open(url, '_blank');
+      },
+      onRemove: (url) => {
+        void historyStore.remove(url).then((items) => {
+          historyEntries = items;
+          historyHandle?.refresh();
+        });
+      },
+      onClear: () => {
+        void historyStore.clear().then((items) => {
+          historyEntries = items;
+          historyHandle?.refresh();
+        });
+      },
+    });
+    panes.push({
+      id: 'history',
+      label: t('tabHistory'),
+      element: historyHandle.element,
+    });
+
+    return panes;
   },
 };
+
+/**
+ * 创建「文件夹」面板。
+ *
+ * 在线文档不提供：目录列表靠的是 Chrome 为 file:// 目录 URL 生成的索引页
+ * （见 shared/directory.ts），这个机制在 http(s) 上不存在；硬做只能靠网页
+ * 抓取猜目录结构，不可靠。返回 null，toc.ts 就跳过这个 tab，
+ * 不会留下一个空标签。
+ */
+function createFolderPane(): HTMLElement | null {
+  if (!baseDocUrl.startsWith('file:')) return null;
+
+  folderHandle = mountFolderPane({
+    // 用最初打开的文档，而不是 currentDocUrl —— 根目录不该随切换而变
+    documentUrl: baseDocUrl,
+    getPrefs: () => ({
+      sortField: currentSettings.folderSortField,
+      sortAsc: currentSettings.folderSortAsc,
+      foldersFirst: currentSettings.folderFoldersFirst,
+      showHidden: currentSettings.folderShowHidden,
+      settingsOpen: currentSettings.folderSettingsOpen,
+      // 用户在设置里追加的后缀，要在文件夹列表里一并生效
+      extensions: effectiveExtensions(currentSettings.extraExtensions),
+    }),
+    /*
+     * 面板偏好的键名与设置里的键名不同（前者面向面板，后者面向存储），
+     * 这里做一次显式映射，避免两处命名被迫耦合。
+     */
+    setPrefs: (patch) => {
+      const next: Partial<ReaderSettings> = {};
+      if (patch.sortField !== undefined) next.folderSortField = patch.sortField;
+      if (patch.sortAsc !== undefined) next.folderSortAsc = patch.sortAsc;
+      if (patch.foldersFirst !== undefined) next.folderFoldersFirst = patch.foldersFirst;
+      if (patch.showHidden !== undefined) next.folderShowHidden = patch.showHidden;
+      if (patch.settingsOpen !== undefined) next.folderSettingsOpen = patch.settingsOpen;
+
+      currentSettings = { ...currentSettings, ...next };
+      void persistSettings(next);
+    },
+    onOpen: (url) => void openInPlace(url),
+  });
+  return folderHandle.element;
+}
 
 /**
  * 同步目录的挂载与可见性。
@@ -448,7 +660,7 @@ async function refreshFromSettings(): Promise<void> {
      *
      * 文案是在**创建 DOM 的那一刻**一次性 t() 出来的，已有的文本节点不会
      * 重新求值（样式能「活」是因为它走 CSS 变量与 class，文本不行）。
-     * 所以要覆盖新文案就只能重建：侧边栏 tab 名、文件夹面板、各处 tooltip、
+     * 所以要覆盖新文案就只能重建：侧边栏 tab 名、文件夹 / 历史面板、各处 tooltip、
      * 以及代码块上那排复制按钮。
      *
      * 顺序要紧：先销毁侧边栏句柄 —— renderDocument 对已存在的 tocHandle
@@ -459,6 +671,8 @@ async function refreshFromSettings(): Promise<void> {
     tocHandle?.destroy();
     tocHandle = null;
     folderHandle = null;
+    favoritesHandle = null;
+    historyHandle = null;
     lastFoldPolicy = '';
     renderDocument(currentRaw, currentDocUrl, settings);
     return;

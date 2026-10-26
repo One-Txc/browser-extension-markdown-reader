@@ -109,6 +109,13 @@ export interface ReaderSettings {
   /** 设置面板是否展开（默认展开，收起后刷新仍保留收起状态） */
   folderSettingsOpen: boolean;
 
+  /* ---------------- 「收藏」面板的排序偏好（刷新后保留） ---------------- */
+
+  /** 排序依据：文件名 / 收藏时间 */
+  favoritesSortField: 'name' | 'time';
+  /** 是否升序；默认 false = 收藏时间降序（最新收藏的在最前） */
+  favoritesSortAsc: boolean;
+
   /** 界面语言；auto 表示跟随浏览器 */
   locale: Locale;
 
@@ -181,6 +188,9 @@ export const DEFAULT_SETTINGS: ReaderSettings = {
   folderShowHidden: true,
   folderSettingsOpen: true,
 
+  favoritesSortField: 'time',
+  favoritesSortAsc: false,
+
   locale: 'auto',
 
   advancedOpen: false,
@@ -239,6 +249,10 @@ export async function loadSettings(): Promise<ReaderSettings> {
       folderFoldersFirst: s.folderFoldersFirst ?? DEFAULT_SETTINGS.folderFoldersFirst,
       folderShowHidden: s.folderShowHidden ?? DEFAULT_SETTINGS.folderShowHidden,
       folderSettingsOpen: s.folderSettingsOpen ?? DEFAULT_SETTINGS.folderSettingsOpen,
+
+      favoritesSortField:
+        s.favoritesSortField === 'name' ? 'name' : DEFAULT_SETTINGS.favoritesSortField,
+      favoritesSortAsc: s.favoritesSortAsc ?? DEFAULT_SETTINGS.favoritesSortAsc,
 
       // 用 LOCALES 校验，加语言时只需改 i18n.ts 一处
       locale: LOCALES.includes(s.locale as Locale)

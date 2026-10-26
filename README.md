@@ -46,7 +46,10 @@
 **导航与外观**
 
 - 左侧**大纲**：按标题层级生成目录树，滚动自动高亮当前章节，支持逐级折叠与「全部 / 第一层 / 前两层 / 前三层」批量档位
-- 左侧**文件夹**：列出当前文档所在目录（仅本地文档），点文档**原地换正文**、不改 URL
+- 左侧**文件**：列出当前文档所在目录（仅本地文档），点文档**原地换正文**、不改 URL（原「文件夹」标签，四个 tab 并排后缩短为「文件」）
+- 左侧**收藏**：星标收藏的文档，最多 50 条；可按名称 / 收藏时间升序或降序排列（默认收藏时间降序），点一条**原地换正文**
+- 左侧**历史**：记录最近打开的 **50 份**文档（本地与在线都记），点一条**原地换正文**、右侧图标跳转真实 URL，可单条移除或一键清空
+- 正文**右上角星标**：一键收藏 / 取消收藏当前文档（收藏满了会提示，不会静默挤掉旧收藏）
 - 侧边栏可拖拽调宽（160–560 px）、可整体隐藏；宽屏固定、窄屏收成抽屉
 - **9 套代码配色** + **5 套护眼配色**（护眼 / 羊皮纸 / 暖白 / 柔灰 / 暗夜暖调），深浅色可跟随系统
 - 字号、正文宽度、大纲折叠阈值与默认层数均可调
@@ -139,7 +142,7 @@ npm run watch          # esbuild 监听重建（Chrome 目标，带 sourcemap、
 | `baseDocUrl` | 用户**最初打开**的文档 | 永不 |
 | `currentDocUrl` | **正在显示**的文档 | 原地切换文档时更新 |
 
-所有与内容相关的判断用后者；「文件夹」面板的根目录用前者（点了子目录里的文档后，根目录不该跟着跑）。需要真实 URL（分享、收藏、刷新）时，走文件夹面板每行右侧的跳转图标。
+所有与内容相关的判断用后者；「文件」面板的根目录用前者（点了子目录里的文档后，根目录不该跟着跑）。需要真实 URL（分享、收藏、刷新）时，走文件 / 收藏 / 历史面板每行右侧的跳转图标。
 
 ---
 
@@ -213,8 +216,14 @@ markdown_reader/
 │  │  ├─ markdown.ts          # markdown-it 管线 + DOMPurify 配置 + highlight.js 语言注册
 │  │  ├─ math.ts              # KaTeX：占位符方式绕开 DOMPurify（见下）
 │  │  ├─ mermaid-entry.ts     # Mermaid 独立 bundle 的入口，被注入后自己扫容器
-│  │  ├─ toc.ts               # 大纲：树形构建 + 折叠 + 批量档位 + 滚动高亮
-│  │  ├─ folder.ts            # 「文件夹」面板：目录列表 + 排序 + 原地切换文档
+│  │  ├─ toc.ts               # 大纲：树形构建 + 折叠 + 批量档位 + 滚动高亮（含扩展面板 tab 机制）
+│  │  ├─ folder.ts            # 「文件」面板：目录列表 + 排序 + 原地切换文档
+│  │  ├─ link-pane.ts         # 通用文档列表面板：收藏 / 历史共用（行、清空、排序行）
+│  │  ├─ history.ts           # 「历史」面板包装：只提供历史文案（无排序行）
+│  │  ├─ favorites.ts         # 「收藏」面板包装：收藏文案 + 排序行
+│  │  ├─ favorite-button.ts   # 正文右上角星标：收藏 / 取消收藏 / 满额提示
+│  │  ├─ icons.ts             # 面板之间共用的图标（Markdown 文件、新标签页打开）
+│  │  ├─ toast.ts             # 页面内轻提示条（设置打不开、收藏已满）
 │  │  ├─ lightbox.ts          # 图片全屏放大（缩放 / 平移 / 切换）
 │  │  ├─ source-view.ts       # 原文 ⇄ 渲染视图切换
 │  │  ├─ settings-button.ts   # 右上角齿轮 + 打开失败时的提示气泡
@@ -229,15 +238,18 @@ markdown_reader/
 │  │  ├─ const.ts             # 常量、两级页面判定、DOM 就绪等待、URL 解码兜底
 │  │  ├─ settings.ts          # 设置模型 + storage.sync 读写 + 取值夹取
 │  │  ├─ directory.ts         # 目录索引解析、过滤、排序
+│  │  ├─ link-store.ts        # 收藏 / 历史共用数据层：归一化 / 去重 / 上限 / 排序 / storage.local
+│  │  ├─ history.ts           # 历史列表实例（50 条，满了淘汰最旧）
+│  │  ├─ favorites.ts         # 收藏列表实例（50 条，满了拒绝新增）
 │  │  ├─ i18n.ts              # 语言包静态 import + t() 回退链
 │  │  └─ perf.ts              # 首屏性能打点
 │  ├─ types/                  # 手工补的模块类型声明（*.css、注入常量）
-│  ├─ _locales/               # 语言包源码：zh_CN（基准）/ en / ja / ko，各 101 条
-│  └─ icons/                  # 图标：16/32/48/128 PNG，白底黑字，形状取自 folder.ts 的 ICON_MD
+│  ├─ _locales/               # 语言包源码：zh_CN（基准，146 条）/ en / ja / ko（115 条）
+│  └─ icons/                  # 图标：16/32/48/128 PNG，白底黑字，形状取自 icons.ts 的 ICON_MD
 ├─ scripts/
 │  ├─ build/                  # build.mjs（esbuild）· manifest.mjs（清单生成）· package.py（打 zip）
 │  └─ tools/                  # locales.py · testdata.py · screenshots.py
-├─ tests/                      # 自动化测试：render / toc / source-view（jsdom，不需要浏览器）
+├─ tests/                      # 自动化测试：render / toc / source-view / collections（jsdom，不需要浏览器）
 ├─ testMd/                     # 手工测试文档，索引见 testMd/00-索引.md
 ├─ docs/                       # 商店上架资料等，不参与构建
 └─ output/                     # 构建产物与 zip（不入库）
@@ -361,7 +373,7 @@ npm run build           # 只构建 Chrome  → output/MV3
 npm run build:firefox   # 只构建 Firefox → output/MV2
 npm run build:all       # 两个目标都构建
 npm run typecheck       # tsc --noEmit
-npm test                # 三组 jsdom 测试（无需浏览器）
+npm test                # 四组 jsdom 测试（无需浏览器）
 npm run check           # typecheck + test + build(chrome)，提交前跑这个
 
 npm run testdata        # 重新生成 testMd/ 的测试图片、GBK 文件、3.4MB 超大文件
@@ -383,14 +395,15 @@ set PYTHONIOENCODING=utf-8 && npm run locales      # cmd
 ## 测试
 
 ```bash
-npm test        # 97 项断言，全部跑在 jsdom 里，不需要浏览器
+npm test        # 201 项断言，全部跑在 jsdom 里，不需要浏览器
 ```
 
 | 脚本 | 断言 | 覆盖 |
 |---|---|---|
 | `tests/render.mjs` | 31 | 渲染管线：标题锚点（含中文锚点）、表格、代码高亮、任务列表只读、脚注、XSS 清除、公式占位符回填、`$5` 不被误判为公式、mermaid 占位容器 |
-| `tests/toc.mjs` | 51 | 目录树：层级 class、折叠、批量档位互斥、permalink 符号剔除、挂载与销毁 |
+| `tests/toc.mjs` | 64 | 目录树：层级 class、折叠、批量档位互斥、permalink 符号剔除、挂载与销毁；扩展面板 tab（顺序 / 切换 / 上次选择 / 无标题时仍生成侧边栏） |
 | `tests/source-view.mjs` | 15 | 原文 ⇄ 渲染切换：hidden 标志、按钮文案、body class |
+| `tests/collections.mjs` | 91 | 收藏 / 历史共用层：URL 归一化、去重、50 条上限、两种溢出策略（淘汰 / 拒绝）、排序（名称 / 时间 × 升降序）、脏数据解析、时间格式、存储往返、并发写入；面板：渲染、点击 / 跳转 / 移除、清空两步确认、空状态、排序行；星标：状态切换与满额提示 |
 
 做法是先用 esbuild 把待测模块打成 ESM，再用 jsdom 提供 `window`/`document`（每组的临时产物放在 `.tmp/<脚本名>/`，互不干扰）。
 
@@ -398,6 +411,8 @@ npm test        # 97 项断言，全部跑在 jsdom 里，不需要浏览器
 
 - 目录的**滚动高亮**
 - 一切视觉与布局：配色、间距、图标、抽屉式侧边栏的断点（当前断点是 **824px**）
+- 收藏 / 历史条目的**目录行左侧省略**与悬停浮出的两个按钮（依赖真实布局与 `direction: rtl`）
+- 右上角星标的激活配色、四个 tab 在 160px 最窄宽度下的排布
 - 交互手感：拖拽调宽、图片缩放平移、毛玻璃与透明度过渡
 
 **这些必须由人在真实浏览器里确认。** 手工清单见 [testMd/00-索引.md](./testMd/00-索引.md)：按顺序打开每个文件、对照「关键验证点」。里面也列了几条**不支持**的写法（YAML front matter、MDX/JSX、依赖 `eval` 的 Mermaid 图表）。
@@ -491,7 +506,11 @@ output/dist/
 
 - **只读**：不修改任何文件。任务列表复选框是 `disabled` 的，勾选不会写回
 - **超过 3 MB 的文件不渲染**，显示原始文本并给出提示条
-- **在线文档没有「文件夹」标签页** —— 目录列表依赖 `file://` 目录索引页，这个机制在 http(s) 上不存在
+- **在线文档没有「文件」标签页** —— 目录列表依赖 `file://` 目录索引页，这个机制在 http(s) 上不存在
+- **「收藏」「历史」只存在本机**：走 `chrome.storage.local`，不同步到其它设备（本地路径属隐私，且 sync 单键只有 8 KB）。各自最多 50 条
+  - 历史超出上限时**静默淘汰最旧的一条**；收藏**满了拒绝新增**并提示，需要先移出一些 —— 收藏是主动保存的内容，不该被静默删掉
+  - 两者的排序偏好（仅收藏有排序）走 `storage.sync`，会跨设备同步
+  - 清空后当前文档不会自动补回，下次打开 / 收藏才重新出现
 - **代码高亮覆盖 16 种语言**（见 `src/render/markdown.ts` 的 `LANGS`，另有常见别名），其他语言按纯文本显示
 - **不支持 YAML front matter** —— 本扩展定位是阅读**已完成**的文档；渲染不符预期时应该改源文件，而不是让阅读器去猜
 - **与其他 Markdown 扩展共存可能互相干扰**：对方注入的样式会压掉 `[hidden]`（UA 样式表里 `display:none` 的对手是所有作者样式），已改用 `.md-reader-hidden` + `display:none!important` 规避；若对方抢先渲染完，本扩展会因找不到 `body > pre` 而走 SW 兜底读取原文，仍能工作

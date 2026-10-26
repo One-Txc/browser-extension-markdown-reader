@@ -457,9 +457,15 @@ body.md-reader-lightbox-open {
 }
 
 .md-reader-tab {
-  flex: 1;
+  /*
+   * 三个 tab 均分整行：flex-basis 0 + min-width 0，
+   * 否则「文件夹」三个字会把 tab 条顶宽、把「历史」挤出可视区。
+   */
+  flex: 1 1 0;
+  min-width: 0;
   position: relative;
-  padding: 9px 8px 8px;
+  /* 侧边栏最窄 160px 时每个 tab 只有 ~53px，左右内边距必须收窄 */
+  padding: 9px 5px 8px;
   border: 0;
   background: transparent;
   font: inherit;
@@ -467,6 +473,9 @@ body.md-reader-lightbox-open {
   color: var(--md-muted, #8c959f);
   cursor: pointer;
   transition: color 0.12s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .md-reader-tab:hover {
@@ -505,14 +514,17 @@ body.md-reader-lightbox-open {
 
 /* ---------- 文件夹面板 ---------- */
 
-.md-reader-folder {
+/* 顶栏样式由「文件」「收藏」「历史」三个面板共用 */
+.md-reader-folder,
+.md-reader-link-pane {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
 }
 
-.md-reader-folder-bar {
+.md-reader-folder-bar,
+.md-reader-link-bar {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -537,14 +549,16 @@ body.md-reader-lightbox-open {
   white-space: nowrap;
 }
 
-.md-reader-folder-bar .count {
+.md-reader-folder-bar .count,
+.md-reader-link-bar .count {
   margin-left: auto;
   flex: 0 0 auto;
   color: var(--md-muted, #a0a8b0);
 }
 
-/* 顶栏上的小图标按钮（折叠全部 / 设置） */
-.folder-tool {
+/* 顶栏上的小图标按钮（折叠全部 / 设置 / 历史条目操作） */
+.folder-tool,
+.link-tool {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -563,26 +577,31 @@ body.md-reader-lightbox-open {
 }
 
 .folder-tool:hover,
-.folder-tool.is-active {
+.folder-tool.is-active,
+.link-tool:hover,
+.link-tool.is-active {
   background: rgba(0, 0, 0, 0.07);
   color: var(--md-fg, #1f2328);
 }
 
-.folder-tool svg {
+.folder-tool svg,
+.link-tool svg {
   display: block;
   width: 13px;
   height: 13px;
 }
 
 /* 排序方向的按钮带文字，宽一点 */
-.folder-tool.folder-asc {
+.folder-tool.folder-asc,
+.link-tool.link-asc {
   padding: 0 7px;
   min-width: 0;
 }
 
 /* ---------- 设置面板 ---------- */
 
-.folder-settings {
+.folder-settings,
+.link-sort-box {
   flex: 0 0 auto;
   padding: 7px 10px 9px;
   border-bottom: 1px solid var(--md-toc-border, rgba(0, 0, 0, 0.06));
@@ -590,19 +609,27 @@ body.md-reader-lightbox-open {
   color: var(--md-muted, #656d76);
 }
 
-.folder-setting-row {
+.folder-setting-row,
+.link-sort-row {
   display: flex;
   align-items: center;
   gap: 6px;
   margin-bottom: 7px;
 }
 
-.folder-setting-label {
+/* 排序行是收藏面板里唯一一行，不需要底部的分组间距 */
+.link-sort-row {
+  margin-bottom: 0;
+}
+
+.folder-setting-label,
+.link-sort-label {
   flex: 0 0 auto;
   color: var(--md-muted, #656d76);
 }
 
-.folder-select {
+.folder-select,
+.link-sort-select {
   flex: 1 1 auto;
   min-width: 0;
   padding: 3px 5px;
@@ -631,7 +658,8 @@ body.md-reader-lightbox-open {
   flex: 1 1 auto;
 }
 
-.md-reader-folder-scroll {
+.md-reader-folder-scroll,
+.md-reader-link-scroll {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -815,6 +843,203 @@ body.md-reader-lightbox-open {
 .folder-error {
   color: #d1242f;
   font-style: normal;
+}
+
+/* ---------- 收藏 / 历史面板（共用同一份样式） ---------- */
+
+/*
+ * 文件面板顶栏是「名字靠左、计数与按钮靠右」，收藏 / 历史顶栏没有名字，
+ * 所以计数要回到左边，只让「清空」被 auto margin 推到右侧。
+ */
+.md-reader-link-bar .count {
+  margin-left: 0;
+}
+
+/* 「清空」是文字按钮，比图标按钮宽一些 */
+.link-clear {
+  margin-left: auto;
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 0 7px;
+  white-space: nowrap;
+}
+
+/* 两步确认的中间态：变红，3 秒没再点自动撤回 */
+.link-clear.is-confirm {
+  color: #d1242f;
+}
+
+.link-clear:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 打开失败的提示：顶栏下方一条，4 秒后自动消失 */
+.link-error {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  color: #d1242f;
+  background: rgba(209, 36, 47, 0.08);
+  border-bottom: 1px solid rgba(209, 36, 47, 0.18);
+}
+
+.md-reader-link-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+ * 一行两段：第一行文件名 + 时间，第二行目录。
+ * 同名文件靠目录区分，所以目录必须显示 —— 但侧边栏最窄只有 160px。
+ */
+.link-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 5px;
+  padding: 3px 6px 3px 2px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.link-row:hover {
+  background: var(--md-toc-border, rgba(0, 0, 0, 0.05));
+}
+
+.link-row.is-current {
+  background: rgba(9, 105, 218, 0.1);
+}
+
+.link-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--md-fg, #1f2328);
+}
+
+.link-icon svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+
+.link-main {
+  display: flex;
+  flex-direction: column;
+  /* flex / grid 子项要显式 min-width: 0 才会收缩，下面的省略号才生效 */
+  min-width: 0;
+  gap: 1px;
+}
+
+.link-name {
+  font-size: 12.5px;
+  color: var(--md-toc-text, #656d76);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-row.is-current .link-icon,
+.link-row.is-current .link-name {
+  color: var(--md-toc-active, #0969da);
+}
+
+.link-row.is-current .link-name {
+  font-weight: 600;
+}
+
+.link-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+/*
+ * 目录行按**左侧省略**：路径尾部（最靠近文件名的一段）才最有辨识度。
+ * direction: rtl + unicode-bidi: plaintext 让省略号出现在左边，
+ * 同时保持每段文字自身的阅读方向。
+ */
+.link-dir {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 10.5px;
+  color: var(--md-muted, #a0a8b0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+  unicode-bidi: plaintext;
+}
+
+.link-time {
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  color: var(--md-muted, #a0a8b0);
+}
+
+/*
+ * 行尾操作：悬停 / 键盘聚焦时才出现。
+ * 绝对定位覆在时间上，不占常驻宽度 —— 最窄侧边栏里
+ * 两个 22px 按钮的固定预留太贵。
+ */
+.link-actions {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 2px;
+  padding-left: 2px;
+  border-radius: 4px;
+  background: var(--md-page-bg, #fff);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
+}
+
+.link-row:hover .link-actions,
+.link-row:focus-within .link-actions {
+  opacity: 1;
+  visibility: visible;
+}
+
+.link-actions .link-tool {
+  background: var(--md-page-bg, #fff);
+}
+
+.link-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 28px 12px;
+  text-align: center;
+}
+
+.link-empty-title {
+  font-size: 12.5px;
+  color: var(--md-toc-text, #656d76);
+}
+
+.link-empty-hint {
+  font-size: 11px;
+  color: var(--md-muted, #a0a8b0);
+}
+
+/* 正文没有标题时「大纲」面板里的说明：tab 不隐藏，但空面板要解释一下 */
+.md-reader-toc-empty {
+  padding: 16px 12px;
+  font-size: 11.5px;
+  color: var(--md-muted, #a0a8b0);
+  font-style: italic;
+  text-align: center;
 }
 
 /* ---------- 目录树 ---------- */
@@ -1019,6 +1244,14 @@ html.md-reader-resizing * {
 /* 右上角：设置。贴最右边 */
 .md-reader-btn-settings {
   right: 12px;
+}
+
+/*
+ * 右上角：收藏星标。排在原文视图按钮左侧 ——
+ * 12（右距）+ 34（设置）+ 8 + 34（源码）+ 8 = 96
+ */
+.md-reader-btn-favorite {
+  right: 96px;
 }
 
 /* ---------- 打开设置失败时的提示 ---------- */
