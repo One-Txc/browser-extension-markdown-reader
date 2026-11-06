@@ -152,12 +152,67 @@ function sampleRows(rows: HTMLTableRowElement[]): HTMLTableRowElement[] {
 }
 
 /**
+ * 把单元格的文本按 `<br>` 切成若干行。
+ *
+ * 为什么必须切：文档里手写 `<br>` 是很常见的排版手段（典型如「系统内<br>部、外部」），
+ * `textContent` 会把两侧拼成一条连续字符串，量出来的宽度是「整段连起来」的长度 ——
+ * 例如 30 个字的一段顶到 20em 上限，而实际渲染时每行只有 6~9 个字，
+ * 结果就是「列特别宽、内容只占左边一条」。
+ *
+ * 普通换行符（\n）不切：CSS 默认 white-space: normal 会把它折叠成空格，视觉上不换行，
+ * 按它切分反而会低估列宽。但连续空白要先折叠成一个空格 —— 浏览器渲染时就是这么做的，
+ * 而 measureText 会把每个空白字符都算进宽度（内联 HTML 表格里的缩进尤其明显）。
+ *
+ * 只认元素节点里的 BR，其它元素（strong / code / a）继续向下遍历取它们的文本。
+ */
+function textRuns(cell: Element): string[] {
+  const runs: string[] = [];
+  let current = '';
+
+  const flush = (): void => {
+    const text = current.trim();
+    if (text !== '') runs.push(text);
+    current = '';
+  };
+
+  const walk = (node: Node): void => {
+    if (node.nodeType === 3 /* TEXT_NODE */) {
+      // 与浏览器渲染保持一致：换行、制表、连续空格都折叠成一个空格
+      current += (node.nodeValue ?? '').replace(/\s+/g, ' ');
+      return;
+    }
+    if (node.nodeType !== 1 /* ELEMENT_NODE */) return;
+    if ((node as Element).tagName === 'BR') {
+      flush();
+      return;
+    }
+    for (let i = 0; i < node.childNodes.length; i++) walk(node.childNodes[i]);
+  };
+
+  walk(cell);
+  flush();
+  return runs;
+}
+
+/** 一行文本里最宽的那段（按 br 切分后的结果） */
+function maxRunWidth(ctx: CanvasRenderingContext2D, runs: string[]): number {
+  let max = 0;
+  for (const run of runs) {
+    const width = ctx.measureText(run).width;
+    if (width > max) max = width;
+  }
+  return max;
+}
+
+/**
  * 逐列算宽度；算不出来（没有 canvas 上下文）返回 null。
  *
  * 规则：clamp(表头宽度, 内容宽度 80 分位, 20em)
  *   - 下限取表头宽度，保证「编号」「级别」这类短列的表头不被压到折行；
  *   - 期望值取 80 分位而不是最长单元格，避免一个超长 URL 绑架整列；
  *   - 上限 20em，让长说明列折几行，而不是撑成一行 800px。
+ *
+ * 宽度按 <br> 切分后的「最长一行」计算，不是整段拼接（见 textRuns）。
  *
  * 用 em 而不是 px：字号从「小」切到「大」时列宽自动等比缩放，无需重测。
  */
@@ -188,14 +243,17 @@ function measureColumns(table: HTMLTableElement): MeasuredColumns | null {
   let totalPx = 0;
 
   for (let i = 0; i < count; i++) {
-    const headText = header.cells[i]?.textContent?.trim() ?? '';
-    const minPx = ctx.measureText(headText).width + CELL_CHROME_PX;
+    const headCell = header.cells[i];
+    const minPx =
+      (headCell ? maxRunWidth(ctx, textRuns(headCell)) : 0) + CELL_CHROME_PX;
 
     const samples: number[] = [];
     for (const row of bodyRows) {
-      const text = row.cells[i]?.textContent?.trim() ?? '';
-      if (!text) continue;
-      samples.push(ctx.measureText(text).width + CELL_CHROME_PX);
+      const cell = row.cells[i];
+      if (!cell) continue;
+      const runs = textRuns(cell);
+      if (runs.length === 0) continue;
+      samples.push(maxRunWidth(ctx, runs) + CELL_CHROME_PX);
     }
     samples.sort((a, b) => a - b);
 

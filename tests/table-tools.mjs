@@ -199,18 +199,63 @@ const bigBox = big.querySelector('.md-reader-table-box');
 check('大表仍按宽度进入 capped', bigBox.dataset.width === 'capped');
 check('大表的 col 数量正确', bigBox.querySelectorAll('colgroup > col').length === 7);
 
-/* --------------------------------------------------------- 7. 互不干扰 */
+/* ------------------------- 7. 单元格手写 <br>：必须按「最长一行」算，不是整段拼接 */
+/*
+ * 每格两段、各 10 个汉字。按 <br> 切分后每列宽度 = 10 字 + chrome = 106px = 6.63em；
+ * 若按 textContent 拼接（20 字）则会是 186px = 11.63em。
+ * 断言 < 8em 就能区分两种算法。
+ */
+const brCell = `<td>${'数据'.repeat(5)}<br>${'数据'.repeat(5)}</td>`;
+const brTable = document.createElement('div');
+brTable.innerHTML = [
+  '<table><thead><tr>',
+  ...Array.from({ length: 10 }, (_, i) => head(i + 1)),
+  '</tr></thead><tbody><tr>',
+  ...Array.from({ length: 10 }, () => brCell),
+  '</tr></tbody></table>',
+].join('');
+
+check('<br> 表格能处理', enhanceTables(brTable) === 1);
+const brBox = brTable.querySelector('.md-reader-table-box');
+check('<br> 表格按宽度进入 capped', brBox.dataset.width === 'capped');
+const brCols = [...brBox.querySelectorAll('colgroup > col')];
+check('按 <br> 切分后列宽明显更窄（不是整段拼接）', brCols.every((c) => parseFloat(c.style.width) < 8));
+check('每列宽度一致', new Set(brCols.map((c) => c.style.width)).size === 1);
+
+/* ----------------------- 8. 普通换行与连续空白：应折叠成一个空格再测量 */
+/*
+ * 内联 HTML 表格里 `<td>` 的文本节点可能带换行/缩进。CSS 的 white-space: normal
+ * 会把它们折叠成一个空格，所以测量前也要折叠：`数据\n\n\n数据` 应量成「数据 数据」5 个字符
+ * （66px = 4.13em），而不是 7 个字符（82px = 5.13em）。
+ */
+const nlCell = `<td>数据\n\n\n数据</td>`;
+const nlTable = document.createElement('div');
+nlTable.innerHTML = [
+  '<table><thead><tr>',
+  ...Array.from({ length: 15 }, (_, i) => head(i + 1)),
+  '</tr></thead><tbody><tr>',
+  ...Array.from({ length: 15 }, () => nlCell),
+  '</tr></tbody></table>',
+].join('');
+
+check('含普通换行的表格能处理', enhanceTables(nlTable) === 1);
+const nlBox = nlTable.querySelector('.md-reader-table-box');
+check('连续空白折叠后列宽更窄', [...nlBox.querySelectorAll('colgroup > col')].every(
+  (c) => parseFloat(c.style.width) < 4.5
+));
+
+/* --------------------------------------------------------- 9. 互不干扰 */
 const rootBoxes = root.querySelectorAll('.md-reader-table-box');
 check(
   '调整第一张表不影响第二张',
   rootBoxes[1].dataset.align === 'auto' && rootBoxes[1].dataset.width === 'wrap'
 );
 
-/* ------------------------------------------------------------ 8. 幂等 */
+/* ------------------------------------------------------------ 10. 幂等 */
 check('重复调用不再包裹', enhanceTables(wide) === 0);
 check('重复调用后外壳数量不变', wide.querySelectorAll('.md-reader-table-box').length === 3);
 
-/* --------------------------------------------------------- 9. 无表格 */
+/* -------------------------------------------------------- 11. 无表格 */
 const empty = document.createElement('div');
 empty.innerHTML = '<p>没有表格的文档</p>';
 check('没有表格时返回 0', enhanceTables(empty) === 0);
