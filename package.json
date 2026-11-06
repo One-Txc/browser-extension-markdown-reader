@@ -1,6 +1,6 @@
 {
   "name": "just-markdown",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "private": true,
   "description": "浏览器扩展：直接阅读本地与在线 Markdown 文档",
   "type": "module",
