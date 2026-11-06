@@ -97,11 +97,25 @@ npm run bump          # 只把版本号第三位 +1（release 内部会调用）
 1. **工作区必须干净**（含未跟踪文件），否则直接拒绝并列出来 —— 发布出去的 zip
    必须对应一个有提交记录的代码状态。先提交，再发布
 2. 版本号第三位 +1（`npm version patch --no-git-tag-version`）
-3. 只提交 `package.json` + `package-lock.json`，提交信息 `chore(release): v1.0.1`。
-   **不打 tag、不 push**
+3. 只提交 `package.json` + `package-lock.json`，提交信息 `chore(release): v1.0.1`
 4. 构建两个目标 → 打包到 `output/dist/`（**打包前会清空该目录里的历史 zip**，
    免得上传时拿错旧版本或改名前的包）
 5. 构建或打包失败 → 自动 `git reset --hard HEAD~1` 撤回那次版本提交，修好后重跑
+6. 全部成功后才打 annotated tag `vX.Y.Z`（带日期与作者）。同名 tag 已存在时
+   提前失败、不覆盖；构建失败时不打 tag，否则 `reset` 会留下指向被撤提交的悬空 tag。
+   **不 push**：tag 只在本地，需要备份时自己 `git push origin vX.Y.Z`
+
+### 回滚到某个已发布版本
+
+产物 `output/` 不入库，所以回滚必须重新构建 —— 否则浏览器里跑的还是坏版本：
+
+```bash
+git reset --hard v1.0.6
+npm run build:all
+```
+
+然后在扩展管理页点刷新。新版本的提交被 tag 保住了，`git reset --hard v1.0.7`
+随时能回去；没有 tag 时退回旧版，新提交只能靠 reflog 捞。
 
 **版本号唯一来源是 `package.json` 的 `version`**，清单与 zip 文件名都从它派生。
 每次发布必然 +1，没有「不升版本号的出包」；已安装用户靠这个版本号递增才会自动更新
