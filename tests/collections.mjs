@@ -88,6 +88,14 @@ check('以斜杠结尾时取主机名', data.linkNameOf('https://x.com/') === 'x
 check('目录去掉 file:// 前缀', data.linkDirOf('file:///D:/docs/sub/a.md') === 'D:/docs/sub');
 check('POSIX 目录保留前导斜杠', data.linkDirOf('file:///home/u/a.md') === '/home/u');
 check('http 目录原样', data.linkDirOf('https://x.com/d/a.md') === 'https://x.com/d');
+check(
+  '目录里的中文解码',
+  data.linkDirOf('file:///D:/%E8%BD%AF%E4%BB%B6/%E6%96%87%E6%A1%A3/a.md') === 'D:/软件/文档'
+);
+check(
+  '坏转义的那一段原样保留，其它段照常解码',
+  data.linkDirOf('file:///D:/%E8%BD%AF%E4%BB%B6/100%/a.md') === 'D:/软件/100%'
+);
 
 /* ------------------------------------------------------ 3. 插入与去重 */
 const base = [

@@ -68,10 +68,24 @@ export function linkNameOf(url: string): string {
 }
 
 /**
- * 从 URL 取展示用目录。
+ * 把展示用的路径解码成人能读的形式。
+ *
+ * 逐段解码而不是整串 decodeURIComponent：整串一旦遇到非法转义（裸 `%`，
+ * 例如「100%完成」）就整体抛错退回原样，同一行里其它中文目录也跟着
+ * 显示成 %E8%BD%AF…；分段后坏掉的那一段原样保留，其余照常解码。
+ */
+function decodePath(path: string): string {
+  if (!path.includes('%')) return path;
+  return path.split('/').map(safeDecode).join('/');
+}
+
+/**
+ * 从 URL 取展示用目录（已解码）。
  *
  * `file://` 前缀去掉（`D:/docs` 比 `file:///D:/docs` 好读），
- * Windows 盘符前那个多余的分隔符也一并去掉；http(s) 保持原样。
+ * Windows 盘符前那个多余的分隔符也一并去掉；http(s) 保留协议与主机。
+ * 中文目录在 URL 里是百分号编码，直接显示就是 `D:/%E8%BD%AF%E4%BB%B6`,
+ * 所以这里解码后再交给界面。
  */
 export function linkDirOf(url: string): string {
   const base = normalizeLinkUrl(url).split('?')[0].replace(/[/\\]+$/, '');
@@ -79,7 +93,7 @@ export function linkDirOf(url: string): string {
   let dir = slash > 0 ? base.slice(0, slash) : base;
   dir = dir.replace(/^file:\/\//i, '');
   dir = dir.replace(/^\/([A-Za-z]:)/, '$1');
-  return dir;
+  return decodePath(dir);
 }
 
 /**
