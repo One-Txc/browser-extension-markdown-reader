@@ -91,6 +91,35 @@
     "description": "页面右上角浮动按钮的悬停提示。当前显示原始 Markdown 文本，点击后回到渲染后的文档。"
   },
 
+  "tableTools": {
+    "message": "表格操作",
+    "description": "表格上方那排按钮（对齐 / 展开）的无障碍标签，作为整组按钮的 aria-label，不显示在界面上。屏幕阅读器会读它来说明这一组按钮的用途，所以不要省略。用简短的名词。"
+  },
+  "tableAlignLeft": {
+    "message": "左对齐",
+    "description": "表格操作条三个对齐按钮中的第一个（图标是三条左对齐的横线）的悬停提示与无障碍标签。按操作按钮的文案约定，message 只用几个字点出方向；完整语义：把这张表所有单元格的内容改为左对齐，会覆盖 Markdown 里 :-: 语法指定的列对齐，表格本身的位置与宽度不受影响。"
+  },
+  "tableAlignCenter": {
+    "message": "居中",
+    "description": "表格操作条三个对齐按钮中的第二个（图标是三条居中横线）的悬停提示与无障碍标签。message 简短，语义同 tableAlignLeft，只是方向为居中。"
+  },
+  "tableAlignRight": {
+    "message": "右对齐",
+    "description": "表格操作条三个对齐按钮中的第三个（图标是三条右对齐横线）的悬停提示与无障碍标签。message 简短，语义同 tableAlignLeft，只是方向为靠右。"
+  },
+  "tableAlignReset": {
+    "message": "文档对齐",
+    "description": "某个对齐按钮已经处于按下状态时，它自己的悬停提示会换成这一条。message 简短，含义是「取消覆盖、回到文档自身的对齐」：再点一次就让 Markdown 原文件里 :-: 指定的列对齐重新生效。与 tableAlignLeft / tableAlignCenter / tableAlignRight 成对出现。"
+  },
+  "tableFitWidth": {
+    "message": "展开",
+    "description": "表格操作条最右侧开关按钮的悬停提示。message 简短，只写「展开」；完整语义：完全按内容的自然宽度展开、不折行，超出正文宽度时出现横向滚动条。注意这不是宽表的默认行为（7 列以上默认已按「限幅展开」处理），它是再进一步、完全不限幅。处于这个状态时提示会换成 tableShrink。"
+  },
+  "tableShrink": {
+    "message": "自动宽度",
+    "description": "表格已经处于「完全展开」状态时，该按钮的悬停提示。message 简短，含义是回到自动档位：列数少时折行压回正文宽度，列数多且放不下时按限幅展开。与 tableFitWidth 成对出现。"
+  },
+
   "imagePreview": {
     "message": "图片预览",
     "description": "点击正文图片后弹出的全屏放大层的无障碍标签，供屏幕阅读器朗读。"

@@ -18,6 +18,7 @@ import { renderMarkdown } from './render/markdown';
 import { applyTheme, injectKatexCss } from './render/styles';
 import { mountToc, type SidebarPane, type TocHandle, type TocHandlers } from './render/toc';
 import { setupImageZoom } from './render/lightbox';
+import { enhanceTables } from './render/table-tools';
 import { setupSourceView, type SourceViewHandle } from './render/source-view';
 import {
   DEFAULT_SETTINGS,
@@ -230,6 +231,11 @@ function renderDocument(raw: string, url: string, settings: ReaderSettings): voi
 
   document.title = titleFromUrl(url);
   enhanceCodeBlocks(main);
+  markPerf('code-blocks');
+  // 表格操作条（内容对齐 / 宽度策略）。必须在正文挂进文档之后做，
+  // 但这里 main 已经是插入后的节点，插入操作放在任何位置都可以。
+  enhanceTables(main);
+  markPerf('tables');
   setupImageZoom(main);
 
   /*

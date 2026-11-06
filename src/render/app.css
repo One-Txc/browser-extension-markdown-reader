@@ -313,13 +313,209 @@ body.md-reader-lightbox-open {
   padding-left: 22px;
 }
 
-/* ---------- 表格：宽表格可横向滚动 ---------- */
+/* ---------- 表格：默认折行，每张表可调对齐与宽度 ---------- */
 
+/*
+ * 这里刻意不沿用 GitHub / github-markdown-css 那套
+ * `display: block; width: max-content; overflow: auto` 作为**默认**行为。
+ *
+ * 那套做法的效果是：列宽固定为「该列最长内容的自然宽度」，
+ * 各列宽之和一旦超过正文宽度，整个表就退化成横向滚动容器。阅读场景下这有两个毛病：
+ *   1. 列宽没有任何分配逻辑，窄列（是/否、序号）会被长列一起拉宽，比例失衡；
+ *   2. 必须左右滚动才能看完一行，打断阅读节奏。
+ *
+ * 所以默认改成正常的 table 布局：
+ *   - fit-content：内容窄时表格保持紧凑，不会被拉成整行宽；
+ *   - max-width: 100%：默认把表格限制在正文宽度内（不突破 --md-content-width）；
+ *   - table-layout: auto：列宽交给浏览器的内容分配算法，按内容比例给，
+ *     短列短、长列长，这就是 CSS 层面能做到的「列宽智能」；
+ *   - 溢出的部分靠单元格折行消化，代价是行高变高，但不再需要横向滚动。
+ *
+ * 想恢复「按内容宽度展开、超出就滚动」的老行为，用表格上方的「自适应宽」按钮
+ * 单独切换 —— 见文件后半段的 [data-width='scroll']。
+ *
+ * 唯一的硬约束：单元格里必须允许在任意位置断词（见下面的 overflow-wrap），
+ * 否则长的 URL / 路径 / 不间断英文 token 的 min-content 会比正文还宽，
+ * 表格会撑破容器 —— 折行模式下既没有滚动条兜底，又会污染整页的横向滚动。
+ */
 .md-reader-root table {
-  display: block;
-  width: max-content;
+  display: table;
+  width: fit-content;
   max-width: 100%;
-  overflow: auto;
+  table-layout: auto;
+}
+
+/*
+ * anywhere 而不是 break-word：只有 anywhere 会参与 min-content 计算，
+ * 让浏览器认为长 token 在任意字符间可断，表格才压得进正文宽度。
+ * break-word 不改变 min-content，遇到超长 URL 仍然会溢出。
+ * 对中文没有副作用（本来就能任意断行），对英文只在整词放不下时才断开。
+ */
+.md-reader-root table :is(th, td) {
+  overflow-wrap: anywhere;
+}
+
+/* 表格里的图片同样不能撑破列宽 */
+.md-reader-root table img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ---------- 表格操作条与滚动容器（由 table-tools.ts 插入） ---------- */
+
+/*
+ * 结构：box > toolbar + scroll > table。
+ *
+ * 之所以要多一层 scroll，是因为 display: table 的元素不能自己滚动 ——
+ * 能滚的是它的外层块级盒子。这一层默认不滚动（overflow 保持可见），
+ * 只有「自适应宽」模式下才变成 overflow-x: auto。
+ */
+.md-reader-table-box {
+  margin: 16px 0;
+}
+
+.md-reader-table-scroll {
+  /* flex / grid 之外也要显式 min-width: 0 的同类约束：
+     scroll 的宽度由父级决定，这里只是让语义更明确 */
+  min-width: 0;
+}
+
+/*
+ * 操作条。
+ *
+ * 常驻在表格上方，但默认压到 0.55 的不透明度：每张表上方都浮着一排图标
+ * 会打断阅读；完全不显示又会让用户找不到入口。指针进入表格区域（或按钮
+ * 获得键盘焦点）时恢复满不透明。
+ *
+ * 用文档流而不是绝对定位（top: -28px）：表格紧邻标题时，绝对定位会盖住标题。
+ */
+.md-reader-table-toolbar {
+  display: flex;
+  /* 靠左：与表格左边缘对齐，用户的视线起点在左边 */
+  justify-content: flex-start;
+  gap: 2px;
+  margin-bottom: 4px;
+  opacity: 0.55;
+  transition: opacity 0.12s ease;
+}
+
+.md-reader-table-box:hover .md-reader-table-toolbar,
+.md-reader-table-toolbar:focus-within {
+  opacity: 1;
+}
+
+.md-reader-table-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: var(--md-toc-text, #57606a);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.md-reader-table-btn:hover {
+  background: var(--md-code-bg, #f6f8fa);
+  border-color: var(--md-code-border, rgba(0, 0, 0, 0.08));
+}
+
+.md-reader-table-btn[aria-pressed='true'] {
+  color: var(--md-toc-active, #0969da);
+  background: var(--md-code-bg, #f6f8fa);
+}
+
+.md-reader-table-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/*
+ * 内容对齐。
+ *
+ * 作用对象是**单元格内容**，不是表格本身的位置 —— 表格始终靠左、宽度由内容决定。
+ *
+ * 必须用 !important：Markdown 的 `:-:` 列对齐会被 markdown-it 写成单元格上的
+ * 内联样式 `style="text-align:…"`，内联样式优先级高于任何外部选择器，
+ * 靠提高特异性压不过去，只有 !important 能覆盖它。
+ *
+ * data-align='auto'（初始状态）不产出任何规则，等于「跟随文档自身的列对齐」；
+ * 用户点选之后才接管，再点同一按钮取消。所以三个按钮初始都不高亮。
+ */
+.md-reader-table-box[data-align='left'] table :is(th, td) {
+  text-align: left !important;
+}
+
+.md-reader-table-box[data-align='center'] table :is(th, td) {
+  text-align: center !important;
+}
+
+.md-reader-table-box[data-align='right'] table :is(th, td) {
+  text-align: right !important;
+}
+
+/*
+ * 折行模式下按列数分档：6 列以内表头不折行、单元格给一个保底宽度。
+ *
+ * 为什么按列数分档：抬高 min-content 是双刃剑 —— 短列不再被压折，
+ * 但 7 列以上的表 min-content 总和可能超过正文宽度，把表格撑破、
+ * 拖出整页横向滚动条。所以只在列数少时开这个口子，7 列以上交给 capped。
+ *
+ * :has() 不被支持时这几条规则整体失效，退化回现在的普通折行，不会坏。
+ */
+.md-reader-table-box[data-width='wrap'] table:not(:has(thead th:nth-child(7))) th {
+  white-space: nowrap;
+}
+
+.md-reader-table-box[data-width='wrap'] table:not(:has(thead th:nth-child(7))) :is(th, td) {
+  /* 5em ≈ 3 个汉字的内容区，装得下「解析器」这种短词 */
+  min-width: 5em;
+}
+
+/*
+ * 两种展开模式共用滚动容器：full 与 capped 都可能比正文宽。
+ *
+ * overflow-y 必须显式 hidden：只设 overflow-x 时，visible 会被提升成 auto，
+ * 表格底部容易莫名多出一条竖直滚动条。
+ */
+.md-reader-table-box[data-width='full'] .md-reader-table-scroll,
+.md-reader-table-box[data-width='capped'] .md-reader-table-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
+
+/*
+ * 自适应宽（full）：按内容自然宽度展开（max-content 不折行），
+ * 超出才出现横向滚动条。列宽回到「每列取最长行」—— 用户点开就是想要它。
+ */
+.md-reader-table-box[data-width='full'] table {
+  width: max-content;
+  max-width: none;
+}
+
+/*
+ * 限幅展开（capped）：列宽由 table-tools.ts 算好写进 <colgroup>，这里必须 fixed。
+ *
+ * 为什么非 fixed 不可：auto 布局下单元格的 max-width 不生效（规范里是 undefined），
+ * 列宽压不下来，长说明列照样会撑成一行。fixed 之后列宽完全由 colgroup 决定，
+ * 放得下就不出现滚动条，放不下才由上面的滚动容器接管。
+ */
+.md-reader-table-box[data-width='capped'] table {
+  width: max-content;
+  max-width: none;
+  table-layout: fixed;
+}
+
+/* 打印时操作条没有意义，去掉免得出现在纸上 */
+@media print {
+  .md-reader-table-toolbar {
+    display: none;
+  }
 }
 
 /* ---------- 任务列表 ---------- */
